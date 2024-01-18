@@ -42,7 +42,10 @@ class CustomDataset(Dataset):
 class EfficientNetSegmentation(nn.Module):
     def __init__(self, num_classes):
         super(EfficientNetSegmentation, self).__init__()
-        # Load pre-trained ResNet50 model
+        # Custom layer to adapt the 256-channel input (LOSS OF INFORMATION???)
+        self.input_adaptation = nn.Conv2d(256, 3, 1)  # Convolution to convert from 256 to 3 channels
+
+        # Load pre-trained EfficientNet model
         self.backbone = models.efficientnet_v2_l(weights='DEFAULT')
 
         # Remove the average pooling and fully connected layer
