@@ -110,13 +110,13 @@ def train(args, predictor):
     train_dataset = CustomDataset(image_embeddings_tensor, labels_tensor)
     train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True)
 
-    # Loss and optimizer functions
-    criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
-
     # Instantiate the model and move it to the device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = EfficientNetSegmentation(num_classes=2).to(device)
+
+    # Loss and optimizer functions
+    criterion = nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
     # Training loop
     num_epochs = 10
@@ -317,13 +317,13 @@ def test(args, predictor):
         train_dataset = CustomDataset(image_embeddings_tensor, labels_tensor)
         train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True)
 
-        # Loss and optimizer functions
-        criterion = nn.CrossEntropyLoss()
-        optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
-
         # Instantiate the model and move it to the device
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model = EfficientNetSegmentation(num_classes=2).to(device)
+
+        # Loss and optimizer functions
+        criterion = nn.CrossEntropyLoss()
+        optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
         # Training loop
         num_epochs = 10
