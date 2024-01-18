@@ -17,13 +17,13 @@ from utils.utils import *
 import time
 
 # Set random seeds for reproducibility
-    random.seed(42)
-    np.random.seed(42)
-    torch.manual_seed(42)
-    torch.cuda.manual_seed(42)
-    torch.cuda.manual_seed_all(42)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
+random.seed(42)
+np.random.seed(42)
+torch.manual_seed(42)
+torch.cuda.manual_seed(42)
+torch.cuda.manual_seed_all(42)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
 
 class CustomDataset(Dataset):
     def __init__(self, embeddings, labels):
@@ -112,7 +112,7 @@ def train(args, predictor):
 
     # Loss and optimizer functions
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(torch.model.parameters(), lr=1e-3)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
     # Instantiate the model and move it to the device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -319,7 +319,7 @@ def test(args, predictor):
 
         # Loss and optimizer functions
         criterion = nn.CrossEntropyLoss()
-        optimizer = torch.optim.Adam(torch.model.parameters(), lr=1e-3)
+        optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
         # Instantiate the model and move it to the device
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
