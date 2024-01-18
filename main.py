@@ -2,6 +2,8 @@ import cv2
 import numpy
 import torch
 import torch.nn.functional as F
+import torch.nn as nn
+from torch.utils.data import Dataset, DataLoader
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LogisticRegression
@@ -14,6 +16,48 @@ import argparse
 from utils.utils import *
 import time
 
+# Set random seeds for reproducibility
+    random.seed(42)
+    np.random.seed(42)
+    torch.manual_seed(42)
+    torch.cuda.manual_seed(42)
+    torch.cuda.manual_seed_all(42)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+class CustomDataset(Dataset):
+    def __init__(self, embeddings, labels):
+        self.embeddings = embeddings
+        self.labels = labels
+
+    def __len__(self):
+        return len(self.embeddings)
+
+    def __getitem__(self, idx):
+        image = self.embeddings[idx]
+        label = self.labels[idx]
+        return image, label
+
+class EfficientNetSegmentation(nn.Module):
+    def __init__(self, num_classes):
+        super(EfficientNetSegmentation, self).__init__()
+        # Load pre-trained ResNet50 model
+        self.backbone = torch.models.efficientnet_v2_l(weights='DEFAULT')
+
+        # Remove the average pooling and fully connected layer
+        self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])
+
+        # Add a convolution layer to get the segmentation map
+        self.conv = nn.Conv2d(1280, num_classes, 1)
+
+        # Upsample to the desired output size
+        self.upsample = nn.Upsample(size=(512, 512), mode='bilinear', align_corners=True)
+
+    def forward(self, x):
+        x = self.backbone(x) # Now x has the shape [batch_size, 2048, H, W]
+        x = self.conv(x)     # Convolution to get the segmentation map
+        x = self.upsample(x) # Upsample to the original image size
+        return x
 
 def get_embedding(img, predictor):
     predictor.set_image(img)
@@ -45,25 +89,63 @@ def train(args, predictor):
         mask = cv2.imread(os.path.join(data_path, 'masks', fname))
         mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
         _, mask = cv2.threshold(mask, 128, 1, cv2.THRESH_BINARY) # threshold the mask to 0 and 1
-        downsampled_mask = cv2.resize(mask, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
+        resized_mask = cv2.resize(mask, dsize=(512, 512), interpolation=cv2.INTER_NEAREST)
          
         img_emb = get_embedding(image, predictor)
-        img_emb = img_emb.cpu().numpy().transpose((2, 3, 1, 0)).reshape((64, 64, 256)).reshape(-1, 256)
+        img_emb = img_emb.cpu().numpy().transpose((2, 3, 1, 0)).reshape((64, 64, 256))
         image_embeddings.append(img_emb)
 
-        labels.append(downsampled_mask.flatten())
+        labels.append(resized_mask)
         
         i += 1
         if i > num_image: break
     t2 = time.time()
     print("Time used: {}m {}s".format((t2 - t1) // 60, (t2 - t1) % 60))
-    image_embeddings_cat = np.concatenate(image_embeddings)
-    labels = np.concatenate(labels)
 
-    # Create a linear regression model and fit it to the training data
-    model = LogisticRegression(max_iter=1000) 
-    model.fit(image_embeddings_cat, labels)
-    
+    # Create tensors from image embeddings and labels
+    image_embeddings_tensor = torch.stack([torch.Tensor(e) for e in image_embeddings])
+    labels_tensor = torch.stack([torch.Tensor(l) for l in labels])
+
+    # Create a CNN model to train on image embeddings and labels
+    train_dataset = CustomDataset(image_embeddings_tensor, labels_tensor)
+    train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True)
+
+    # Loss and optimizer functions
+    criterion = nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(torch.model.parameters(), lr=1e-3)
+
+    # Instantiate the model and move it to the device
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = EfficientNetSegmentation(num_classes=2).to(device)
+
+    # Training loop
+    num_epochs = 10
+
+    for epoch in range(num_epochs):
+        model.train()  # Set the model to training mode
+        total_loss = 0.0
+
+        for images, labels in train_loader:
+            images, labels = images.to(device), labels.to(device)
+            labels = labels.squeeze(1).long()
+
+            # Forward pass
+            outputs = model(images)
+
+            # Compute the loss
+            loss = criterion(outputs, labels)
+
+            # Backward pass and optimization
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            total_loss += loss.item()
+
+        # Print the average loss for this epoch
+        avg_loss = total_loss / len(train_loader)
+        print(f'Epoch [{epoch + 1}/{num_epochs}], Avg Loss: {avg_loss:.4f}')
+
     return model
 
 def test_visualize(args, model, predictor):
@@ -89,23 +171,20 @@ def test_visualize(args, model, predictor):
         mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
         _, mask = cv2.threshold(mask, 128, 1, cv2.THRESH_BINARY)
         H, W, _ = image.shape
-        
-        # get the image embedding and flatten it
+
+        # get the image embedding for CNN
         img_emb = get_embedding(image, predictor)
-        img_emb = img_emb.cpu().numpy().transpose((2, 3, 1, 0)).reshape((64, 64, 256)).reshape(-1, 256)
-        
-        # get the mask predicted by the linear classifier
-        y_pred = model.predict(img_emb)
-        y_pred = y_pred.reshape((64, 64))
-        # mask predicted by the linear classifier
+        img_emb = img_emb.cpu().numpy().transpose((2, 3, 1, 0)).reshape((64, 64, 256))
+
+        # CNN prediction
+        img_emb_tensor = torch.Tensor(img_emb).unsqueeze(0).to(args.device)  # Add batch dimension and send to device
+        y_pred = model(img_emb_tensor)
+        y_pred = torch.argmax(y_pred, dim=1).squeeze(
+            0).cpu().numpy()  # Assuming the model outputs logits for each class
         mask_pred_l = cv2.resize(y_pred, (mask.shape[1], mask.shape[0]), interpolation=cv2.INTER_NEAREST)
-        
+
         # use distance transform to find a point inside the mask
         fg_point = get_max_dist_point(mask_pred_l)
-        # Define the kernel for dilation
-        kernel = np.ones((5, 5), np.uint8)
-        eroded_mask = cv2.erode(mask_pred_l, kernel, iterations=3)
-        mask_pred_l = cv2.dilate(eroded_mask, kernel, iterations=5)
         
         # set the image to sam
         predictor.set_image(image)
@@ -223,18 +302,56 @@ def test(args, predictor):
         for idx in random_indices:
             image = train_images[idx]
             mask = train_masks[idx]
-            downsampled_mask = cv2.resize(mask, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
+            resized_mask = cv2.resize(mask, dsize=(512, 512), interpolation=cv2.INTER_NEAREST)
 
             img_emb = get_embedding(image)
-            img_emb = img_emb.cpu().numpy().transpose((2, 3, 1, 0)).reshape((64, 64, 256)).reshape(-1, 256)
+            img_emb = img_emb.cpu().numpy().transpose((2, 3, 1, 0)).reshape((64, 64, 256))
             image_embeddings.append(img_emb)
-            labels.append(downsampled_mask.flatten())
-                
-        image_embeddings_cat = numpy.concatenate(image_embeddings)
-        labels = numpy.concatenate(labels)
+            labels.append(resized_mask)
 
-        model = LogisticRegression(max_iter=1000) # how to set parameters?? C, max_iter, verbose, solver
-        model.fit(image_embeddings_cat, labels)
+        # Create tensors from image embeddings and labels
+        image_embeddings_tensor = torch.stack([torch.Tensor(e) for e in image_embeddings])
+        labels_tensor = torch.stack([torch.Tensor(l) for l in labels])
+
+        # Create a CNN model to train on image embeddings and labels
+        train_dataset = CustomDataset(image_embeddings_tensor, labels_tensor)
+        train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True)
+
+        # Loss and optimizer functions
+        criterion = nn.CrossEntropyLoss()
+        optimizer = torch.optim.Adam(torch.model.parameters(), lr=1e-3)
+
+        # Instantiate the model and move it to the device
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        model = EfficientNetSegmentation(num_classes=2).to(device)
+
+        # Training loop
+        num_epochs = 10
+
+        for epoch in range(num_epochs):
+            model.train()  # Set the model to training mode
+            total_loss = 0.0
+
+            for images, labels in train_loader:
+                images, labels = images.to(device), labels.to(device)
+                labels = labels.squeeze(1).long()
+
+                # Forward pass
+                outputs = model(images)
+
+                # Compute the loss
+                loss = criterion(outputs, labels)
+
+                # Backward pass and optimization
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+
+                total_loss += loss.item()
+
+            # Print the average loss for this epoch
+            avg_loss = total_loss / len(train_loader)
+            print(f'Epoch [{epoch + 1}/{num_epochs}], Avg Loss: {avg_loss:.4f}')
 
         # test
         dice_linear=[]
@@ -246,22 +363,18 @@ def test(args, predictor):
             mask = test_masks[idx]
             H, W, _ = image.shape
 
-            img_emb = get_embedding(image)
-            img_emb = img_emb.cpu().numpy().transpose((2, 3, 1, 0)).reshape((64, 64, 256)).reshape(-1, 256)
+            # get the image embedding for CNN
+            img_emb = get_embedding(image, predictor)
+            img_emb = img_emb.cpu().numpy().transpose((2, 3, 1, 0)).reshape((64, 64, 256))
 
-            # ger the mask predicted by the linear classifier
-            y_pred = model.predict(img_emb)
-            y_pred = y_pred.reshape((64,64))
+            # CNN prediction
+            img_emb_tensor = torch.Tensor(img_emb).unsqueeze(0).to(args.device)
+            y_pred = model(img_emb_tensor)
+            y_pred = torch.argmax(y_pred, dim=1).squeeze(0).cpu().numpy()
             mask_pred_l = cv2.resize(y_pred, (mask.shape[1], mask.shape[0]), interpolation=cv2.INTER_NEAREST)
 
             # use distance transform to find a point inside the mask
             fg_point = get_max_dist_point(mask_pred_l)
-
-            # Define the kernel for dilation
-            kernel = np.ones((5, 5), np.uint8)
-
-            eroded_mask = cv2.erode(mask_pred_l, kernel, iterations=3)
-            mask_pred_l = cv2.dilate(eroded_mask, kernel, iterations=5)
 
             # set the image to sam
             predictor.set_image(image)
