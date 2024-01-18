@@ -18,7 +18,6 @@ import time
 def get_embedding(img, predictor):
     predictor.set_image(img)
     img_emb = predictor.get_image_embedding()
-    test = test
     return img_emb
 
 
