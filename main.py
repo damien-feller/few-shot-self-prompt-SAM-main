@@ -4,6 +4,7 @@ import torch
 import torch.nn.functional as F
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
+import torchvision.models as models
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LogisticRegression
@@ -42,7 +43,7 @@ class EfficientNetSegmentation(nn.Module):
     def __init__(self, num_classes):
         super(EfficientNetSegmentation, self).__init__()
         # Load pre-trained ResNet50 model
-        self.backbone = torch.models.efficientnet_v2_l(weights='DEFAULT')
+        self.backbone = models.efficientnet_v2_l(weights='DEFAULT')
 
         # Remove the average pooling and fully connected layer
         self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])
