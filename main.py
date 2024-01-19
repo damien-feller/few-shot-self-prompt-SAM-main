@@ -75,7 +75,7 @@ class EfficientNetSegmentation(nn.Module):
         self.efficientnet.features[0][0] = first_conv
 
         # Remove the average pooling and fully connected layer
-        self.efficientnet = nn.Sequential(*list(self.backbone.children())[:-2])
+        self.efficientnet = nn.Sequential(*list(self.efficientnet.children())[:-2])
 
         # Add a convolution layer to get the segmentation map
         self.conv = nn.Conv2d(1280, num_classes, 1)
