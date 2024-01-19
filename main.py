@@ -87,7 +87,7 @@ class EfficientNetSegmentation(nn.Module):
         x = self.efficientnet(x)
         x = self.conv(x)  # Convolution to get the segmentation map
         x = self.upsample(x) # Upsample to the original image size
-        return self.efficientnet(x)
+        return x
 
 def get_embedding(img, predictor):
     predictor.set_image(img)
@@ -122,7 +122,7 @@ def train(args, predictor):
         resized_mask = cv2.resize(mask, dsize=(512, 512), interpolation=cv2.INTER_NEAREST)
          
         img_emb = get_embedding(image, predictor)
-        img_emb = img_emb.cpu().numpy().transpose((2, 3, 1, 0)).reshape((64, 64, 256))
+        img_emb = img_emb.cpu().numpy().transpose((2, 0, 3, 1)).reshape((256, 64, 64))
         image_embeddings.append(img_emb)
 
         labels.append(resized_mask)
