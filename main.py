@@ -58,6 +58,7 @@ class EfficientNetSegmentation(nn.Module):
         self.upsample = nn.Upsample(size=(512, 512), mode='bilinear', align_corners=True)
 
     def forward(self, x):
+        x = self.input_adaptation(x)
         x = self.backbone(x) # Now x has the shape [batch_size, 2048, H, W]
         x = self.conv(x)     # Convolution to get the segmentation map
         x = self.upsample(x) # Upsample to the original image size
