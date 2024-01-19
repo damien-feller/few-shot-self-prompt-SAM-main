@@ -39,14 +39,40 @@ class CustomDataset(Dataset):
         label = self.labels[idx]
         return image, label
 
+# class EfficientNetSegmentation(nn.Module):
+#     def __init__(self, num_classes):
+#         super(EfficientNetSegmentation, self).__init__()
+#         # Custom layer to adapt the 256-channel input (LOSS OF INFORMATION???)
+#         self.input_adaptation = nn.Conv2d(256, 3, 1)  # Convolution to convert from 256 to 3 channels
+#
+#         # Load pre-trained EfficientNet model
+#         self.backbone = models.efficientnet_v2_l(weights='DEFAULT')
+#
+#         # Remove the average pooling and fully connected layer
+#         self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])
+#
+#         # Add a convolution layer to get the segmentation map
+#         self.conv = nn.Conv2d(1280, num_classes, 1)
+#
+#         # Upsample to the desired output size
+#         self.upsample = nn.Upsample(size=(512, 512), mode='bilinear', align_corners=True)
+#
+#     def forward(self, x):
+#         x = self.input_adaptation(x)
+#         x = self.backbone(x) # Now x has the shape [batch_size, 2048, H, W]
+#         x = self.conv(x)     # Convolution to get the segmentation map
+#         x = self.upsample(x) # Upsample to the original image size
+#         return x
+
 class EfficientNetSegmentation(nn.Module):
     def __init__(self, num_classes):
         super(EfficientNetSegmentation, self).__init__()
-        # Custom layer to adapt the 256-channel input (LOSS OF INFORMATION???)
-        self.input_adaptation = nn.Conv2d(256, 3, 1)  # Convolution to convert from 256 to 3 channels
-
         # Load pre-trained EfficientNet model
-        self.backbone = models.efficientnet_v2_l(weights='DEFAULT')
+        self.efficientnet = models.efficientnet_b0(pretrained=True)
+
+        # Modify the first convolution layer
+        first_conv = nn.Conv2d(256, self.efficientnet.features[0][0].out_channels, kernel_size=3, stride=2, padding=1, bias=False)
+        self.efficientnet.features[0][0] = first_conv
 
         # Remove the average pooling and fully connected layer
         self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])
@@ -58,11 +84,10 @@ class EfficientNetSegmentation(nn.Module):
         self.upsample = nn.Upsample(size=(512, 512), mode='bilinear', align_corners=True)
 
     def forward(self, x):
-        x = self.input_adaptation(x)
-        x = self.backbone(x) # Now x has the shape [batch_size, 2048, H, W]
-        x = self.conv(x)     # Convolution to get the segmentation map
+        x = self.efficientnet(x)
+        x = self.conv(x)  # Convolution to get the segmentation map
         x = self.upsample(x) # Upsample to the original image size
-        return x
+        return self.efficientnet(x)
 
 def get_embedding(img, predictor):
     predictor.set_image(img)
