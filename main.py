@@ -204,7 +204,7 @@ def test_visualize(args, model, predictor):
 
         # get the image embedding for CNN
         img_emb = get_embedding(image, predictor)
-        img_emb = img_emb.cpu().numpy().transpose((2, 3, 1, 0)).reshape((64, 64, 256))
+        img_emb = img_emb.cpu().numpy().transpose((2, 0, 3, 1)).reshape((256, 64, 64))
 
         # CNN prediction
         img_emb_tensor = torch.Tensor(img_emb).unsqueeze(0).to(args.device)  # Add batch dimension and send to device
