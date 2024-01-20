@@ -187,15 +187,23 @@ def visualize_predictions(dataset, model, num_samples=5, val=False):
             plt.savefig(f"/content/visualisation/val_{i}.png")
 
 def plot_losses(train_losses, val_losses):
-    plt.figure(figsize=(10, 6))
-    plt.plot(train_losses, label='Training Loss')
-    plt.plot(val_losses, label='Validation Loss')
-    plt.title('Training and Validation Loss')
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
-    plt.legend()
-    plt.grid(True)
-    plt.savefig(f"/content/visualisation/LOSSES.png")
+    try:
+        # Assuming train_losses and val_losses are lists containing loss values for each epoch
+        epochs = range(1, len(train_losses) + 1)
+
+        plt.figure(figsize=(10, 6))
+        plt.plot(epochs, train_losses, label='Training Loss')
+        plt.plot(epochs, val_losses, label='Validation Loss')
+        plt.title('Training and Validation Loss')
+        plt.xlabel('Epochs')
+        plt.ylabel('Loss')
+        plt.legend()
+        plt.grid(True)
+        plt.savefig(f"/content/visualisation/LOSSES.png")
+        plt.show()
+    except Exception as e:
+        print(f"Error occurred while saving the plot: {e}")
+
 
 def train(args, predictor):
     data_path = args.data_path
