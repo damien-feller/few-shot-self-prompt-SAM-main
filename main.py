@@ -236,7 +236,7 @@ def train(args, predictor):
     val_dataset = CustomDataset(val_embeddings, val_labels)
 
     train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=4, shuffle=False
+    val_loader = DataLoader(val_dataset, batch_size=4, shuffle=False)
 
     # Instantiate the model and move it to the device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
