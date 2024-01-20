@@ -161,7 +161,7 @@ def get_embedding(img, predictor):
     img_emb = predictor.get_image_embedding()
     return img_emb
 
-def visualize_predictions(dataset, model, num_samples=5, val):
+def visualize_predictions(dataset, model, num_samples=5, val=False):
     model.eval()
     indices = np.random.choice(range(len(dataset)), num_samples, replace=False)
     for i in indices:
