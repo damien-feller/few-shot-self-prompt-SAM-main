@@ -58,12 +58,15 @@ def iou_coef(groundtruth_mask, pred_mask):
 
 
 def get_max_dist_point(mask):
-  # Compute the distance transform of the binary mask
-  dist_transform = cv2.distanceTransform(mask, cv2.DIST_L2, cv2.DIST_MASK_PRECISE)
+    # Assuming mask_pred_l is a binary mask with values 0 and 1
+    mask_pred_l_8bit = (mask * 255).astype(np.uint8)  # Convert to 8-bit unsigned integer
 
-  # Find the location of the point with maximum distance value
-  max_dist = np.max(dist_transform)
-  max_dist_idx = np.where(dist_transform == max_dist)
-  point = (max_dist_idx[1][0], max_dist_idx[0][0])  # (x, y) coordinates
+    # Now you can safely apply cv2.distanceTransform
+    dist_transform = cv2.distanceTransform(mask_pred_l_8bit, cv2.DIST_L2, cv2.DIST_MASK_PRECISE)
 
-  return point
+     # Find the location of the point with maximum distance value
+     max_dist = np.max(dist_transform)
+     max_dist_idx = np.where(dist_transform == max_dist)
+     point = (max_dist_idx[1][0], max_dist_idx[0][0])  # (x, y) coordinates
+
+     return point
