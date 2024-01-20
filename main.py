@@ -282,6 +282,8 @@ def train(args, predictor):
     # val_losses = []
     # model.train()
 
+    train_losses = []
+    val_losses = []
     for epoch in range(num_epochs):
         # Training phase
         train_loss = 0.0
