@@ -255,12 +255,6 @@ def train(args, predictor):
             pred_mask = torch.sigmoid(pred_mask)  # Apply sigmoid to get probabilities
             pred_mask = (pred_mask > 0.5).float()  # Threshold the probabilities to get binary mask
 
-            plt.figure(figsize=(10, 4))
-            plt.subplot(1, 3, 1)
-            plt.imshow(image.cpu().squeeze(), cmap='gray')
-            plt.title("Input Image")
-            plt.axis('off')
-
             plt.subplot(1, 3, 2)
             plt.imshow(true_mask.squeeze(), cmap='gray')
             plt.title("True Mask")
@@ -270,7 +264,7 @@ def train(args, predictor):
             plt.imshow(pred_mask.cpu().squeeze(), cmap='gray')
             plt.title("Predicted Mask")
             plt.axis('off')
-            plt.savefig(f"/content/visualisation/plot_{i}.png")
+            plt.show()
 
     return model
 
