@@ -186,7 +186,7 @@ def train(args, predictor):
         mask = cv2.imread(os.path.join(data_path, 'masks', fname))
         mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
         _, mask = cv2.threshold(mask, 128, 1, cv2.THRESH_BINARY) # threshold the mask to 0 and 1
-        resized_mask = cv2.resize(mask, dsize=(256, 256), interpolation=cv2.INTER_NEAREST)
+        resized_mask = cv2.resize(mask, dsize=(64, 64), mode='nearest')
          
         img_emb = get_embedding(image, predictor)
         img_emb = img_emb.cpu().numpy().transpose((2, 0, 3, 1)).reshape((256, 64, 64))
@@ -401,7 +401,7 @@ def test(args, predictor):
         for idx in random_indices:
             image = train_images[idx]
             mask = train_masks[idx]
-            resized_mask = cv2.resize(mask, dsize=(256, 256), interpolation=cv2.INTER_NEAREST)
+            resized_mask = cv2.resize(mask, dsize=(64, 64), mode='nearest')
 
             img_emb = get_embedding(image)
             img_emb = img_emb.cpu().numpy().transpose((2, 3, 1, 0)).reshape((64, 64, 256))
