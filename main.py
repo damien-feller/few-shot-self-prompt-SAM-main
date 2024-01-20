@@ -64,30 +64,89 @@ class CustomDataset(Dataset):
 #         x = self.upsample(x) # Upsample to the original image size
 #         return x
 
-class EfficientNetSegmentation(nn.Module):
-    def __init__(self, num_classes):
-        super(EfficientNetSegmentation, self).__init__()
-        # Load pre-trained EfficientNet model
-        self.efficientnet = models.efficientnet_b0(pretrained=True)
+class DoubleConv(nn.Module):
+    """(convolution => [BN] => ReLU) * 2"""
 
-        # Modify the first convolution layer
-        first_conv = nn.Conv2d(256, self.efficientnet.features[0][0].out_channels, kernel_size=3, stride=2, padding=1, bias=False)
-        self.efficientnet.features[0][0] = first_conv
-
-        # Remove the average pooling and fully connected layer
-        self.efficientnet = nn.Sequential(*list(self.efficientnet.children())[:-2])
-
-        # Add a convolution layer to get the segmentation map
-        self.conv = nn.Conv2d(1280, num_classes, 1)
-
-        # Upsample to the desired output size
-        self.upsample = nn.Upsample(size=(512, 512), mode='bilinear', align_corners=True)
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        self.double_conv = nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True)
+        )
 
     def forward(self, x):
-        x = self.efficientnet(x)
-        x = self.conv(x)  # Convolution to get the segmentation map
-        x = self.upsample(x) # Upsample to the original image size
-        return x
+        return self.double_conv(x)
+
+
+class Down(nn.Module):
+    """Downscaling with maxpool then double conv"""
+
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        self.maxpool_conv = nn.Sequential(
+            nn.MaxPool2d(2),
+            DoubleConv(in_channels, out_channels)
+        )
+
+    def forward(self, x):
+        return self.maxpool_conv(x)
+
+
+class Up(nn.Module):
+    """Upscaling then double conv"""
+
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        self.up = nn.ConvTranspose2d(in_channels, in_channels // 2, kernel_size=2, stride=2)
+        self.conv = DoubleConv(in_channels, out_channels)
+
+    def forward(self, x1, x2):
+        x1 = self.up(x1)
+        # Input is CHW
+        diffY = torch.tensor([x2.size()[2] - x1.size()[2]])
+        diffX = torch.tensor([x2.size()[3] - x1.size()[3]])
+
+        x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2, diffY // 2, diffY - diffY // 2])
+
+        x = torch.cat([x2, x1], dim=1)
+        return self.conv(x)
+
+
+class OutConv(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super(OutConv, self).__init__()
+        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
+
+    def forward(self, x):
+        return self.conv(x)
+
+
+class UNet(nn.Module):
+    def __init__(self, n_channels, n_classes):
+        super(UNet, self).__init__()
+        self.inc = DoubleConv(n_channels, 64)
+        self.down1 = Down(64, 128)
+        self.down2 = Down(128, 256)
+        self.up1 = Up(256, 128)
+        self.up2 = Up(128, 64)
+        self.up3 = Up(64, 32)  # Additional upsampling layer
+        self.up4 = Up(32, 16)  # Additional upsampling layer
+        self.outc = OutConv(16, n_classes)  # Adjust the number of output channels to match n_classes
+
+    def forward(self, x):
+        x1 = self.inc(x)
+        x2 = self.down1(x1)
+        x3 = self.down2(x2)
+        x = self.up1(x3, x2)
+        x = self.up2(x, x1)
+        x = self.up3(x)  # Additional upsampling step
+        x = self.up4(x)  # Additional upsampling step
+        logits = self.outc(x)
+        return logits
 
 def get_embedding(img, predictor):
     predictor.set_image(img)
@@ -119,7 +178,7 @@ def train(args, predictor):
         mask = cv2.imread(os.path.join(data_path, 'masks', fname))
         mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
         _, mask = cv2.threshold(mask, 128, 1, cv2.THRESH_BINARY) # threshold the mask to 0 and 1
-        resized_mask = cv2.resize(mask, dsize=(512, 512), interpolation=cv2.INTER_NEAREST)
+        resized_mask = cv2.resize(mask, dsize=(256, 256), interpolation=cv2.INTER_NEAREST)
          
         img_emb = get_embedding(image, predictor)
         img_emb = img_emb.cpu().numpy().transpose((2, 0, 3, 1)).reshape((256, 64, 64))
@@ -142,13 +201,13 @@ def train(args, predictor):
 
     # Instantiate the model and move it to the device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = EfficientNetSegmentation(num_classes=2).to(device)
+    # Instantiate the model
+    model = UNet(n_channels=256, n_classes=1).to(device)
 
     # Loss and optimizer functions
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
-    # Training loop
     num_epochs = 10
 
     for epoch in range(num_epochs):
@@ -157,13 +216,15 @@ def train(args, predictor):
 
         for images, labels in train_loader:
             images, labels = images.to(device), labels.to(device)
-            labels = labels.squeeze(1).long()
 
-            # Forward pass
-            outputs = model(images)
+            # Ensure the label is a floating-point tensor
+            labels = labels.float()
+
+            # Forward pass (model outputs logits)
+            logits = model(images)
 
             # Compute the loss
-            loss = criterion(outputs, labels)
+            loss = criterion(logits, labels)
 
             # Backward pass and optimization
             optimizer.zero_grad()
@@ -332,7 +393,7 @@ def test(args, predictor):
         for idx in random_indices:
             image = train_images[idx]
             mask = train_masks[idx]
-            resized_mask = cv2.resize(mask, dsize=(512, 512), interpolation=cv2.INTER_NEAREST)
+            resized_mask = cv2.resize(mask, dsize=(256, 256), interpolation=cv2.INTER_NEAREST)
 
             img_emb = get_embedding(image)
             img_emb = img_emb.cpu().numpy().transpose((2, 3, 1, 0)).reshape((64, 64, 256))
@@ -347,12 +408,12 @@ def test(args, predictor):
         train_dataset = CustomDataset(image_embeddings_tensor, labels_tensor)
         train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True)
 
-        # Instantiate the model and move it to the device
+        # Instantiate the U-Net model and move it to the device
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        model = EfficientNetSegmentation(num_classes=2).to(device)
+        model = UNet(n_channels=256, n_classes=1).to(device)  # Adjust n_channels and n_classes as needed
 
-        # Loss and optimizer functions
-        criterion = nn.CrossEntropyLoss()
+        # For binary segmentation, use BCEWithLogitsLoss
+        criterion = nn.BCEWithLogitsLoss()
         optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
         # Training loop
@@ -364,13 +425,15 @@ def test(args, predictor):
 
             for images, labels in train_loader:
                 images, labels = images.to(device), labels.to(device)
-                labels = labels.squeeze(1).long()
+
+                # Ensure the label is a floating-point tensor
+                labels = labels.float()
 
                 # Forward pass
-                outputs = model(images)
+                logits = model(images)
 
                 # Compute the loss
-                loss = criterion(outputs, labels)
+                loss = criterion(logits, labels)
 
                 # Backward pass and optimization
                 optimizer.zero_grad()
