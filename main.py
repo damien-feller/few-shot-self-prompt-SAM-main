@@ -138,13 +138,21 @@ class UNet(nn.Module):
         self.outc = OutConv(16, n_classes)  # Adjust the number of output channels to match n_classes
 
     def forward(self, x):
+        # Downsampling path
         x1 = self.inc(x)
         x2 = self.down1(x1)
         x3 = self.down2(x2)
+
+        # Upsampling path with skip connections
         x = self.up1(x3, x2)
         x = self.up2(x, x1)
-        x = self.up3(x)  # Additional upsampling step
-        x = self.up4(x)  # Additional upsampling step
+
+        # If you don't have additional layers for skip connections in up3 and up4,
+        # you might consider not using them or redesigning your architecture.
+        # As an example, just passing through additional convolutions:
+        x = self.up3.conv(x)  # Modified to use only conv part of the Up module
+        x = self.up4.conv(x)  # Modified to use only conv part of the Up module
+
         logits = self.outc(x)
         return logits
 
