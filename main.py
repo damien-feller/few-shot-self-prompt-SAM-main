@@ -267,39 +267,6 @@ def train(args, predictor):
 
     num_epochs = 50
 
-    # for epoch in range(num_epochs):
-    #     model.train()  # Set the model to training mode
-    #     total_loss = 0.0
-    #
-    #     for images, labels in train_loader:
-    #         images, labels = images.to(device), labels.to(device)
-    #
-    #         # Ensure the label is a floating-point tensor
-    #         labels = labels.float()
-    #
-    #         # Forward pass (model outputs logits)
-    #         logits = model(images)
-    #
-    #         # Compute the loss
-    #         labels = labels.unsqueeze(1)
-    #         loss = criterion(logits, labels)
-    #
-    #         # Backward pass and optimization
-    #         optimizer.zero_grad()
-    #         loss.backward()
-    #         optimizer.step()
-    #
-    #         total_loss += loss.item()
-    #
-    #     # Print the average loss for this epoch
-    #     avg_loss = total_loss / len(train_loader)
-    #     print(f'Epoch [{epoch + 1}/{num_epochs}], Avg Loss: {avg_loss:.4f}')
-    #
-    # # Initialize lists to monitor training and validation loss
-    # train_losses = []
-    # val_losses = []
-    # model.train()
-
     train_losses = []
     val_losses = []
     for epoch in range(num_epochs):
