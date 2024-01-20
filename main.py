@@ -196,7 +196,6 @@ def plot_losses(train_losses, val_losses):
     plt.legend()
     plt.grid(True)
     plt.savefig(f"/content/visualisation/LOSSES.png")
-    plt.show()
 
 def train(args, predictor):
     data_path = args.data_path
