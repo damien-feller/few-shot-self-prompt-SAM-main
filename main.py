@@ -7,7 +7,6 @@ from torch.utils.data import Dataset, DataLoader
 import torchvision.models as models
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import KFold
 import os
 import random
@@ -16,6 +15,7 @@ from segment_anything import SamAutomaticMaskGenerator, sam_model_registry, SamP
 import argparse
 from utils.utils import *
 import time
+from sklearn.model_selection import train_test_split
 
 # Set random seeds for reproducibility
 random.seed(42)
