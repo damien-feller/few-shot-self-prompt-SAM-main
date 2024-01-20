@@ -216,7 +216,7 @@ def train(args, predictor):
     criterion = nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
-    num_epochs = 100
+    num_epochs = 30
 
     for epoch in range(num_epochs):
         model.train()  # Set the model to training mode
@@ -426,7 +426,7 @@ def test(args, predictor):
         optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
         # Training loop
-        num_epochs = 100
+        num_epochs = 30
 
         for epoch in range(num_epochs):
             model.train()  # Set the model to training mode
