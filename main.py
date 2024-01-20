@@ -210,7 +210,7 @@ def train(args, predictor):
     # Instantiate the model and move it to the device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # Instantiate the model
-    model = UNet(n_channels=256, n_classes=2).to(device)
+    model = UNet(n_channels=256, n_classes=1).to(device)
 
     # Loss and optimizer functions
     criterion = nn.BCEWithLogitsLoss()
@@ -419,7 +419,7 @@ def test(args, predictor):
 
         # Instantiate the U-Net model and move it to the device
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        model = UNet(n_channels=256, n_classes=2).to(device)  # Adjust n_channels and n_classes as needed
+        model = UNet(n_channels=256, n_classes=1).to(device)  # Adjust n_channels and n_classes as needed
 
         # For binary segmentation, use BCEWithLogitsLoss
         criterion = nn.BCEWithLogitsLoss()
