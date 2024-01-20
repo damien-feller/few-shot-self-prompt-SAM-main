@@ -253,7 +253,7 @@ def train(args, predictor):
             image = image.unsqueeze(0).to(device)  # Add batch dimension and transfer to device
             pred_mask = model(image)
             pred_mask = torch.sigmoid(pred_mask)  # Apply sigmoid to get probabilities
-            pred_mask = (pred_mask > 0.5).float()  # Threshold the probabilities to get binary mask
+            pred_mask = (pred_mask > 0.75).float()  # Threshold the probabilities to get binary mask
 
             plt.subplot(1, 3, 2)
             plt.imshow(true_mask.squeeze(), cmap='gray')
