@@ -272,7 +272,7 @@ def train(args, predictor):
             plt.imshow(pred_mask.cpu().squeeze(), cmap='gray')
             plt.title("Predicted Mask")
             plt.axis('off')
-            plt.show()
+            plt.savefig(f"/content/visualisation/plot_{i}.png")
 
 def test_visualize(args, model, predictor):
     data_path = args.data_path
@@ -506,7 +506,7 @@ def test(args, predictor):
                 plt.imshow(pred_mask.cpu().squeeze(), cmap='gray')
                 plt.title("Predicted Mask")
                 plt.axis('off')
-                plt.show()
+                plt.savefig(f"/content/visualisation/plot_{i}.png")
 
         # test
         dice_linear=[]
