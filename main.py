@@ -232,6 +232,7 @@ def train(args, predictor):
             logits = model(images)
 
             # Compute the loss
+            labels = labels.unsqueeze(1)
             loss = criterion(logits, labels)
 
             # Backward pass and optimization
@@ -441,6 +442,7 @@ def test(args, predictor):
                 logits = model(images)
 
                 # Compute the loss
+                labels = labels.unsqueeze(1)
                 loss = criterion(logits, labels)
 
                 # Backward pass and optimization
