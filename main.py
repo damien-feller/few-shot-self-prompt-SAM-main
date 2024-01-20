@@ -170,7 +170,7 @@ def visualize_predictions(dataset, model, num_samples=5, val=False):
         image = image.unsqueeze(0).to(device)
         pred = model(image)
         pred = torch.sigmoid(pred)
-        pred = (pred > 0.75).float()
+        pred = (pred > 0.5).float()
 
         plt.subplot(1, 3, 2)
         plt.imshow(mask.squeeze(), cmap='gray')
@@ -257,7 +257,7 @@ def train(args, predictor):
     criterion = nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
-    num_epochs = 35
+    num_epochs = 50
 
     # for epoch in range(num_epochs):
     #     model.train()  # Set the model to training mode
