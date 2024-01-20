@@ -246,33 +246,33 @@ def train(args, predictor):
         avg_loss = total_loss / len(train_loader)
         print(f'Epoch [{epoch + 1}/{num_epochs}], Avg Loss: {avg_loss:.4f}')
 
+    with torch.no_grad():
+        for i in range(5):  # Check 5 random samples
+            idx = np.random.randint(0, len(train_dataset))
+            image, true_mask = train_dataset[idx]
+            image = image.unsqueeze(0).to(device)  # Add batch dimension and transfer to device
+            pred_mask = model(image)
+            pred_mask = torch.sigmoid(pred_mask)  # Apply sigmoid to get probabilities
+            pred_mask = (pred_mask > 0.5).float()  # Threshold the probabilities to get binary mask
+
+            plt.figure(figsize=(10, 4))
+            plt.subplot(1, 3, 1)
+            plt.imshow(image.cpu().squeeze(), cmap='gray')
+            plt.title("Input Image")
+            plt.axis('off')
+
+            plt.subplot(1, 3, 2)
+            plt.imshow(true_mask.squeeze(), cmap='gray')
+            plt.title("True Mask")
+            plt.axis('off')
+
+            plt.subplot(1, 3, 3)
+            plt.imshow(pred_mask.cpu().squeeze(), cmap='gray')
+            plt.title("Predicted Mask")
+            plt.axis('off')
+            plt.savefig(f"/content/visualisation/plot_{i}.png")
+
     return model
-
-with torch.no_grad():
-    for i in range(5):  # Check 5 random samples
-        idx = np.random.randint(0, len(train_dataset))
-        image, true_mask = train_dataset[idx]
-        image = image.unsqueeze(0).to(device)  # Add batch dimension and transfer to device
-        pred_mask = model(image)
-        pred_mask = torch.sigmoid(pred_mask)  # Apply sigmoid to get probabilities
-        pred_mask = (pred_mask > 0.5).float()  # Threshold the probabilities to get binary mask
-
-        plt.figure(figsize=(10, 4))
-        plt.subplot(1, 3, 1)
-        plt.imshow(image.cpu().squeeze(), cmap='gray')
-        plt.title("Input Image")
-        plt.axis('off')
-
-        plt.subplot(1, 3, 2)
-        plt.imshow(true_mask.squeeze(), cmap='gray')
-        plt.title("True Mask")
-        plt.axis('off')
-
-        plt.subplot(1, 3, 3)
-        plt.imshow(pred_mask.cpu().squeeze(), cmap='gray')
-        plt.title("Predicted Mask")
-        plt.axis('off')
-        plt.savefig(f"/content/visualisation/plot_{i}.png")
 
 def test_visualize(args, model, predictor):
     data_path = args.data_path
