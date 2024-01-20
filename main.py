@@ -161,6 +161,31 @@ def get_embedding(img, predictor):
     img_emb = predictor.get_image_embedding()
     return img_emb
 
+def visualize_predictions(dataset, model, num_samples=5, val):
+    model.eval()
+    indices = np.random.choice(range(len(dataset)), num_samples, replace=False)
+    for i in indices:
+        image, mask = dataset[i]
+        image = image.unsqueeze(0).to(device)
+        pred = model(image)
+        pred = torch.sigmoid(pred)
+        pred = (pred > 0.75).float()
+
+        plt.subplot(1, 3, 2)
+        plt.imshow(mask.squeeze(), cmap='gray')
+        plt.title("True Mask")
+        plt.axis('off')
+
+        plt.subplot(1, 3, 3)
+        plt.imshow(pred.cpu().squeeze(), cmap='gray')
+        plt.title("Predicted Mask")
+        plt.axis('off')
+        if val == False:
+            plt.savefig(f"/content/visualisation/train_{i}.png")
+        else:
+            plt.savefig(f"/content/visualisation/val_{i}.png")
+
+
 
 def train(args, predictor):
     data_path = args.data_path
@@ -203,9 +228,15 @@ def train(args, predictor):
     image_embeddings_tensor = torch.stack([torch.Tensor(e) for e in image_embeddings])
     labels_tensor = torch.stack([torch.Tensor(l) for l in labels])
 
-    # Create a CNN model to train on image embeddings and labels
-    train_dataset = CustomDataset(image_embeddings_tensor, labels_tensor)
+    # Split the dataset into training and validation sets
+    train_embeddings, val_embeddings, train_labels, val_labels = train_test_split(
+        image_embeddings_tensor, labels_tensor, test_size=0.2, random_state=42)
+
+    train_dataset = CustomDataset(train_embeddings, train_labels)
+    val_dataset = CustomDataset(val_embeddings, val_labels)
+
     train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=4, shuffle=False
 
     # Instantiate the model and move it to the device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -218,10 +249,42 @@ def train(args, predictor):
 
     num_epochs = 100
 
-    for epoch in range(num_epochs):
-        model.train()  # Set the model to training mode
-        total_loss = 0.0
+    # for epoch in range(num_epochs):
+    #     model.train()  # Set the model to training mode
+    #     total_loss = 0.0
+    #
+    #     for images, labels in train_loader:
+    #         images, labels = images.to(device), labels.to(device)
+    #
+    #         # Ensure the label is a floating-point tensor
+    #         labels = labels.float()
+    #
+    #         # Forward pass (model outputs logits)
+    #         logits = model(images)
+    #
+    #         # Compute the loss
+    #         labels = labels.unsqueeze(1)
+    #         loss = criterion(logits, labels)
+    #
+    #         # Backward pass and optimization
+    #         optimizer.zero_grad()
+    #         loss.backward()
+    #         optimizer.step()
+    #
+    #         total_loss += loss.item()
+    #
+    #     # Print the average loss for this epoch
+    #     avg_loss = total_loss / len(train_loader)
+    #     print(f'Epoch [{epoch + 1}/{num_epochs}], Avg Loss: {avg_loss:.4f}')
+    #
+    # # Initialize lists to monitor training and validation loss
+    # train_losses = []
+    # val_losses = []
+    # model.train()
 
+    for epoch in range(num_epochs):
+        # Training phase
+        train_loss = 0.0
         for images, labels in train_loader:
             images, labels = images.to(device), labels.to(device)
 
@@ -240,31 +303,38 @@ def train(args, predictor):
             loss.backward()
             optimizer.step()
 
-            total_loss += loss.item()
+            train_loss += loss.item()
+            train_losses.append(train_loss / len(train_loader))
 
-        # Print the average loss for this epoch
-        avg_loss = total_loss / len(train_loader)
-        print(f'Epoch [{epoch + 1}/{num_epochs}], Avg Loss: {avg_loss:.4f}')
+        # Validation phase
+        model.eval()
+        val_loss = 0.0
+        with torch.no_grad():
+            for images, labels in val_loader:
+                images, labels = images.to(device), labels.to(device)
+                labels = labels.float().unsqueeze(1)  # Ensure labels have correct shape
 
-    with torch.no_grad():
-        for i in range(5):  # Check 5 random samples
-            idx = np.random.randint(0, len(train_dataset))
-            image, true_mask = train_dataset[idx]
-            image = image.unsqueeze(0).to(device)  # Add batch dimension and transfer to device
-            pred_mask = model(image)
-            pred_mask = torch.sigmoid(pred_mask)  # Apply sigmoid to get probabilities
-            pred_mask = (pred_mask > 0.75).float()  # Threshold the probabilities to get binary mask
+                # Forward pass
+                logits = model(images)
 
-            plt.subplot(1, 3, 2)
-            plt.imshow(true_mask.squeeze(), cmap='gray')
-            plt.title("True Mask")
-            plt.axis('off')
+                # Calculate the loss
+                loss = criterion(logits, labels)
 
-            plt.subplot(1, 3, 3)
-            plt.imshow(pred_mask.cpu().squeeze(), cmap='gray')
-            plt.title("Predicted Mask")
-            plt.axis('off')
-            plt.savefig(f"/content/visualisation/plot_{i}.png")
+                # Accumulate the validation loss
+                val_loss += loss.item()
+
+                # Average validation loss for this epoch
+                val_losses.append(val_loss / len(val_loader))
+
+    print(f'Epoch [{epoch + 1}/{num_epochs}], Train Loss: {train_losses[-1]:.4f}, Val Loss: {val_losses[-1]:.4f}')
+
+    # Visualize training predictions
+    print("Training Predictions:")
+    visualize_predictions(train_dataset, model, val = False)
+
+    # Visualize validation predictions
+    print("Validation Predictions:")
+    visualize_predictions(val_dataset, model, val = True)
 
     return model
 
