@@ -162,6 +162,7 @@ def get_embedding(img, predictor):
     return img_emb
 
 def visualize_predictions(dataset, model, num_samples=5, val=False):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model.eval()
     indices = np.random.choice(range(len(dataset)), num_samples, replace=False)
     for i in indices:
