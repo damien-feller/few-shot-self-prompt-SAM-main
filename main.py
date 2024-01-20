@@ -186,7 +186,17 @@ def visualize_predictions(dataset, model, num_samples=5, val=False):
         else:
             plt.savefig(f"/content/visualisation/val_{i}.png")
 
-
+def plot_losses(train_losses, val_losses):
+    plt.figure(figsize=(10, 6))
+    plt.plot(train_losses, label='Training Loss')
+    plt.plot(val_losses, label='Validation Loss')
+    plt.title('Training and Validation Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(f"/content/visualisation/LOSSES.png")
+    plt.show()
 
 def train(args, predictor):
     data_path = args.data_path
