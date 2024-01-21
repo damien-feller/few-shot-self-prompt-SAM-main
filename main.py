@@ -267,7 +267,7 @@ def train(args, predictor):
     criterion = nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 
-    num_epochs = 50
+    num_epochs = 20
 
     train_losses = []
     val_losses = []
