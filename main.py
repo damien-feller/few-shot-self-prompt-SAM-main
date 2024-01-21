@@ -269,6 +269,8 @@ def train(args, predictor):
 
     train_losses = []
     val_losses = []
+
+    #training cycle
     for epoch in range(num_epochs):
         # Training phase
         train_loss = 0.0
@@ -322,6 +324,8 @@ def train(args, predictor):
     # Visualize validation predictions
     print("Validation Predictions:")
     visualize_predictions(val_dataset, model, val = True)
+
+    plot_losses(train_losses, val_losses)
 
     return model
 
