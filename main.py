@@ -293,7 +293,9 @@ def train(args, predictor):
             optimizer.step()
 
             train_loss += loss.item()
-            train_losses.append(train_loss / len(train_loader))
+
+        # Append average loss per epoch
+        train_losses.append(train_loss / len(train_loader))
 
         # Validation phase
         model.eval()
@@ -312,8 +314,8 @@ def train(args, predictor):
                 # Accumulate the validation loss
                 val_loss += loss.item()
 
-                # Average validation loss for this epoch
-                val_losses.append(val_loss / len(val_loader))
+        # Append average loss per epoch
+        val_losses.append(val_loss / len(val_loader))
 
         print(f'Epoch [{epoch + 1}/{num_epochs}], Train Loss: {train_losses[-1]:.4f}, Val Loss: {val_losses[-1]:.4f}')
 
