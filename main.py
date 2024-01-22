@@ -346,7 +346,7 @@ def train(args, predictor):
         # Append average loss per epoch
         val_losses.append(val_loss / len(val_loader))
 
-        print(f'Epoch [{epoch + 1}/{num_epochs}], Train Loss: {train_losses[-1]:.4f}, Val Loss: {val_losses[-1]:.4f}')
+        print(f'Epoch [{epoch + 1}/{args.epochs}], Train Loss: {train_losses[-1]:.4f}, Val Loss: {val_losses[-1]:.4f}')
 
     # Visualize training predictions
     print("Training Predictions:")
