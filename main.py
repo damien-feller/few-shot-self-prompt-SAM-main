@@ -284,8 +284,8 @@ def train(args, predictor):
     train_dataset = CustomDataset(train_embeddings, train_labels)
     val_dataset = CustomDataset(val_embeddings, val_labels)
 
-    train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=4, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=2, shuffle=False)
 
     # Instantiate the model and move it to the device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -294,7 +294,7 @@ def train(args, predictor):
 
     # Loss and optimizer functions
     criterion = nn.BCEWithLogitsLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
     num_epochs = 50
 
