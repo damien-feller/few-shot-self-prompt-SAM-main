@@ -192,7 +192,7 @@ def get_embedding(img, predictor):
     img_emb = predictor.get_image_embedding()
     return img_emb
 
-def visualize_predictions(dataset, model, num_samples=5, val=False):
+def visualize_predictions(dataset, model, num_samples=5, val=False, threshold=0.5):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model.eval()
     indices = np.random.choice(range(len(dataset)), num_samples, replace=False)
@@ -201,7 +201,7 @@ def visualize_predictions(dataset, model, num_samples=5, val=False):
         image = image.unsqueeze(0).to(device)
         pred = model(image)
         pred = torch.sigmoid(pred)
-        pred = (pred > 0.5).float()
+        pred = (pred > threshold).float()
 
         plt.subplot(1, 3, 2)
         plt.imshow(mask.squeeze(), cmap='gray')
@@ -284,8 +284,8 @@ def train(args, predictor):
     train_dataset = CustomDataset(train_embeddings, train_labels)
     val_dataset = CustomDataset(val_embeddings, val_labels)
 
-    train_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=2, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
 
     # Instantiate the model and move it to the device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -294,15 +294,13 @@ def train(args, predictor):
 
     # Loss and optimizer functions
     criterion = nn.BCEWithLogitsLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
-
-    num_epochs = 50
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
 
     train_losses = []
     val_losses = []
 
     #training cycle
-    for epoch in range(num_epochs):
+    for epoch in range(args.epochs):
         # Training phase
         train_loss = 0.0
         for images, labels in train_loader:
@@ -356,7 +354,7 @@ def train(args, predictor):
 
     # Visualize validation predictions
     print("Validation Predictions:")
-    visualize_predictions(val_dataset, model, val = True)
+    visualize_predictions(val_dataset, model, val = True, threshold=args.threshold)
 
     plot_losses(train_losses, val_losses)
 
@@ -540,9 +538,8 @@ def test(args, predictor):
         optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
         # Training loop
-        num_epochs = 30
 
-        for epoch in range(num_epochs):
+        for epoch in range(args.epochs):
             model.train()  # Set the model to training mode
             total_loss = 0.0
 
@@ -689,6 +686,10 @@ def main():
     parser.add_argument('--visualize', type=bool, default=True, help='visualize the results')
     parser.add_argument('--save_path', type=str, default='./results', help='path to save the results')
     parser.add_argument('--visualize_num', type=int, default=30, help='number of pics to visualize')
+    parser.add_argument('--epochs', type=int, default=50, help='number of training epochs')
+    parser.add_argument('--batch_size', type=int, default=2, help='batch size for training')
+    parser.add_argument('--learning_rate', type=float, default=1e-3, help='learning rate for the optimizer')
+    parser.add_argument('--threshold', type=float, default=0.5, help='threshold for binary segmentation')
     args = parser.parse_args()
 
     # set random seed
