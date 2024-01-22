@@ -127,36 +127,65 @@ class OutConv(nn.Module):
         return self.conv(x)
 
 
+# class UNet(nn.Module):
+#     def __init__(self, n_channels, n_classes):
+#         super(UNet, self).__init__()
+#         self.inc = DoubleConv(n_channels, 64)   #
+#         self.down1 = Down(64, 128)
+#         self.down2 = Down(128, 256)
+#         self.up1 = Up(256, 128)
+#         self.up2 = Up(128, 64)
+#         self.up3 = Up(64, 32)  # Additional upsampling layer
+#         self.up4 = Up(32, 16)  # Additional upsampling layer
+#         self.outc = OutConv(16, n_classes)  # Adjust the number of output channels to match n_classes
+#
+#     def forward(self, x):
+#         # Downsampling path
+#         x1 = self.inc(x)
+#         x2 = self.down1(x1)
+#         x3 = self.down2(x2)
+#
+#         # Upsampling path with skip connections
+#         x = self.up1(x3, x2)
+#         x = self.up2(x, x1)
+#
+#         # If you don't have additional layers for skip connections in up3 and up4,
+#         # you might consider not using them or redesigning your architecture.
+#         # As an example, just passing through additional convolutions:
+#         x = self.up3.conv(x)  # Modified to use only conv part of the Up module
+#         x = self.up4.conv(x)  # Modified to use only conv part of the Up module
+#
+#         logits = self.outc(x)
+#         return logits
+
 class UNet(nn.Module):
     def __init__(self, n_channels, n_classes):
         super(UNet, self).__init__()
         self.inc = DoubleConv(n_channels, 64)
         self.down1 = Down(64, 128)
-        self.down2 = Down(128, 256)
-        self.up1 = Up(256, 128)
-        self.up2 = Up(128, 64)
-        self.up3 = Up(64, 32)  # Additional upsampling layer
-        self.up4 = Up(32, 16)  # Additional upsampling layer
-        self.outc = OutConv(16, n_classes)  # Adjust the number of output channels to match n_classes
+        # Removed the second down layer
+        self.up1 = Up(128, 64)  # Changed input channels to match output of down1
+        # Removed the third upsampling layer, and modified the channels for up2
+        self.up2 = Up(64, 32)  # Adjusted to take the output of up1 and halve the channels
+        self.up3 = Up(32, 16)  # This is now the final upsampling layer before the output layer
+        self.outc = OutConv(16, n_classes)  # No change
 
     def forward(self, x):
         # Downsampling path
         x1 = self.inc(x)
         x2 = self.down1(x1)
-        x3 = self.down2(x2)
+        # Removed the operation involving down2
 
         # Upsampling path with skip connections
-        x = self.up1(x3, x2)
-        x = self.up2(x, x1)
-
-        # If you don't have additional layers for skip connections in up3 and up4,
-        # you might consider not using them or redesigning your architecture.
-        # As an example, just passing through additional convolutions:
-        x = self.up3.conv(x)  # Modified to use only conv part of the Up module
-        x = self.up4.conv(x)  # Modified to use only conv part of the Up module
+        # The output of down1 is now used as the input to the first upsampling layer
+        x = self.up1(x2, x1)
+        # Since we removed one upsampling layer, we no longer have a skip connection for up2, so we just perform the up operation
+        x = self.up2.conv(x)  # Changed to use only the conv part of the Up module
+        x = self.up3.conv(x)  # No change
 
         logits = self.outc(x)
         return logits
+
 
 def get_embedding(img, predictor):
     predictor.set_image(img)
