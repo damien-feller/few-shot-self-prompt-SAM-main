@@ -159,16 +159,15 @@ class OutConv(nn.Module):
 #         return logits
 
 class UNet(nn.Module):
-    def __init__(self, n_channels, n_classes):
+    def __init__(self, n_channels, n_classes, output_size=(256, 256)):
         super(UNet, self).__init__()
         self.inc = DoubleConv(n_channels, 64)
         self.down1 = Down(64, 128)
         # Removed the second down layer
         self.up1 = Up(128, 64)  # Changed input channels to match output of down1
-        # Removed the third upsampling layer, and modified the channels for up2
-        self.up2 = Up(64, 32)  # Adjusted to take the output of up1 and halve the channels
-        self.up3 = Up(32, 16)  # This is now the final upsampling layer before the output layer
-        self.outc = OutConv(16, n_classes)  # No change
+        # Direct Upsampling Layer
+        self.upsample = nn.Upsample(size=output_size, mode='bilinear', align_corners=True)
+        self.outc = OutConv(64, n_classes)  # No change
 
     def forward(self, x):
         # Downsampling path
@@ -179,9 +178,9 @@ class UNet(nn.Module):
         # Upsampling path with skip connections
         # The output of down1 is now used as the input to the first upsampling layer
         x = self.up1(x2, x1)
-        # Since we removed one upsampling layer, we no longer have a skip connection for up2, so we just perform the up operation
-        x = self.up2.conv(x)  # Changed to use only the conv part of the Up module
-        x = self.up3.conv(x)  # No change
+
+        # Direct Upsampling to the final output size
+        x = self.upsample(x)
 
         logits = self.outc(x)
         return logits
@@ -260,7 +259,7 @@ def train(args, predictor):
         mask = cv2.imread(os.path.join(data_path, 'masks', fname))
         mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
         _, mask = cv2.threshold(mask, 128, 1, cv2.THRESH_BINARY) # threshold the mask to 0 and 1
-        resized_mask = cv2.resize(mask, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
+        resized_mask = cv2.resize(mask, dsize=(256, 256), interpolation=cv2.INTER_NEAREST)
          
         img_emb = get_embedding(image, predictor)
         img_emb = img_emb.cpu().numpy().transpose((2, 0, 3, 1)).reshape((256, 64, 64))
