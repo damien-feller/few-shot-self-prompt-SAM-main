@@ -217,7 +217,7 @@ def visualize_predictions(dataset, model, num_samples=5, val=False, threshold=0.
         else:
             plt.savefig(f"/content/visualisation/val_{i}.png")
 
-def plot_losses(train_losses, val_losses):
+def plot_losses(train_losses, val_losses, train_dice,  val_dice):
     try:
         # Assuming train_losses and val_losses are lists containing loss values for each epoch
         epochs = range(1, len(train_losses) + 1)
@@ -231,6 +231,23 @@ def plot_losses(train_losses, val_losses):
         plt.legend()
         plt.grid(True)
         plt.savefig(f"/content/visualisation/LOSSES.png")
+        plt.show()
+    except Exception as e:
+        print(f"Error occurred while saving the plot: {e}")
+
+    try:
+        # Assuming train_losses and val_losses are lists containing loss values for each epoch
+        epochs = range(1, len(train_losses) + 1)
+
+        plt.figure(figsize=(10, 6))
+        plt.plot(epochs, train_dice, label='Training Dice')
+        plt.plot(epochs, val_dice, label='Validation Dice')
+        plt.title('Training and Validation Dice Score')
+        plt.xlabel('Epochs')
+        plt.ylabel('Dice Score')
+        plt.legend()
+        plt.grid(True)
+        plt.savefig(f"/content/visualisation/Dice Score.png")
         plt.show()
     except Exception as e:
         print(f"Error occurred while saving the plot: {e}")
