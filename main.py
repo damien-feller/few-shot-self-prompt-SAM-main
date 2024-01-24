@@ -272,7 +272,7 @@ def train(args, predictor):
     i = 0
 
     # image augmentation and embedding processing
-    num_augmentations = 3  # Number of augmented versions to create per image
+    num_augmentations = 10  # Number of augmented versions to create per image
 
     for fname in tqdm(fnames):
         # Read data
