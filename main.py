@@ -336,6 +336,10 @@ def train(args, predictor):
     for epoch in range(args.epochs):
         # Training phase
         train_loss = 0.0
+        val_loss = 0.0
+        train_dice = 0.0
+        val_dice = 0.0
+
         for images, labels in train_loader:
             images, labels = images.to(device), labels.to(device)
 
