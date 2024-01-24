@@ -428,7 +428,7 @@ def train(args, predictor):
     print("Validation Predictions:")
     visualize_predictions(val_dataset, model, val = True, threshold=args.threshold)
 
-    plot_losses(train_losses, val_losses)
+    plot_losses(train_losses, val_losses, train_dice, val_dice)
 
     return model
 
