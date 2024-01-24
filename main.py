@@ -217,7 +217,7 @@ def visualize_predictions(dataset, model, num_samples=5, val=False, threshold=0.
         else:
             plt.savefig(f"/content/visualisation/val_{i}.png")
 
-def plot_losses(train_losses, val_losses, train_dice,  val_dice):
+def plot_losses(train_losses, val_losses, train_dice, val_dice):
     try:
         # Assuming train_losses and val_losses are lists containing loss values for each epoch
         epochs = range(1, len(train_losses) + 1)
@@ -237,7 +237,7 @@ def plot_losses(train_losses, val_losses, train_dice,  val_dice):
 
     try:
         # Assuming train_losses and val_losses are lists containing loss values for each epoch
-        epochs = range(1, len(train_losses) + 1)
+        epochs = range(1, len(train_dice) + 1)
 
         plt.figure(figsize=(10, 6))
         plt.plot(epochs, train_dice, label='Training Dice')
@@ -428,7 +428,7 @@ def train(args, predictor):
     print("Validation Predictions:")
     visualize_predictions(val_dataset, model, val = True, threshold=args.threshold)
 
-    plot_losses(train_losses, val_losses, train_dice, val_dice)
+    plot_losses(train_losses, val_losses, train_dice_scores, val_dice_scores)
 
     return model
 
