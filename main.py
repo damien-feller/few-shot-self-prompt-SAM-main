@@ -16,6 +16,7 @@ import argparse
 from utils.utils import *
 import time
 from sklearn.model_selection import train_test_split
+import albumentations as A
 
 # Set random seeds for reproducibility
 random.seed(42)
@@ -234,6 +235,23 @@ def plot_losses(train_losses, val_losses):
     except Exception as e:
         print(f"Error occurred while saving the plot: {e}")
 
+def augment(image, mask):
+    # Define an augmentation pipeline
+    transform = A.Compose([
+        A.Rotate(limit=45, p=0.5),  # Rotation
+        A.RandomScale(scale_limit=0.2, p=0.5),  # Scaling
+        A.GaussNoise(var_limit=(10, 50), p=0.5),  # Gaussian Noise
+        A.GaussianBlur(blur_limit=(3, 7), p=0.5),  # Gaussian Blur
+        A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.5),  # Brightness & Contrast
+        A.Downscale(scale_min=0.25, scale_max=0.75, p=0.5),  # Low Resolution Simulation
+        A.RandomGamma(gamma_limit=(80, 120), p=0.5),  # Gamma Augmentation
+        A.HorizontalFlip(p=0.5),  # Horizontal Mirroring
+        A.VerticalFlip(p=0.5),  # Vertical Mirroring
+    ])
+
+    augmented = transform(image=image, mask=mask)
+    return augmented['image'], augmented['mask']
+
 
 def train(args, predictor):
     data_path = args.data_path
@@ -251,24 +269,31 @@ def train(args, predictor):
     # get the image embeddings
     print('Start training...')
     t1 = time.time()
-    i = 0 
+    i = 0
+
+    # image augmentation and embedding processing
+    num_augmentations = 5  # Number of augmented versions to create per image
+
     for fname in tqdm(fnames):
-        # read data
+        # Read data
         image = cv2.imread(os.path.join(data_path, 'images', fname))
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        mask = cv2.imread(os.path.join(data_path, 'masks', fname))
-        mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
-        _, mask = cv2.threshold(mask, 128, 1, cv2.THRESH_BINARY) # threshold the mask to 0 and 1
-        resized_mask = cv2.resize(mask, dsize=(256, 256), interpolation=cv2.INTER_NEAREST)
-         
-        img_emb = get_embedding(image, predictor)
-        img_emb = img_emb.cpu().numpy().transpose((2, 0, 3, 1)).reshape((256, 64, 64))
-        image_embeddings.append(img_emb)
+        mask = cv2.imread(os.path.join(data_path, 'masks', fname), cv2.IMREAD_GRAYSCALE)
+        _, mask = cv2.threshold(mask, 128, 1, cv2.THRESH_BINARY)
 
-        labels.append(resized_mask)
-        
-        i += 1
-        if i > num_image: break
+        for _ in range(num_augmentations):
+            # Apply augmentations
+            augmented_image, augmented_mask = augment(image, mask)
+
+            # Resize and process the augmented mask
+            resized_mask = cv2.resize(augmented_mask, dsize=(256, 256), interpolation=cv2.INTER_NEAREST)
+
+            # Process the augmented image to create an embedding
+            img_emb = get_embedding(augmented_image, predictor)
+            img_emb = img_emb.cpu().numpy().transpose((2, 0, 3, 1)).reshape((256, 64, 64))
+            image_embeddings.append(img_emb)
+
+            labels.append(resized_mask)
     t2 = time.time()
     print("Time used: {}m {}s".format((t2 - t1) // 60, (t2 - t1) % 60))
 
