@@ -40,6 +40,38 @@ class CustomDataset(Dataset):
         label = self.labels[idx]
         return image, label
 
+class CustomDataset(Dataset):
+    def __init__(self, image_paths, mask_paths, predictor, is_train=True):
+        self.image_paths = image_paths
+        self.mask_paths = mask_paths
+        self.predictor = predictor
+        self.is_train = is_train
+
+    def __len__(self):
+        return len(self.image_paths)
+
+    def __getitem__(self, idx):
+        # Load image and mask
+        image = cv2.imread(self.image_paths[idx])
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        mask = cv2.imread(self.mask_paths[idx], cv2.IMREAD_GRAYSCALE)
+        _, mask = cv2.threshold(mask, 128, 1, cv2.THRESH_BINARY)
+
+        # Perform augmentation if it's a training dataset
+        if self.is_train:
+            augmented_image, augmented_mask = augment(image, mask)
+        else:
+            augmented_image, augmented_mask = image, mask
+
+        # Resize and process the augmented mask
+        resized_mask = cv2.resize(augmented_mask, dsize=(256, 256), interpolation=cv2.INTER_NEAREST)
+
+        # Compute the embedding for the augmented image
+        img_emb = get_embedding(augmented_image, self.predictor)
+        img_emb = img_emb.cpu().numpy().transpose((2, 0, 3, 1)).reshape((256, 64, 64))
+
+        return torch.Tensor(img_emb), torch.Tensor(resized_mask)
+
 # class EfficientNetSegmentation(nn.Module):
 #     def __init__(self, num_classes):
 #         super(EfficientNetSegmentation, self).__init__()
@@ -280,56 +312,29 @@ def train(args, predictor):
     data_path = args.data_path
     assert os.path.exists(data_path), 'data path does not exist!'
 
-    num_image = args.k
+    # Load the arguments (assuming args.k exists and is the number of images to load)
+    num_images = args.k
+    image_dir = os.path.join(data_path, 'images')
+    mask_dir = os.path.join(data_path, 'masks')
 
-    fnames = os.listdir(os.path.join(data_path, 'images'))
-    # get 20 random indices from fnames
-    random.shuffle(fnames)
-    fnames = fnames[:num_image]
-    image_embeddings = []
-    labels = []
-    
-    # get the image embeddings
-    print('Start training...')
-    t1 = time.time()
-    i = 0
+    # Get all file names
+    all_image_files = sorted(os.listdir(image_dir))  # Sort to ensure consistent ordering
+    all_mask_files = sorted(os.listdir(mask_dir))
 
-    # image augmentation and embedding processing
-    num_augmentations = 1  # Number of augmented versions to create per image
+    # Select only the first 'num_images' files
+    selected_image_files = all_image_files[:num_images]
+    selected_mask_files = all_mask_files[:num_images]
 
-    for fname in tqdm(fnames):
-        # Read data
-        image = cv2.imread(os.path.join(data_path, 'images', fname))
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        mask = cv2.imread(os.path.join(data_path, 'masks', fname), cv2.IMREAD_GRAYSCALE)
-        _, mask = cv2.threshold(mask, 128, 1, cv2.THRESH_BINARY)
+    # Create full paths
+    image_paths = [os.path.join(image_dir, fname) for fname in selected_image_files]
+    mask_paths = [os.path.join(mask_dir, fname) for fname in selected_mask_files]
 
-        for _ in range(num_augmentations):
-            # Apply augmentations
-            augmented_image, augmented_mask = augment(image, mask)
+    #dataset intialisation
+    train_image_paths, val_image_paths, train_mask_paths, val_mask_paths = train_test_split(
+        image_paths, mask_paths, test_size=0.2, random_state=42)
 
-            # Resize and process the augmented mask
-            resized_mask = cv2.resize(augmented_mask, dsize=(256, 256), interpolation=cv2.INTER_NEAREST)
-
-            # Process the augmented image to create an embedding
-            img_emb = get_embedding(augmented_image, predictor)
-            img_emb = img_emb.cpu().numpy().transpose((2, 0, 3, 1)).reshape((256, 64, 64))
-            image_embeddings.append(img_emb)
-
-            labels.append(resized_mask)
-    t2 = time.time()
-    print("Time used: {}m {}s".format((t2 - t1) // 60, (t2 - t1) % 60))
-
-    # Create tensors from image embeddings and labels
-    image_embeddings_tensor = torch.stack([torch.Tensor(e) for e in image_embeddings])
-    labels_tensor = torch.stack([torch.Tensor(l) for l in labels])
-
-    # Split the dataset into training and validation sets
-    train_embeddings, val_embeddings, train_labels, val_labels = train_test_split(
-        image_embeddings_tensor, labels_tensor, test_size=0.2, random_state=42)
-
-    train_dataset = CustomDataset(train_embeddings, train_labels)
-    val_dataset = CustomDataset(val_embeddings, val_labels)
+    train_dataset = CustomDataset(train_image_paths, train_mask_paths, predictor, is_train=True)
+    val_dataset = CustomDataset(val_image_paths, val_mask_paths, predictor, is_train=False)
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
@@ -343,14 +348,14 @@ def train(args, predictor):
     criterion = nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate, weight_decay=1e-5)
 
-
+    #training cycle
     train_losses = []
     val_losses = []
     train_dice_scores = []
     val_dice_scores = []
 
-    #training cycle
     for epoch in range(args.epochs):
+        model.train()
         # Training phase
         train_loss = 0.0
         val_loss = 0.0
