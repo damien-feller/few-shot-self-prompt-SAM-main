@@ -365,10 +365,8 @@ def train(args, predictor):
 
             train_loss += loss.item()
 
-        train_dice_scores.append(train_dice / len(train_loader))
-
-        # Append average loss per epoch
-        train_losses.append(train_loss / len(train_loader))
+        #dice score
+        avg_train_dice = train_dice / len(train_loader)
 
         # Validation phase
         model.eval()
@@ -393,13 +391,17 @@ def train(args, predictor):
                 # Accumulate the validation loss
                 val_loss += loss.item()
 
-        val_dice_scores.append(val_dice / len(val_loader))
+        #dice score
+        avg_val_dice = val_dice / len(val_loader)
 
         # Append average loss per epoch
+        train_losses.append(train_loss / len(train_loader))
         val_losses.append(val_loss / len(val_loader))
+        train_dice_scores.append(avg_train_dice)
+        val_dice_scores.append(avg_val_dice)
 
-        print(f'Epoch [{epoch + 1}/{args.epochs}], Train Loss: {train_loss / len(train_loader):.4f}, Val Loss: {val_loss / len(val_loader):.4f}, Train Dice: {train_dice_scores:.4f}, Val Dice: {val_dice_scores:.4f}')
-
+        print(f'Epoch [{epoch + 1}/{args.epochs}], Train Loss: {train_losses[-1]:.4f}, Val Loss: {val_losses[-1]:.4f}, '
+              f'Train Dice: {avg_train_dice:.4f}, Val Dice: {avg_val_dice:.4f}')
 
     # Visualize training predictions
     print("Training Predictions:")
