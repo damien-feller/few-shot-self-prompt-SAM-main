@@ -251,6 +251,13 @@ def augment(image, mask):
     augmented = transform(image=image, mask=mask)
     return augmented['image'], augmented['mask']
 
+def dice_coeff(pred, target):
+    smooth = 1.
+    pred_flat = pred.view(-1)
+    target_flat = target.view(-1)
+    intersection = (pred_flat * target_flat).sum()
+    return (2. * intersection + smooth) / (pred_flat.sum() + target_flat.sum() + smooth)
+
 
 def train(args, predictor):
     data_path = args.data_path
@@ -322,6 +329,8 @@ def train(args, predictor):
 
     train_losses = []
     val_losses = []
+    train_dice_scores = []
+    val_dice_scores = []
 
     #training cycle
     for epoch in range(args.epochs):
@@ -331,14 +340,19 @@ def train(args, predictor):
             images, labels = images.to(device), labels.to(device)
 
             # Ensure the label is a floating-point tensor
-            labels = labels.float()
+            labels = labels.float().unsqueeze(1)
 
             # Forward pass (model outputs logits)
             logits = model(images)
 
             # Compute the loss
-            labels = labels.unsqueeze(1)
             loss = criterion(logits, labels)
+
+            # Compute dice score
+            preds = torch.sigmoid(logits)
+            preds = (preds > args.threshold).float()
+            dice_score = dice_coeff(preds, labels)
+            train_dice += dice_score.item()
 
             # Backward pass and optimization
             optimizer.zero_grad()
@@ -346,6 +360,8 @@ def train(args, predictor):
             optimizer.step()
 
             train_loss += loss.item()
+
+        train_dice_scores.append(train_dice / len(train_loader))
 
         # Append average loss per epoch
         train_losses.append(train_loss / len(train_loader))
@@ -364,13 +380,22 @@ def train(args, predictor):
                 # Calculate the loss
                 loss = criterion(logits, labels)
 
+                # Compute dice score
+                preds = torch.sigmoid(logits)
+                preds = (preds > args.threshold).float()
+                dice_score = dice_coeff(preds, labels)
+                val_dice += dice_score.item()
+
                 # Accumulate the validation loss
                 val_loss += loss.item()
+
+        val_dice_scores.append(val_dice / len(val_loader))
 
         # Append average loss per epoch
         val_losses.append(val_loss / len(val_loader))
 
-        print(f'Epoch [{epoch + 1}/{args.epochs}], Train Loss: {train_losses[-1]:.4f}, Val Loss: {val_losses[-1]:.4f}')
+        print(f'Epoch [{epoch + 1}/{args.epochs}], Train Loss: {train_loss / len(train_loader):.4f}, Val Loss: {val_loss / len(val_loader):.4f}, Train Dice: {avg_train_dice:.4f}, Val Dice: {avg_val_dice:.4f}')
+
 
     # Visualize training predictions
     print("Training Predictions:")
