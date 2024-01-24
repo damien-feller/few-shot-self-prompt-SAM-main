@@ -243,7 +243,7 @@ def augment(image, mask):
         A.GaussNoise(var_limit=(10, 50), p=0.5),  # Gaussian Noise
         A.GaussianBlur(blur_limit=(3, 7), p=0.5),  # Gaussian Blur
         A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.5),  # Brightness & Contrast
-        #A.Downscale(scale_min=0.25, scale_max=0.75, p=0.5),  # Low Resolution Simulation
+        A.Downscale(scale_min=0.25, scale_max=0.75, p=0.5),  # Low Resolution Simulation
         A.RandomGamma(gamma_limit=(80, 120), p=0.5),  # Gamma Augmentation
         A.HorizontalFlip(p=0.5),  # Horizontal Mirroring
         A.VerticalFlip(p=0.5),  # Vertical Mirroring
