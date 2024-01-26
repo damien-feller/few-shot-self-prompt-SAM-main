@@ -307,13 +307,6 @@ def dice_coeff(pred, target):
     intersection = (pred_flat * target_flat).sum()
     return (2. * intersection + smooth) / (pred_flat.sum() + target_flat.sum() + smooth)
 
-def dice_loss(pred, target):
-    smooth = 1.
-    pred_flat = pred.view(-1)
-    target_flat = target.view(-1)
-    intersection = (pred_flat * target_flat).sum()
-    return 1 - (2. * intersection + smooth) / (pred_flat.sum() + target_flat.sum() + smooth)
-
 
 def train(args, predictor):
     data_path = args.data_path
@@ -377,13 +370,13 @@ def train(args, predictor):
 
             # Forward pass (model outputs logits)
             logits = model(images)
-            preds = torch.sigmoid(logits)
-            preds = (preds > args.threshold).float()
 
             # Compute the loss
-            loss = dice_loss(preds, labels)
+            loss = criterion(logits, labels)
 
             # Compute dice score
+            preds = torch.sigmoid(logits)
+            preds = (preds > args.threshold).float()
             dice_score = dice_coeff(preds, labels)
             train_dice += dice_score.item()
 
