@@ -286,50 +286,59 @@ def train(args, predictor):
     # get 20 random indices from fnames
     random.shuffle(fnames)
     fnames = fnames[:num_image]
-    image_embeddings = []
-    labels = []
-    
-    # get the image embeddings
-    print('Start training...')
-    t1 = time.time()
-    i = 0
+
+    # Split file names into training and validation sets
+    train_fnames, val_fnames = train_test_split(fnames, test_size=0.2, random_state=42)
 
     # image augmentation and embedding processing
-    num_augmentations = 1  # Number of augmented versions to create per image
+    num_augmentations = 20  # Number of augmented versions to create per image
 
-    for fname in tqdm(fnames):
-        # Read data
-        image = cv2.imread(os.path.join(data_path, 'images', fname))
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        mask = cv2.imread(os.path.join(data_path, 'masks', fname), cv2.IMREAD_GRAYSCALE)
-        _, mask = cv2.threshold(mask, 128, 1, cv2.THRESH_BINARY)
+    def process_images(file_names, augment_data=True):
+        image_embeddings = []
+        labels = []
 
-        for _ in range(num_augmentations):
-            # Apply augmentations
-            augmented_image, augmented_mask = augment(image, mask)
+        for fname in tqdm(file_names):
+            # Read data
+            image = cv2.imread(os.path.join(data_path, 'images', fname))
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            mask = cv2.imread(os.path.join(data_path, 'masks', fname), cv2.IMREAD_GRAYSCALE)
+            _, mask = cv2.threshold(mask, 128, 1, cv2.THRESH_BINARY)
 
-            # Resize and process the augmented mask
-            resized_mask = cv2.resize(augmented_mask, dsize=(256, 256), interpolation=cv2.INTER_NEAREST)
+            if augment_data:
+                for _ in range(num_augmentations):
+                    # Apply augmentations
+                    augmented_image, augmented_mask = augment(image, mask)
+                    process_and_store(augmented_image, augmented_mask)
+            else:
+                # For validation data, do not apply augmentation
+                process_and_store(image, mask)
 
-            # Process the augmented image to create an embedding
-            img_emb = get_embedding(augmented_image, predictor)
+        def process_and_store(img, msk):
+            # Resize and process the mask
+            resized_mask = cv2.resize(msk, dsize=(256, 256), interpolation=cv2.INTER_NEAREST)
+
+            # Process the image to create an embedding
+            img_emb = get_embedding(img, predictor)
             img_emb = img_emb.cpu().numpy().transpose((2, 0, 3, 1)).reshape((256, 64, 64))
             image_embeddings.append(img_emb)
-
             labels.append(resized_mask)
-    t2 = time.time()
-    print("Time used: {}m {}s".format((t2 - t1) // 60, (t2 - t1) % 60))
 
-    # Create tensors from image embeddings and labels
-    image_embeddings_tensor = torch.stack([torch.Tensor(e) for e in image_embeddings])
-    labels_tensor = torch.stack([torch.Tensor(l) for l in labels])
+        return image_embeddings, labels
 
-    # Split the dataset into training and validation sets
-    train_embeddings, val_embeddings, train_labels, val_labels = train_test_split(
-        image_embeddings_tensor, labels_tensor, test_size=0.2, random_state=42)
+    # Process training images with augmentation
+    train_embeddings, train_labels = process_images(train_fnames, augment_data=True)
 
-    train_dataset = CustomDataset(train_embeddings, train_labels)
-    val_dataset = CustomDataset(val_embeddings, val_labels)
+    # Process validation images without augmentation
+    val_embeddings, val_labels = process_images(val_fnames, augment_data=False)
+
+    # Convert to tensors
+    train_embeddings_tensor = torch.stack([torch.Tensor(e) for e in train_embeddings])
+    train_labels_tensor = torch.stack([torch.Tensor(l) for l in train_labels])
+    val_embeddings_tensor = torch.stack([torch.Tensor(e) for e in val_embeddings])
+    val_labels_tensor = torch.stack([torch.Tensor(l) for l in val_labels])
+
+    train_dataset = CustomDataset(train_embeddings_tensor, train_labels_tensor)
+    val_dataset = CustomDataset(val_embeddings_tensor, val_labels_tensor)
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
@@ -342,7 +351,6 @@ def train(args, predictor):
     # Loss and optimizer functions
     criterion = nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate, weight_decay=1e-5)
-
 
     train_losses = []
     val_losses = []
