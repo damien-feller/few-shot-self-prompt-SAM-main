@@ -297,6 +297,16 @@ def train(args, predictor):
         image_embeddings = []
         labels = []
 
+        def process_and_store(img, msk):
+            # Resize and process the mask
+            resized_mask = cv2.resize(msk, dsize=(256, 256), interpolation=cv2.INTER_NEAREST)
+
+            # Process the image to create an embedding
+            img_emb = get_embedding(img, predictor)
+            img_emb = img_emb.cpu().numpy().transpose((2, 0, 3, 1)).reshape((256, 64, 64))
+            image_embeddings.append(img_emb)
+            labels.append(resized_mask)
+
         for fname in tqdm(file_names):
             # Read data
             image = cv2.imread(os.path.join(data_path, 'images', fname))
@@ -312,16 +322,6 @@ def train(args, predictor):
             else:
                 # For validation data, do not apply augmentation
                 process_and_store(image, mask)
-
-        def process_and_store(img, msk):
-            # Resize and process the mask
-            resized_mask = cv2.resize(msk, dsize=(256, 256), interpolation=cv2.INTER_NEAREST)
-
-            # Process the image to create an embedding
-            img_emb = get_embedding(img, predictor)
-            img_emb = img_emb.cpu().numpy().transpose((2, 0, 3, 1)).reshape((256, 64, 64))
-            image_embeddings.append(img_emb)
-            labels.append(resized_mask)
 
         return image_embeddings, labels
 
