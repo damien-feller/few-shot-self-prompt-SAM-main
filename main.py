@@ -291,7 +291,7 @@ def train(args, predictor):
     train_fnames, val_fnames = train_test_split(fnames, test_size=0.2, random_state=42)
 
     # image augmentation and embedding processing
-    num_augmentations = 20  # Number of augmented versions to create per image
+    num_augmentations = 50  # Number of augmented versions to create per image
 
     def process_images(file_names, augment_data=True):
         image_embeddings = []
