@@ -82,16 +82,14 @@ class Up(nn.Module):
         self.up = nn.ConvTranspose2d(in_channels, in_channels // 2, kernel_size=2, stride=2)
         self.conv = DoubleConv(in_channels, out_channels)
 
-    def forward(self, x1, x2):
+    def forward(self, x1, x2=None):
         x1 = self.up(x1)
-        # Input is CHW
-        diffY = torch.tensor([x2.size()[2] - x1.size()[2]])
-        diffX = torch.tensor([x2.size()[3] - x1.size()[3]])
-
-        x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2, diffY // 2, diffY - diffY // 2])
-
-        x = torch.cat([x2, x1], dim=1)
-        return self.conv(x)
+        if x2 is not None:
+            diffY = torch.tensor([x2.size()[2] - x1.size()[2]])
+            diffX = torch.tensor([x2.size()[3] - x1.size()[3]])
+            x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2, diffY // 2, diffY - diffY // 2])
+            x1 = torch.cat([x2, x1], dim=1)
+        return self.conv(x1)
 
 
 class OutConv(nn.Module):
@@ -123,7 +121,7 @@ class UNet(nn.Module):
 
     def forward(self, x):
         # Initial upsampling
-        x = self.up1(x, x)
+        x = self.up1(x)
 
         # Double convolution
         x = self.conv1(x)
