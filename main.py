@@ -40,31 +40,6 @@ class CustomDataset(Dataset):
         label = self.labels[idx]
         return image, label
 
-# class EfficientNetSegmentation(nn.Module):
-#     def __init__(self, num_classes):
-#         super(EfficientNetSegmentation, self).__init__()
-#         # Custom layer to adapt the 256-channel input (LOSS OF INFORMATION???)
-#         self.input_adaptation = nn.Conv2d(256, 3, 1)  # Convolution to convert from 256 to 3 channels
-#
-#         # Load pre-trained EfficientNet model
-#         self.backbone = models.efficientnet_v2_l(weights='DEFAULT')
-#
-#         # Remove the average pooling and fully connected layer
-#         self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])
-#
-#         # Add a convolution layer to get the segmentation map
-#         self.conv = nn.Conv2d(1280, num_classes, 1)
-#
-#         # Upsample to the desired output size
-#         self.upsample = nn.Upsample(size=(512, 512), mode='bilinear', align_corners=True)
-#
-#     def forward(self, x):
-#         x = self.input_adaptation(x)
-#         x = self.backbone(x) # Now x has the shape [batch_size, 2048, H, W]
-#         x = self.conv(x)     # Convolution to get the segmentation map
-#         x = self.upsample(x) # Upsample to the original image size
-#         return x
-
 class DoubleConv(nn.Module):
     """(convolution => [BN] => ReLU => Dropout) * 2"""
 
@@ -128,61 +103,40 @@ class OutConv(nn.Module):
         return self.conv(x)
 
 
-# class UNet(nn.Module):
-#     def __init__(self, n_channels, n_classes):
-#         super(UNet, self).__init__()
-#         self.inc = DoubleConv(n_channels, 64)   #
-#         self.down1 = Down(64, 128)
-#         self.down2 = Down(128, 256)
-#         self.up1 = Up(256, 128)
-#         self.up2 = Up(128, 64)
-#         self.up3 = Up(64, 32)  # Additional upsampling layer
-#         self.up4 = Up(32, 16)  # Additional upsampling layer
-#         self.outc = OutConv(16, n_classes)  # Adjust the number of output channels to match n_classes
-#
-#     def forward(self, x):
-#         # Downsampling path
-#         x1 = self.inc(x)
-#         x2 = self.down1(x1)
-#         x3 = self.down2(x2)
-#
-#         # Upsampling path with skip connections
-#         x = self.up1(x3, x2)
-#         x = self.up2(x, x1)
-#
-#         # If you don't have additional layers for skip connections in up3 and up4,
-#         # you might consider not using them or redesigning your architecture.
-#         # As an example, just passing through additional convolutions:
-#         x = self.up3.conv(x)  # Modified to use only conv part of the Up module
-#         x = self.up4.conv(x)  # Modified to use only conv part of the Up module
-#
-#         logits = self.outc(x)
-#         return logits
-
 class UNet(nn.Module):
     def __init__(self, n_channels, n_classes, output_size=(1024, 1024)):
         super(UNet, self).__init__()
-        self.inc = DoubleConv(n_channels, 64)
+        # upsampling layer (256x64x64 -> 128x128x128)
+        self.up1 = Up(n_channels, 128)
+        #double conv takes channesl from 128x128x128 -> 64x128x128
+        self.conv1 = DoubleConv(128, 64)
+        #downsampling layer (64x128x128 -> 128x64x64)
         self.down1 = Down(64, 128)
-        # Removed the second down layer
-        self.up1 = Up(128, 64)  # Changed input channels to match output of down1
-        # Direct Upsampling Layer
-        self.upsample = nn.Upsample(size=output_size, mode='bilinear', align_corners=True)
+        #downsampling layer (128x64x64 -> 256x32x32)
+        self.down2 = Down(128, 256)
+        # upsampling layer (256x32x32 -> 128x64x64)
+        self.up2 = Up(256, 128)
+        # upsampling layer (128x64x64 -> 64x128x128)
+        self.up3 = Up(128, 64)
+        # output convolution (64x128x128 -> 1x128x128)
         self.outc = OutConv(64, n_classes)  # No change
 
     def forward(self, x):
+        # Initial upsampling
+        x = self.up1(x)
+
+        # Double convolution
+        x = self.conv1(x)
+
         # Downsampling path
-        x1 = self.inc(x)
-        x2 = self.down1(x1)
-        # Removed the operation involving down2
+        x1 = self.down1(x)
+        x2 = self.down2(x1)
 
         # Upsampling path with skip connections
-        # The output of down1 is now used as the input to the first upsampling layer
-        x = self.up1(x2, x1)
+        x = self.up2(x2, x1)  # skip connection from down1
+        x = self.up3(x, x)    # self-connection (could also be a skip from an earlier layer if needed)
 
-        # Direct Upsampling to the final output size
-        x = self.upsample(x)
-
+        # Output layer
         logits = self.outc(x)
         return logits
 
@@ -299,7 +253,7 @@ def train(args, predictor):
 
         def process_and_store(img, msk):
             # Resize and process the mask and image
-            resized_mask = cv2.resize(msk, dsize=(1024, 1024), interpolation=cv2.INTER_NEAREST)
+            resized_mask = cv2.resize(msk, dsize=(128, 128), interpolation=cv2.INTER_NEAREST)
             resized_img = cv2.resize(img, dsize=(1024, 1024), interpolation=cv2.INTER_NEAREST)
 
             # Process the image to create an embedding
@@ -441,320 +395,7 @@ def train(args, predictor):
 
     return model
 
-def test_visualize(args, model, predictor):
-    data_path = args.data_path
-        
-    num_image = args.k
-    fnames = os.listdir(os.path.join(data_path, 'images'))
-    random.shuffle(fnames)
-    fnames = fnames[num_image:]
-    num_visualize = args.visualize_num
-    
-    dice_linear = []
-    dice1 = []
-    dice2 = []
-    dice3 = []
-    i = 0
 
-    for fname in tqdm(fnames[:num_visualize]):
-        # read data
-        image = cv2.imread(os.path.join(data_path, 'images', fname))
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        mask = cv2.imread(os.path.join(data_path, 'masks', fname))
-        mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
-        _, mask = cv2.threshold(mask, 128, 1, cv2.THRESH_BINARY)
-        H, W, _ = image.shape
-
-        # get the image embedding for CNN
-        img_emb = get_embedding(image, predictor)
-        img_emb = img_emb.cpu().numpy().transpose((2, 0, 3, 1)).reshape((256, 64, 64))
-
-        # CNN prediction
-        img_emb_tensor = torch.Tensor(img_emb).unsqueeze(0).to(args.device)  # Add batch dimension and send to device
-        y_pred = model(img_emb_tensor)
-        y_pred = torch.argmax(y_pred, dim=1).squeeze(
-            0).cpu().numpy()  # Assuming the model outputs logits for each class
-        mask_pred_l = cv2.resize(y_pred, (mask.shape[1], mask.shape[0]), interpolation=cv2.INTER_NEAREST)
-
-        # use distance transform to find a point inside the mask
-        fg_point = get_max_dist_point(mask_pred_l)
-        
-        # set the image to sam
-        predictor.set_image(image)
-        
-        # prompt the sam with the point
-        input_point = np.array([[fg_point[0], fg_point[1]]])
-        input_label = np.array([1])
-        masks_pred_sam_prompted1, _, _ = predictor.predict(
-            point_coords=input_point,
-            point_labels=input_label,
-            box=None,
-            multimask_output=False,
-        )
-        
-        # prompt the sam with the bounding box
-        y_indices, x_indices = np.where(mask_pred_l > 0)
-        if np.all(mask_pred_l == 0):
-            bbox = np.array([0, 0, H, W])
-        else:
-            x_min, x_max = np.min(x_indices), np.max(x_indices)
-            y_min, y_max = np.min(y_indices), np.max(y_indices)
-            H, W = mask_pred_l.shape
-            x_min = max(0, x_min - np.random.randint(0, 20))
-            x_max = min(W, x_max + np.random.randint(0, 20))
-            y_min = max(0, y_min - np.random.randint(0, 20))
-            y_max = min(H, y_max + np.random.randint(0, 20))
-            bbox = np.array([x_min, y_min, x_max, y_max])
-        masks_pred_sam_prompted2, _, _ = predictor.predict(
-            point_coords=None,
-            point_labels=None,
-            box=bbox[None, :],
-            multimask_output=False,)
-            
-        # prompt the sam with both the point and bounding box
-        masks_pred_sam_prompted3, _, _ = predictor.predict(
-            point_coords=input_point,
-            point_labels=input_label,
-            box=bbox[None, :],
-            multimask_output=False,)
-        
-        dice_l = dice_coef(mask, mask_pred_l)
-        dice_p = dice_coef(mask, masks_pred_sam_prompted1[0])
-        dice_b = dice_coef(mask, masks_pred_sam_prompted2[0])
-        dice_i = dice_coef(mask, masks_pred_sam_prompted3[0])
-        dice_linear.append(dice_l)
-        dice1.append(dice_p)
-        dice2.append(dice_b)
-        dice3.append(dice_i)
-
-        # plot the results
-        fig, ax = plt.subplots(1, 5, figsize=(15, 10))
-        ax[0].set_title('Ground Truth')
-        ax[0].imshow(mask)
-        ax[1].set_title('Linear + e&d')
-        ax[1].plot(fg_point[0], fg_point[1], 'r.')
-        ax[1].imshow(mask_pred_l)
-        ax[2].set_title('Point')
-        ax[2].plot(fg_point[0], fg_point[1], 'r.')
-        ax[2].imshow(masks_pred_sam_prompted1[0]) 
-        ax[3].set_title('Box')
-        show_box(bbox, ax[3])
-        ax[3].imshow(masks_pred_sam_prompted2[0])
-        ax[4].set_title('Point + Box')
-        ax[4].plot(fg_point[0], fg_point[1], 'r.')
-        show_box(bbox, ax[4])
-        ax[4].imshow(masks_pred_sam_prompted3[0])
-        [axi.set_axis_off() for axi in ax.ravel()]
-        
-        
-        if os.path.exists(args.save_path) == False:
-            os.mkdir(args.save_path)
-        plt.savefig(os.path.join(args.save_path, fname.split('.')[0]+str(i)))
-    
-    mdice0 = round(sum(dice_linear)/float(len(dice_linear)), 5)
-    mdice1 = round(sum(dice1)/float(len(dice1)), 5)
-    mdice2 = round(sum(dice2)/float(len(dice2)), 5)
-    mdice3 = round(sum(dice3)/float(len(dice3)), 5)
-    
-    print('For the first {} images: '.format(num_visualize))
-    print('mdice(linear classifier: )', mdice0)
-    print('mDice(point prompts): ', mdice1)
-    print('mDice(bbox prompts): ', mdice2)
-    print('mDice(points and boxes): ', mdice3)
-
-        
-        
-def test(args, predictor):
-    data_path = args.data_path
-    images = []
-    masks = []
-    fnames = os.listdir(os.path.join(data_path, 'images'))
-    print(f'loading images from {data_path}...')
-    for fname in tqdm(fnames):
-        # read data
-        image = cv2.imread(os.path.join(data_path, 'images', fname))
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        mask = cv2.imread(os.path.join(data_path, 'masks', fname))
-        mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
-        _, mask = cv2.threshold(mask, 128, 1, cv2.THRESH_BINARY)
-        images.append(image)
-        masks.append(mask)
-    
-    kf = KFold(n_splits=5, shuffle=True, random_state=42)
-    for train_index, text_index in kf.split(images):
-        train_images = [images[i] for i in train_index]
-        train_masks = [masks[i] for i in train_index]
-        test_images = [images[i] for i in text_index]
-        test_masks = [masks[i] for i in text_index]
-        
-        # train the linear classifier
-        k = args.k
-        random_indices = random.sample(range(len(train_images)), k)
-        image_embeddings = []
-        labels = []
-        for idx in random_indices:
-            image = train_images[idx]
-            mask = train_masks[idx]
-            resized_mask = cv2.resize(mask, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
-
-            img_emb = get_embedding(image)
-            img_emb = img_emb.cpu().numpy().transpose((2, 3, 1, 0)).reshape((64, 64, 256))
-            image_embeddings.append(img_emb)
-            labels.append(resized_mask)
-
-        # Create tensors from image embeddings and labels
-        image_embeddings_tensor = torch.stack([torch.Tensor(e) for e in image_embeddings])
-        labels_tensor = torch.stack([torch.Tensor(l) for l in labels])
-
-        # Create a CNN model to train on image embeddings and labels
-        train_dataset = CustomDataset(image_embeddings_tensor, labels_tensor)
-        train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True)
-
-        # Instantiate the U-Net model and move it to the device
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        model = UNet(n_channels=256, n_classes=1).to(device)  # Adjust n_channels and n_classes as needed
-
-        # For binary segmentation, use BCEWithLogitsLoss
-        criterion = nn.BCEWithLogitsLoss()
-        optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
-
-        # Training loop
-
-        for epoch in range(args.epochs):
-            model.train()  # Set the model to training mode
-            total_loss = 0.0
-
-            for images, labels in train_loader:
-                images, labels = images.to(device), labels.to(device)
-
-                # Ensure the label is a floating-point tensor
-                labels = labels.float()
-
-                # Forward pass
-                logits = model(images)
-
-                # Compute the loss
-                labels = labels.unsqueeze(1)
-                loss = criterion(logits, labels)
-
-                # Backward pass and optimization
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
-
-                total_loss += loss.item()
-
-            # Print the average loss for this epoch
-            avg_loss = total_loss / len(train_loader)
-            print(f'Epoch [{epoch + 1}/{num_epochs}], Avg Loss: {avg_loss:.4f}')
-
-        with torch.no_grad():
-            for i in range(5):  # Check 5 random samples
-                idx = np.random.randint(0, len(train_dataset))
-                image, true_mask = train_dataset[idx]
-                image = image.unsqueeze(0).to(device)  # Add batch dimension and transfer to device
-                pred_mask = model(image)
-                pred_mask = torch.sigmoid(pred_mask)  # Apply sigmoid to get probabilities
-                pred_mask = (pred_mask > 0.5).float()  # Threshold the probabilities to get binary mask
-
-                plt.figure(figsize=(10, 4))
-                plt.subplot(1, 3, 1)
-                plt.imshow(image.cpu().squeeze(), cmap='gray')
-                plt.title("Input Image")
-                plt.axis('off')
-
-                plt.subplot(1, 3, 2)
-                plt.imshow(true_mask.squeeze(), cmap='gray')
-                plt.title("True Mask")
-                plt.axis('off')
-
-                plt.subplot(1, 3, 3)
-                plt.imshow(pred_mask.cpu().squeeze(), cmap='gray')
-                plt.title("Predicted Mask")
-                plt.axis('off')
-                plt.savefig(f"/content/visualisation/plot_{i}.png")
-
-        # test
-        dice_linear=[]
-        dice1=[]
-        dice2=[]
-        dice3=[]
-        for idx in range(len(test_images)):
-            image = test_images[idx]
-            mask = test_masks[idx]
-            H, W, _ = image.shape
-
-            # get the image embedding for CNN
-            img_emb = get_embedding(image, predictor)
-            img_emb = img_emb.cpu().numpy().transpose((2, 3, 1, 0)).reshape((64, 64, 256))
-
-            # CNN prediction
-            img_emb_tensor = torch.Tensor(img_emb).unsqueeze(0).to(args.device)
-            y_pred = model(img_emb_tensor)
-            y_pred = torch.argmax(y_pred, dim=1).squeeze(0).cpu().numpy()
-            mask_pred_l = cv2.resize(y_pred, (mask.shape[1], mask.shape[0]), interpolation=cv2.INTER_NEAREST)
-
-            # use distance transform to find a point inside the mask
-            fg_point = get_max_dist_point(mask_pred_l)
-
-            # set the image to sam
-            predictor.set_image(image)
-
-            # prompt sam with the point
-            input_point = np.array([[fg_point[0], fg_point[1]]])
-            input_label = np.array([1])
-            masks_pred_sam_prompted1, _, logits = predictor.predict(
-            point_coords=input_point,
-            point_labels=input_label,
-            box=None,
-            multimask_output=False,)
-
-            # prompt sam with the bbox
-            y_indices, x_indices = np.where(mask_pred_l > 0)
-            if np.all(mask_pred_l==0):
-                bbox = np.array([0 ,0, H, W])
-            else:
-                x_min, x_max = np.min(x_indices), np.max(x_indices)
-                y_min, y_max = np.min(y_indices), np.max(y_indices)
-                H, W = mask_pred_l.shape
-                x_min = max(0, x_min - np.random.randint(0, 20))
-                x_max = min(W, x_max + np.random.randint(0, 20))
-                y_min = max(0, y_min - np.random.randint(0, 20))
-                y_max = min(H, y_max + np.random.randint(0, 20))
-                bbox = np.array([x_min, y_min, x_max, y_max])
-                masks_pred_sam_prompted2, _, _ = predictor.predict(
-                point_coords=None,
-                point_labels=None,
-                box=bbox[None, :],
-                multimask_output=False,)
-
-                masks_pred_sam_prompted3, _, _,= predictor.predict(
-                point_coords=input_point,
-                point_labels=input_label,
-                box=bbox[None, :],
-                multimask_output=False,)
-
-                dice_l = dice_coef(mask, mask_pred_l)
-                dice_p = dice_coef(mask, masks_pred_sam_prompted1[0])
-                dice_b = dice_coef(mask, masks_pred_sam_prompted2[0])
-                dice_c = dice_coef(mask, masks_pred_sam_prompted3[0])
-                dice_linear.append(dice_l)
-                dice1.append(dice_p)
-                dice2.append(dice_b)
-                dice3.append(dice_c)
-                
-        mdice0 = round(sum(dice_linear)/float(len(dice_linear)), 5)
-        mdice1 = round(sum(dice1)/float(len(dice1)), 5)
-        mdice2 = round(sum(dice2)/float(len(dice2)), 5)
-        mdice3 = round(sum(dice3)/float(len(dice3)), 5)
-
-        print('mdice(linear classifier: )', mdice0)
-        print('mDice(point prompts): ', mdice1)
-        print('mDice(bbox prompts): ', mdice2)
-        print('mDice(points and boxes): ', mdice3)
-        print('\n')
-
-    
 
 def main():
     parser = argparse.ArgumentParser()
@@ -782,12 +423,9 @@ def main():
     global predictor
     predictor = SamPredictor(sam)
     print('SAM model loaded!', '\n')
-    
-    if args.visualize:
-        model = train(args, predictor)
-        test_visualize(args, model, predictor)
-    else:
-        test(args, predictor)
+
+    model = train(args, predictor)
+
 
 
 if __name__ == '__main__':
