@@ -220,14 +220,6 @@ def train(args, predictor):
     print(f'SVM Accuracy: {accuracy_svm}')
     print(classification_report(val_labels_flat, predicted_masks_svm.reshape(-1)))
 
-    # Visualize SVM predictions on the training dataset
-    print("Training Predictions with SVM:")
-    visualize_predictions(train_embeddings, train_labels, svm_model, val=False)
-
-    # Visualize SVM predictions on the validation dataset
-    print("Validation Predictions with SVM:")
-    visualize_predictions(val_embeddings, val_labels, svm_model, val=True)
-
     # Train a logistic regression model
     logistic_regression_model = LogisticRegression()
     logistic_regression_model.fit(train_embeddings_flat, train_labels_flat)
@@ -244,6 +236,14 @@ def train(args, predictor):
     accuracy_svm = accuracy_score(val_labels_flat, predicted_masks_binary.reshape(-1))
     print(f'SVM Accuracy: {accuracy_svm}')
     print(classification_report(val_labels_flat, predicted_masks_svm.reshape(-1)))
+
+    # Visualize SVM predictions on the training dataset
+    print("Training Predictions with SVM:")
+    visualize_predictions(train_embeddings, train_labels, svm_model, val=False)
+
+    # Visualize SVM predictions on the validation dataset
+    print("Validation Predictions with SVM:")
+    visualize_predictions(val_embeddings, val_labels, svm_model, val=True)
 
     return svm_model
 
