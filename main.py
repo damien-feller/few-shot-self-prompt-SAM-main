@@ -228,8 +228,7 @@ def train(args, predictor):
     predicted_masks_logistic = logistic_regression_model.predict(val_embeddings_flat)
 
     # Apply thresholding (e.g., 0.5) to get binary predictions
-    threshold = 0.5
-    predicted_masks_binary = (predicted_masks_logistic > threshold).astype(np.uint8).reshape(len(val_embeddings), 64, 64)
+    predicted_masks_binary = (predicted_masks_logistic > args.threshold).astype(np.uint8).reshape(len(val_embeddings), 64, 64)
 
     # Dice Scores
     svm_dice_val = dice_coeff(torch.Tensor(predicted_masks_svm), torch.Tensor(val_labels))
