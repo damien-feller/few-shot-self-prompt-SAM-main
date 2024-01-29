@@ -19,7 +19,7 @@ from sklearn.model_selection import train_test_split
 import albumentations as A
 # Import necessary libraries
 from cuml.svm import SVC
-from cuml.preprocessing.model_selection import train_test_split
+from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, classification_report
 
 # Set random seeds for reproducibility
@@ -181,16 +181,11 @@ def train(args, predictor):
     val_embeddings_flat, val_labels_flat = create_dataset_for_SVM(val_embeddings_tensor.numpy(),
                                                                  val_labels_tensor.numpy())
 
-
-    # Instantiate the model and move it to the device
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-    # Create and train the SVM model
-    model = SVC(kernel='linear')  # You can experiment with different kernels
-    model.fit(train_embeddings_flat, train_labels_flat)
+    svm_model = SVC(kernel='linear')  # Or any other kernel
+    svm_model.fit(train_embeddings_flat, train_labels_flat)
 
     # Predict on the validation set
-    predicted_masks_svm = predict_and_reshape(model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
+    predicted_masks_svm = predict_and_reshape(svm_model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
 
     # Evaluate the SVM model
     accuracy_svm = accuracy_score(val_labels_flat, predicted_masks_svm.reshape(-1))
