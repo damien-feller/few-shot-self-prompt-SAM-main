@@ -160,7 +160,7 @@ class OutConv(nn.Module):
 #         return logits
 
 class UNet(nn.Module):
-    def __init__(self, n_channels, n_classes, output_size=(256, 256)):
+    def __init__(self, n_channels, n_classes, output_size=(1024, 1024)):
         super(UNet, self).__init__()
         self.inc = DoubleConv(n_channels, 64)
         self.down1 = Down(64, 128)
@@ -298,11 +298,12 @@ def train(args, predictor):
         labels = []
 
         def process_and_store(img, msk):
-            # Resize and process the mask
-            resized_mask = cv2.resize(msk, dsize=(256, 256), interpolation=cv2.INTER_NEAREST)
+            # Resize and process the mask and image
+            resized_mask = cv2.resize(msk, dsize=(1024, 1024), interpolation=cv2.INTER_NEAREST)
+            resized_img = cv2.resize(img, dsize=(1024, 1024), interpolation=cv2.INTER_NEAREST)
 
             # Process the image to create an embedding
-            img_emb = get_embedding(img, predictor)
+            img_emb = get_embedding(resized_img, predictor)
             img_emb = img_emb.cpu().numpy().transpose((2, 0, 3, 1)).reshape((256, 64, 64))
             image_embeddings.append(img_emb)
             labels.append(resized_mask)
