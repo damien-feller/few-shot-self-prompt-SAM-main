@@ -126,15 +126,15 @@ class UNet(nn.Module):
         x = self.up1(x)
 
         # Double convolution
-        x = self.conv1(x)
+        x1 = self.conv1(x)
 
         # Downsampling path
-        x1 = self.down1(x)
-        x2 = self.down2(x1)
+        x2 = self.down1(x1)
+        x3 = self.down2(x2)
 
         # Upsampling path with skip connections
-        x = self.up2(x2, x1)  # skip connection from down1
-        x = self.up3(x, x)    # self-connection (could also be a skip from an earlier layer if needed)
+        x = self.up2(x3, x2)  # skip connection from down1
+        x = self.up3(x, x1)    # self-connection (could also be a skip from an earlier layer if needed)
 
         # Output layer
         logits = self.outc(x)
