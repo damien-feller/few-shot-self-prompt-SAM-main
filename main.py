@@ -245,7 +245,7 @@ class DiceLoss(nn.Module):
         return 1 - dice_score
 
 class FocalLoss(nn.Module):
-    def __init__(self, alpha=0.25, gamma=2.0):
+    def __init__(self, alpha=0.75, gamma=2.0):
         super(FocalLoss, self).__init__()
         self.alpha = alpha
         self.gamma = gamma
