@@ -110,6 +110,31 @@ def predict_and_reshape(model, X, original_shape):
     predictions = model.predict(X)
     return predictions.reshape(original_shape)
 
+def visualize_predictions(dataset, model, num_samples=5, val=False, threshold=0.5):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model.eval()
+    indices = np.random.choice(range(len(dataset)), num_samples, replace=False)
+    for i in indices:
+        image, mask = dataset[i]
+        image = image.unsqueeze(0).to(device)
+        pred = model(image)
+        pred = torch.sigmoid(pred)
+        pred = (pred > threshold).float()
+
+        plt.subplot(1, 3, 2)
+        plt.imshow(mask.squeeze(), cmap='gray')
+        plt.title("True Mask")
+        plt.axis('off')
+
+        plt.subplot(1, 3, 3)
+        plt.imshow(pred.cpu().squeeze(), cmap='gray')
+        plt.title("Predicted Mask")
+        plt.axis('off')
+        if val == False:
+            plt.savefig(f"/content/visualisation/train_{i}.png")
+        else:
+            plt.savefig(f"/content/visualisation/val_{i}.png")
+
 
 def train(args, predictor):
     data_path = args.data_path
