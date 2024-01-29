@@ -232,6 +232,9 @@ def train(args, predictor):
     predicted_masks_binary = (predicted_masks_logistic > threshold).astype(np.uint8).reshape(len(val_embeddings), 64, 64)
 
     # Dice Scores
+    print(np.shape(predicted_masks_svm))
+    print(np.shape(val_labels))
+    print(np.shape(predicted_masks_binary))
     svm_dice_val = dice_coeff(predicted_masks_svm, val_labels)
     print('SVM Dice: ', svm_dice_val)
     log_dice_val = dice_coeff(predicted_masks_binary,val_labels)
