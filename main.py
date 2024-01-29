@@ -77,7 +77,7 @@ class Down(nn.Module):
 class Up(nn.Module):
     def __init__(self, in_channels, out_channels, concat_channels=None):
         super().__init__()
-        self.up = nn.ConvTranspose2d(in_channels // 2, in_channels // 2, kernel_size=2, stride=2)
+        self.up = nn.ConvTranspose2d(in_channels, in_channels // 2, kernel_size=2, stride=2)
         if concat_channels is not None:
             self.conv = DoubleConv(in_channels // 2 + concat_channels, out_channels)
         else:
