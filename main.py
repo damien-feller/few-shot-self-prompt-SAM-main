@@ -119,7 +119,7 @@ def visualize_predictions(images, masks, model, num_samples=3, val=False):
 
         # Flatten the image for SVM prediction
         image_flat = image.reshape(-1, image.shape[0])
-        pred_flat = model.predict(image)
+        pred_flat = model.predict(image_flat)
         # Reshape the prediction to the original mask shape
         pred = pred_flat.reshape(mask.shape)
 
