@@ -75,16 +75,18 @@ class Down(nn.Module):
 
 
 class Up(nn.Module):
-    """Upscaling then double conv"""
-
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, concat_channels=None):
         super().__init__()
-        self.up = nn.ConvTranspose2d(in_channels, in_channels // 2, kernel_size=2, stride=2)
-        self.conv = DoubleConv(in_channels, out_channels)
+        self.up = nn.ConvTranspose2d(in_channels // 2, in_channels // 2, kernel_size=2, stride=2)
+        if concat_channels is not None:
+            self.conv = DoubleConv(in_channels // 2 + concat_channels, out_channels)
+        else:
+            self.conv = DoubleConv(in_channels // 2, out_channels)
 
     def forward(self, x1, x2=None):
         x1 = self.up(x1)
         if x2 is not None:
+            # Code for padding and concatenation
             diffY = torch.tensor([x2.size()[2] - x1.size()[2]])
             diffX = torch.tensor([x2.size()[3] - x1.size()[3]])
             x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2, diffY // 2, diffY - diffY // 2])
@@ -113,9 +115,9 @@ class UNet(nn.Module):
         #downsampling layer (128x64x64 -> 256x32x32)
         self.down2 = Down(128, 256)
         # upsampling layer (256x32x32 -> 128x64x64)
-        self.up2 = Up(256, 128)
+        self.up2 = Up(256, 128, 128)
         # upsampling layer (128x64x64 -> 64x128x128)
-        self.up3 = Up(128, 64)
+        self.up3 = Up(128, 64, 64)
         # output convolution (64x128x128 -> 1x128x128)
         self.outc = OutConv(64, n_classes)  # No change
 
