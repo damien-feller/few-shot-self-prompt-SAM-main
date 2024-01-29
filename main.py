@@ -331,8 +331,9 @@ def train(args, predictor):
     model = UNet(n_channels=256, n_classes=1).to(device)
 
     # Loss and optimizer functions
-    criterion = FocalLoss()
+    criterion = DiceLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate, weight_decay=1e-5)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10, verbose=True)
 
     train_losses = []
     val_losses = []
@@ -400,6 +401,9 @@ def train(args, predictor):
 
         #dice score
         avg_val_dice = val_dice / len(val_loader)
+        avg_val_loss = val_loss / len(val_loader)
+        scheduler.step(avg_val_loss)
+
 
         # Append average loss per epoch
         train_losses.append(train_loss / len(train_loader))
