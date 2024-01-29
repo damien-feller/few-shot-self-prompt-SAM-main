@@ -110,14 +110,14 @@ def predict_and_reshape(model, X, original_shape):
     predictions = model.predict(X)
     return predictions.reshape(original_shape)
 
-def visualize_predictions(dataset, model, num_samples=3, val=False):
-    indices = np.random.choice(range(len(dataset)), num_samples, replace=False)
+def visualize_predictions(images, masks, model, num_samples=3, val=False):
+    indices = np.random.choice(range(len(images)), num_samples, replace=False)
 
     for i in indices:
-        image, mask = dataset[i]
-        # Flatten the image for SVM prediction
-        image_flat = image.reshape(-1, image.shape[0])
-        pred_flat = model.predict(image_flat)
+        image = images[i]
+        mask = masks[i]
+
+        pred_flat = model.predict(image)
         # Reshape the prediction to the original mask shape
         pred = pred_flat.reshape(mask.shape)
 
@@ -217,9 +217,13 @@ def train(args, predictor):
     print(f'SVM Accuracy: {accuracy_svm}')
     print(classification_report(val_labels_flat, predicted_masks_svm.reshape(-1)))
 
+    # Visualize SVM predictions on the training dataset
+    print("Validation Predictions with SVM:")
+    visualize_predictions(train_embeddings_flat, train_labels, svm_model, val=False)
+
     # Visualize SVM predictions on the validation dataset
     print("Validation Predictions with SVM:")
-    visualize_predictions(val_dataset, svm_model)
+    visualize_predictions(val_embeddings_flat, val_labels, svm_model, val=True)
 
     return svm_model
 
