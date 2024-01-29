@@ -283,7 +283,7 @@ def train(args, predictor):
     num_image = args.k
 
     fnames = os.listdir(os.path.join(data_path, 'images'))
-    # get 20 random indices from fnames
+    # get k random indices from fnames
     random.shuffle(fnames)
     fnames = fnames[:num_image]
 
@@ -291,7 +291,7 @@ def train(args, predictor):
     train_fnames, val_fnames = train_test_split(fnames, test_size=0.2, random_state=42)
 
     # image augmentation and embedding processing
-    num_augmentations = 50  # Number of augmented versions to create per image
+    num_augmentations = args.augmentation_num  # Number of augmented versions to create per image
 
     def process_images(file_names, augment_data=True):
         image_embeddings = []
@@ -770,6 +770,7 @@ def main():
     parser.add_argument('--batch_size', type=int, default=2, help='batch size for training')
     parser.add_argument('--learning_rate', type=float, default=1e-3, help='learning rate for the optimizer')
     parser.add_argument('--threshold', type=float, default=0.5, help='threshold for binary segmentation')
+    parser.add_argument('--augmentation_num', type=float, default=20, help='number of image augmentations to perform')
     args = parser.parse_args()
 
     # set random seed
