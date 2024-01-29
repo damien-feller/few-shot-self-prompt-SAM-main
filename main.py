@@ -244,6 +244,19 @@ class DiceLoss(nn.Module):
         dice_score = (2. * intersection + self.smooth) / (preds_flat.sum() + true_masks_flat.sum() + self.smooth)
         return 1 - dice_score
 
+class FocalLoss(nn.Module):
+    def __init__(self, alpha=0.25, gamma=2.0):
+        super(FocalLoss, self).__init__()
+        self.alpha = alpha
+        self.gamma = gamma
+
+    def forward(self, inputs, targets):
+        BCE_loss = F.binary_cross_entropy_with_logits(inputs, targets, reduction='none')
+        pt = torch.exp(-BCE_loss)  # prevents nans when probability 0
+        F_loss = self.alpha * (1-pt)**self.gamma * BCE_loss
+        return F_loss.mean()
+
+
 def train(args, predictor):
     data_path = args.data_path
     assert os.path.exists(data_path), 'data path does not exist!'
@@ -318,7 +331,7 @@ def train(args, predictor):
     model = UNet(n_channels=256, n_classes=1).to(device)
 
     # Loss and optimizer functions
-    criterion = DiceLoss()  # Change the loss function to DiceLoss
+    criterion = FocalLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate, weight_decay=1e-5)
 
     train_losses = []
