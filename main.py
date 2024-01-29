@@ -123,7 +123,7 @@ class UNet(nn.Module):
 
     def forward(self, x):
         # Initial upsampling
-        x = self.up1(x)
+        x = self.up1(x, x)
 
         # Double convolution
         x = self.conv1(x)
