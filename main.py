@@ -229,8 +229,13 @@ def train(args, predictor):
 
     # Apply thresholding (e.g., 0.5) to get binary predictions
     threshold = 0.5
-    predicted_masks_binary = (predicted_masks_logistic > threshold).astype(np.uint8)
-    predicted_masks_binary.reshape(len(val_embeddings), 64, 64)
+    predicted_masks_binary = (predicted_masks_logistic > threshold).astype(np.uint8).reshape(len(val_embeddings), 64, 64)
+
+    # Dice Scores
+    svm_dice_val = dice_coeff(predicted_masks_svm, val_labels)
+    print('SVM Dice: ', svm_dice_val)
+    log_dice_val = dice_coeff(predicted_masks_binary,val_labels)
+    print('Logsitic Regression Dice: ', svm_dice_val)
 
     # Evaluate the SVM model
     accuracy_svm = accuracy_score(val_labels_flat, predicted_masks_binary.reshape(-1))
