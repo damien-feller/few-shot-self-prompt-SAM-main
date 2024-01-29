@@ -230,6 +230,20 @@ def dice_coeff(pred, target):
     return (2. * intersection + smooth) / (pred_flat.sum() + target_flat.sum() + smooth)
 
 
+class DiceLoss(nn.Module):
+    def __init__(self, smooth=1.):
+        super(DiceLoss, self).__init__()
+        self.smooth = smooth
+
+    def forward(self, logits, true_masks):
+        preds = torch.sigmoid(logits)
+        preds_flat = preds.view(-1)
+        true_masks_flat = true_masks.view(-1)
+
+        intersection = (preds_flat * true_masks_flat).sum()
+        dice_score = (2. * intersection + self.smooth) / (preds_flat.sum() + true_masks_flat.sum() + self.smooth)
+        return 1 - dice_score
+
 def train(args, predictor):
     data_path = args.data_path
     assert os.path.exists(data_path), 'data path does not exist!'
@@ -304,7 +318,7 @@ def train(args, predictor):
     model = UNet(n_channels=256, n_classes=1).to(device)
 
     # Loss and optimizer functions
-    criterion = nn.BCEWithLogitsLoss()
+    criterion = DiceLoss()  # Change the loss function to DiceLoss
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate, weight_decay=1e-5)
 
     train_losses = []
