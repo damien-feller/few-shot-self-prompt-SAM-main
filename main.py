@@ -17,8 +17,6 @@ from utils.utils import *
 import time
 from sklearn.model_selection import train_test_split
 import albumentations as A
-# Import necessary libraries
-from cuml.svm import SVC
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, classification_report
 
