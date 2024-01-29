@@ -17,7 +17,7 @@ from utils.utils import *
 import time
 from sklearn.model_selection import train_test_split
 import albumentations as A
-from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, classification_report
 
@@ -227,6 +227,23 @@ def train(args, predictor):
     # Visualize SVM predictions on the validation dataset
     print("Validation Predictions with SVM:")
     visualize_predictions(val_embeddings, val_labels, svm_model, val=True)
+
+    # Train a logistic regression model
+    logistic_regression_model = LogisticRegression()
+    logistic_regression_model.fit(train_embeddings_flat, train_labels_flat)
+
+    # Predict on the validation set
+    predicted_masks_logistic = logistic_regression_model.predict(val_embeddings_flat)
+
+    # Apply thresholding (e.g., 0.5) to get binary predictions
+    threshold = 0.5
+    predicted_masks_binary = (predicted_masks_logistic > threshold).astype(np.uint8)
+    predicted_masks_binary.reshape(len(val_embeddings), 64, 64)
+
+    # Evaluate the SVM model
+    accuracy_svm = accuracy_score(val_labels_flat, predicted_masks_binary.reshape(-1))
+    print(f'SVM Accuracy: {accuracy_svm}')
+    print(classification_report(val_labels_flat, predicted_masks_svm.reshape(-1)))
 
     return svm_model
 
