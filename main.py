@@ -257,7 +257,7 @@ def augment(image, mask):
     transform = A.Compose([
         A.Rotate(limit=30, p=0.5),  # Rotation
         A.RandomScale(scale_limit=0.2, p=0.5),  # Scaling
-        A.GaussNoise(var_limit=(5, 25), p=0.5),  # Gaussian Noise
+        A.GaussNoise(var_limit=(6, 26), p=0.5),  # Gaussian Noise
         A.GaussianBlur(blur_limit=(2, 5), p=0.5),  # Gaussian Blur
         A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.5),  # Brightness & Contrast
         A.RandomGamma(gamma_limit=(20, 60), p=0.5),  # Gamma Augmentation
