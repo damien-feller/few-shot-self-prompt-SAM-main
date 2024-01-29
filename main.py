@@ -110,26 +110,28 @@ def predict_and_reshape(model, X, original_shape):
     predictions = model.predict(X)
     return predictions.reshape(original_shape)
 
-def visualize_predictions(dataset, model, num_samples=5, val=False, threshold=0.5):
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model.eval()
+def visualize_predictions(dataset, model, num_samples=3, val=False):
     indices = np.random.choice(range(len(dataset)), num_samples, replace=False)
+
     for i in indices:
         image, mask = dataset[i]
-        image = image.unsqueeze(0).to(device)
-        pred = model(image)
-        pred = torch.sigmoid(pred)
-        pred = (pred > threshold).float()
+        # Flatten the image for SVM prediction
+        image_flat = image.reshape(-1, image.shape[0])
+        pred_flat = model.predict(image_flat)
+        # Reshape the prediction to the original mask shape
+        pred = pred_flat.reshape(mask.shape)
 
-        plt.subplot(1, 3, 2)
-        plt.imshow(mask.squeeze(), cmap='gray')
+        plt.figure(figsize=(6, 4))
+        plt.subplot(1, 2, 1)
+        plt.imshow(mask, cmap='gray')
         plt.title("True Mask")
         plt.axis('off')
 
-        plt.subplot(1, 3, 3)
-        plt.imshow(pred.cpu().squeeze(), cmap='gray')
+        plt.subplot(1, 2, 2)
+        plt.imshow(pred, cmap='gray')
         plt.title("Predicted Mask")
         plt.axis('off')
+
         if val == False:
             plt.savefig(f"/content/visualisation/train_{i}.png")
         else:
@@ -215,7 +217,11 @@ def train(args, predictor):
     print(f'SVM Accuracy: {accuracy_svm}')
     print(classification_report(val_labels_flat, predicted_masks_svm.reshape(-1)))
 
-    return model
+    # Visualize SVM predictions on the validation dataset
+    print("Validation Predictions with SVM:")
+    visualize_predictions(val_dataset, svm_model)
+
+    return svm_model
 
 def test_visualize(args, model, predictor):
     data_path = args.data_path
