@@ -220,7 +220,7 @@ def train(args, predictor):
     print(classification_report(val_labels_flat, predicted_masks_svm.reshape(-1)))
 
     # Visualize SVM predictions on the training dataset
-    print("Validation Predictions with SVM:")
+    print("Training Predictions with SVM:")
     visualize_predictions(train_embeddings, train_labels, svm_model, val=False)
 
     # Visualize SVM predictions on the validation dataset
@@ -573,7 +573,6 @@ def main():
     
     if args.visualize:
         model = train(args, predictor)
-        test_visualize(args, model, predictor)
     else:
         test(args, predictor)
 
