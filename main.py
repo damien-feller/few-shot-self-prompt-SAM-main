@@ -237,12 +237,12 @@ def train(args, predictor):
     log_dice_val = dice_coeff(torch.Tensor(predicted_masks_binary),torch.Tensor(val_labels))
     print('Logsitic Regression Dice: ', svm_dice_val)
 
-    # Evaluate the SVM model
+    # Evaluate the Logistic regression model
     accuracy_svm = accuracy_score(val_labels_flat, predicted_masks_binary.reshape(-1))
-    print(f'SVM Accuracy: {accuracy_svm}')
+    print(f'Logistic Regression Accuracy: {accuracy_svm}')
     print(classification_report(val_labels_flat, predicted_masks_svm.reshape(-1)))
 
-    # Visualize SVM predictions on the training dataset
+    # Visualize Logistic regression predictions on the training dataset
     print("Training Predictions with SVM:")
     visualize_predictions(train_embeddings, train_labels, svm_model, val=False)
 
@@ -251,7 +251,7 @@ def train(args, predictor):
     visualize_predictions(val_embeddings, val_labels, svm_model, val=True)
 
     return svm_model
-    
+
 
 def main():
     parser = argparse.ArgumentParser()
