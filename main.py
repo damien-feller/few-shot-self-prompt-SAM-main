@@ -221,7 +221,7 @@ def train(args, predictor):
     print(classification_report(val_labels_flat, predicted_masks_svm.reshape(-1)))
 
     # Train a logistic regression model
-    logistic_regression_model = LogisticRegression()
+    logistic_regression_model = LogisticRegression(max_iter = 10000)
     logistic_regression_model.fit(train_embeddings_flat, train_labels_flat)
 
     # Predict on the validation set
