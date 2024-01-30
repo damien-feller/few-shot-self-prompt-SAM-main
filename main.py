@@ -183,6 +183,17 @@ def visualize_predictions(dataset, model, num_samples=5, val=False, threshold=0.
             plt.savefig(f"/content/visualisation/val_{i}.png")
         plt.close()
 
+def visualize_samples(dataset):
+    for i in range(len(dataset)):
+        embedding, mask, original_image = dataset[i]  # Now includes the original image
+        plt.figure()
+        plt.imshow(original_image.squeeze(), cmap='gray')  # Display the original image
+        plt.title("Original Image")
+        plt.axis('off')
+
+        plt.savefig(f"/content/visualisation/image_{i}.png")
+        plt.close()
+
 
 def plot_losses(train_losses, val_losses, train_dice, val_dice):
     try:
@@ -369,6 +380,9 @@ def train(args, predictor):
     val_losses = []
     train_dice_scores = []
     val_dice_scores = []
+
+    visualize_samples(train_dataset)
+    visualize_samples(val_dataset)
 
     #training cycle
     for epoch in range(args.epochs):
