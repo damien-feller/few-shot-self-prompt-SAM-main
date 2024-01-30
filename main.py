@@ -152,24 +152,35 @@ def visualize_predictions(dataset, model, num_samples=5, val=False, threshold=0.
     indices = np.random.choice(range(len(dataset)), num_samples, replace=False)
     for i in indices:
         image, mask = dataset[i]
+        original_image = image.clone()  # Make a copy of the original image for visualization
         image = image.unsqueeze(0).to(device)
         pred = model(image)
         pred = torch.sigmoid(pred)
         pred = (pred > threshold).float()
 
-        plt.subplot(1, 3, 2)
+        plt.figure(figsize=(12, 3))  # Adjust the figure size as needed
+
+        plt.subplot(1, 4, 1)
+        plt.imshow(original_image.squeeze().cpu(), cmap='gray')
+        plt.title("Original Image")
+        plt.axis('off')
+
+        plt.subplot(1, 4, 2)
         plt.imshow(mask.squeeze(), cmap='gray')
         plt.title("True Mask")
         plt.axis('off')
 
-        plt.subplot(1, 3, 3)
+        plt.subplot(1, 4, 3)
         plt.imshow(pred.cpu().squeeze(), cmap='gray')
         plt.title("Predicted Mask")
         plt.axis('off')
+
         if val == False:
             plt.savefig(f"/content/visualisation/train_{i}.png")
         else:
             plt.savefig(f"/content/visualisation/val_{i}.png")
+        plt.close()  # Close the plot to prevent it from displaying inline if you're using Jupyter Notebooks
+
 
 def plot_losses(train_losses, val_losses, train_dice, val_dice):
     try:
