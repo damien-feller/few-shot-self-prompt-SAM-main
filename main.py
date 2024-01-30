@@ -28,17 +28,20 @@ torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
 class CustomDataset(Dataset):
-    def __init__(self, embeddings, labels):
+    def __init__(self, embeddings, labels, original_images):
         self.embeddings = embeddings
         self.labels = labels
+        self.original_images = original_images  # Store the original images
 
     def __len__(self):
         return len(self.embeddings)
 
     def __getitem__(self, idx):
-        image = self.embeddings[idx]
+        embedding = self.embeddings[idx]
         label = self.labels[idx]
-        return image, label
+        original_image = self.original_images[idx]  # Retrieve the original image
+        return embedding, label, original_image
+
 
 class DoubleConv(nn.Module):
     """(convolution => [BN] => ReLU => Dropout) * 2"""
@@ -151,17 +154,16 @@ def visualize_predictions(dataset, model, num_samples=5, val=False, threshold=0.
     model.eval()
     indices = np.random.choice(range(len(dataset)), num_samples, replace=False)
     for i in indices:
-        image, mask = dataset[i]
-        original_image = image.clone()  # Make a copy of the original image for visualization
-        image = image.unsqueeze(0).to(device)
-        pred = model(image)
+        embedding, mask, original_image = dataset[i]  # Now includes the original image
+        embedding = embedding.unsqueeze(0).to(device)
+        pred = model(embedding)
         pred = torch.sigmoid(pred)
         pred = (pred > threshold).float()
 
-        plt.figure(figsize=(12, 3))  # Adjust the figure size as needed
+        plt.figure(figsize=(12, 3))
 
         plt.subplot(1, 4, 1)
-        plt.imshow(original_image.squeeze().cpu(), cmap='gray')
+        plt.imshow(original_image.squeeze(), cmap='gray')  # Display the original image
         plt.title("Original Image")
         plt.axis('off')
 
@@ -179,7 +181,7 @@ def visualize_predictions(dataset, model, num_samples=5, val=False, threshold=0.
             plt.savefig(f"/content/visualisation/train_{i}.png")
         else:
             plt.savefig(f"/content/visualisation/val_{i}.png")
-        plt.close()  # Close the plot to prevent it from displaying inline if you're using Jupyter Notebooks
+        plt.close()
 
 
 def plot_losses(train_losses, val_losses, train_dice, val_dice):
@@ -303,11 +305,13 @@ def train(args, predictor):
     def process_images(file_names, augment_data=True):
         image_embeddings = []
         labels = []
+        original_images = []
 
         def process_and_store(img, msk):
             # Resize and process the mask and image
             resized_mask = cv2.resize(msk, dsize=(128, 128), interpolation=cv2.INTER_NEAREST)
             resized_img = cv2.resize(img, dsize=(1024, 1024), interpolation=cv2.INTER_NEAREST)
+            original_images.append(resized_img)
 
             # Process the image to create an embedding
             img_emb = get_embedding(resized_img, predictor)
@@ -331,13 +335,13 @@ def train(args, predictor):
                 # For validation data, do not apply augmentation
                 process_and_store(image, mask)
 
-        return image_embeddings, labels
+        return image_embeddings, labels, original_images
 
     # Process training images with augmentation
-    train_embeddings, train_labels = process_images(train_fnames, augment_data=True)
+    train_embeddings, train_labels, train_images = process_images(train_fnames, augment_data=True)
 
     # Process validation images without augmentation
-    val_embeddings, val_labels = process_images(val_fnames, augment_data=False)
+    val_embeddings, val_labels, val_images = process_images(val_fnames, augment_data=False)
 
     # Convert to tensors
     train_embeddings_tensor = torch.stack([torch.Tensor(e) for e in train_embeddings])
@@ -345,8 +349,8 @@ def train(args, predictor):
     val_embeddings_tensor = torch.stack([torch.Tensor(e) for e in val_embeddings])
     val_labels_tensor = torch.stack([torch.Tensor(l) for l in val_labels])
 
-    train_dataset = CustomDataset(train_embeddings_tensor, train_labels_tensor)
-    val_dataset = CustomDataset(val_embeddings_tensor, val_labels_tensor)
+    train_dataset = CustomDataset(train_embeddings_tensor, train_labels_tensor, train_images)
+    val_dataset = CustomDataset(val_embeddings_tensor, val_labels_tensor, val_images)
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
