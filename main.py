@@ -378,7 +378,7 @@ def train(args, predictor):
         train_dice = 0.0
         val_dice = 0.0
 
-        for images, labels in train_loader:
+        for images, labels, _ in train_loader:
             images, labels = images.to(device), labels.to(device)
 
             # Ensure the label is a floating-point tensor
