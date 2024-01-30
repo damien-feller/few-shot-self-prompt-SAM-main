@@ -410,7 +410,7 @@ def train(args, predictor):
         model.eval()
         val_loss = 0.0
         with torch.no_grad():
-            for images, labels in val_loader:
+            for images, labels, _ in val_loader:
                 images, labels = images.to(device), labels.to(device)
                 labels = labels.float().unsqueeze(1)  # Ensure labels have correct shape
 
