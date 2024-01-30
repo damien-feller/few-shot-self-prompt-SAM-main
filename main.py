@@ -256,6 +256,21 @@ class FocalLoss(nn.Module):
         F_loss = self.alpha * (1-pt)**self.gamma * BCE_loss
         return F_loss.mean()
 
+class TverskyLoss(nn.Module):
+    def __init__(self, alpha=0.5, beta=0.5, smooth=1e-6):
+        super(TverskyLoss, self).__init__()
+        self.alpha = alpha
+        self.beta = beta
+        self.smooth = smooth
+
+    def forward(self, logits, true):
+        probs = torch.sigmoid(logits)
+        true = true.float()
+        true_pos = torch.sum(probs * true, dim=(2, 3))
+        false_neg = torch.sum((1 - probs) * true, dim=(2, 3))
+        false_pos = torch.sum(probs * (1 - true), dim=(2, 3))
+        tversky = (true_pos + self.smooth) / (true_pos + self.alpha * false_neg + self.beta * false_pos + self.smooth)
+        return 1 - torch.mean(tversky)
 
 def train(args, predictor):
     data_path = args.data_path
@@ -331,7 +346,7 @@ def train(args, predictor):
     model = UNet(n_channels=256, n_classes=1).to(device)
 
     # Loss and optimizer functions
-    criterion = DiceLoss()
+    criterion = TverskyLoss(alpha=0.3, beta=0.7)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate, weight_decay=1e-5)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.2, patience=50, verbose=True)
 
