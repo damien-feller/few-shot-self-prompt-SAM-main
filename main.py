@@ -107,38 +107,35 @@ class OutConv(nn.Module):
 
 
 class UNet(nn.Module):
-    def __init__(self, n_channels, n_classes, output_size=(1024, 1024)):
+    def __init__(self, n_channels, n_classes):
         super(UNet, self).__init__()
-        # upsampling layer (256x64x64 -> 128x128x128)
-        self.up1 = Up(n_channels, 128)
-        #double conv takes channesl from 128x128x128 -> 64x128x128
-        self.conv1 = DoubleConv(128, 64)
-        #downsampling layer (64x128x128 -> 128x64x64)
+        # Initial double conv to reduce channels from 256 to 64
+        self.inc = DoubleConv(n_channels, 64)
+        # 64x64x64
         self.down1 = Down(64, 128)
-        #downsampling layer (128x64x64 -> 256x32x32)
+        # 128x32x32
         self.down2 = Down(128, 256)
-        # upsampling layer (256x32x32 -> 128x64x64)
-        self.up2 = Up(256, 128, 128)
-        # upsampling layer (128x64x64 -> 64x128x128)
-        self.up3 = Up(128, 64, 64)
-        # output convolution (64x128x128 -> 1x128x128)
-        self.outc = OutConv(64, n_classes)  # No change
+        # 256x16x16
+        # Upscaling back to 128 channels and 32x32
+        self.up1 = Up(256, 128)
+        # 128x32x32
+        # Upscaling back to 64 channels and 64x64
+        self.up2 = Up(128, 64)
+        # 64x64x64
+        # Output layer to get the required number of classes
+        self.outc = OutConv(64, n_classes)
+        # 1x64x64 (or n_classes x 64 x 64 if n_classes > 1)
 
     def forward(self, x):
-        # Initial upsampling
-        x = self.up1(x)
-
-        # Double convolution
-        x1 = self.conv1(x)
-
-        # Downsampling path
+        # Initial double conv
+        x1 = self.inc(x)
+        # Downscale
         x2 = self.down1(x1)
         x3 = self.down2(x2)
-
-        # Upsampling path with skip connections
-        x = self.up2(x3, x2)  # skip connection from down1
-        x = self.up3(x, x1)    # self-connection (could also be a skip from an earlier layer if needed)
-
+        # Upscale + skip connection from corresponding downscale
+        x = self.up1(x3, x2)
+        # Upscale + skip connection from initial double conv
+        x = self.up2(x, x1)
         # Output layer
         logits = self.outc(x)
         return logits
@@ -235,9 +232,9 @@ def augment(image, mask):
     transform = A.Compose([
         A.Rotate(limit=45, p=0.5),  # Rotation
         A.RandomScale(scale_limit=0.2, p=0.5),  # Scaling
-        A.GaussNoise(var_limit=(9, 33), p=0.5),  # Gaussian Noise
+        A.GaussNoise(var_limit=(6, 27), p=0.5),  # Gaussian Noise
         A.GaussianBlur(blur_limit=(3, 9), p=0.5),  # Gaussian Blur
-        A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.5),  # Brightness & Contrast
+        A.RandomBrightnessContrast(brightness_limit=0.1, contrast_limit=0.1, p=0.5),  # Brightness & Contrast
         A.RandomGamma(gamma_limit=(20, 60), p=0.5),  # Gamma Augmentation
         A.HorizontalFlip(p=0.5),  # Horizontal Mirroring
         A.VerticalFlip(p=0.5),  # Vertical Mirroring
