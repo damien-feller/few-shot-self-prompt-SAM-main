@@ -372,7 +372,8 @@ def train(args, predictor):
     model = UNet(n_channels=256, n_classes=1).to(device)
 
     # Loss and optimizer functions
-    criterion = TverskyLoss(alpha=0.5, beta=0.5)
+    #criterion = TverskyLoss(alpha=0.5, beta=0.5)
+    criterion = DiceLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate, weight_decay=1e-5)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.2, patience=15, verbose=True)
 
