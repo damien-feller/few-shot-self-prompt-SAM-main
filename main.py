@@ -378,8 +378,8 @@ def train(args, predictor):
     train_dice_scores = []
     val_dice_scores = []
 
-    visualize_samples(train_dataset)
-    visualize_samples(val_dataset)
+    #visualize_samples(train_dataset)
+    #visualize_samples(val_dataset)
 
     #training cycle
     for epoch in range(args.epochs):
