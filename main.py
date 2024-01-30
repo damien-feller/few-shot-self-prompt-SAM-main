@@ -162,17 +162,17 @@ def visualize_predictions(dataset, model, num_samples=5, val=False, threshold=0.
 
         plt.figure(figsize=(12, 3))
 
-        plt.subplot(1, 4, 1)
+        plt.subplot(1, 3, 1)
         plt.imshow(original_image.squeeze(), cmap='gray')  # Display the original image
         plt.title("Original Image")
         plt.axis('off')
 
-        plt.subplot(1, 4, 2)
+        plt.subplot(1, 3, 2)
         plt.imshow(mask.squeeze(), cmap='gray')
         plt.title("True Mask")
         plt.axis('off')
 
-        plt.subplot(1, 4, 3)
+        plt.subplot(1, 3, 3)
         plt.imshow(pred.cpu().squeeze(), cmap='gray')
         plt.title("Predicted Mask")
         plt.axis('off')
