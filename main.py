@@ -117,10 +117,10 @@ class UNet(nn.Module):
         self.down2 = Down(128, 256)
         # 256x16x16
         # Upscaling back to 128 channels and 32x32
-        self.up1 = Up(256, 128)
+        self.up1 = Up(256, 128, 128)
         # 128x32x32
         # Upscaling back to 64 channels and 64x64
-        self.up2 = Up(128, 64)
+        self.up2 = Up(128, 64, 256)
         # 64x64x64
         # Output layer to get the required number of classes
         self.outc = OutConv(64, n_classes)
