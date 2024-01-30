@@ -363,7 +363,7 @@ def train(args, predictor):
     # Loss and optimizer functions
     criterion = TverskyLoss(alpha=0.4, beta=0.6)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate, weight_decay=1e-5)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.2, patience=50, verbose=True)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.2, patience=20, verbose=True)
 
     train_losses = []
     val_losses = []
