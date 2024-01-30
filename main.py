@@ -78,23 +78,22 @@ class Down(nn.Module):
 
 
 class Up(nn.Module):
-    def __init__(self, in_channels, out_channels, concat_channels=None):
+    def __init__(self, in_channels, out_channels):
         super().__init__()
-        self.up = nn.ConvTranspose2d(in_channels, in_channels // 2, kernel_size=2, stride=2)
-        if concat_channels is not None:
-            self.conv = DoubleConv(in_channels // 2 + concat_channels, out_channels)
-        else:
-            self.conv = DoubleConv(in_channels // 2, out_channels)
+        self.up = nn.ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2)
+        self.conv = DoubleConv(in_channels, out_channels * 2)
 
-    def forward(self, x1, x2=None):
+    def forward(self, x1, x2):
         x1 = self.up(x1)
-        if x2 is not None:
-            # Code for padding and concatenation
-            diffY = torch.tensor([x2.size()[2] - x1.size()[2]])
-            diffX = torch.tensor([x2.size()[3] - x1.size()[3]])
-            x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2, diffY // 2, diffY - diffY // 2])
-            x1 = torch.cat([x2, x1], dim=1)
-        return self.conv(x1)
+        # input is CHW
+        diffY = x2.size()[2] - x1.size()[2]
+        diffX = x2.size()[3] - x1.size()[3]
+
+        x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2,
+                        diffY // 2, diffY - diffY // 2])
+        # for padding issues, you should adjust padding if sizes are not even
+        x = torch.cat([x2, x1], dim=1)
+        return self.conv(x)
 
 
 class OutConv(nn.Module):
@@ -117,10 +116,10 @@ class UNet(nn.Module):
         self.down2 = Down(128, 256)
         # 256x16x16
         # Upscaling back to 128 channels and 32x32
-        self.up1 = Up(256, 128, 128)
+        self.up1 = Up(256, 128)
         # 128x32x32
         # Upscaling back to 64 channels and 64x64
-        self.up2 = Up(128, 64)
+        self.up2 = Up(256, 64)
         # 64x64x64
         # Output layer to get the required number of classes
         self.outc = OutConv(64, n_classes)
