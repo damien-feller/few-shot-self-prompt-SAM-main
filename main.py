@@ -124,7 +124,8 @@ class UNet(nn.Module):
         # 64x64x64
         # Output layer to get the required number of classes
         self.outc = OutConv(64, n_classes)
-        # 1x64x64 (or n_classes x 64 x 64 if n_classes > 1)
+        # Final upsampling to 128x128
+        self.final_up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
 
     def forward(self, x):
         # Initial double conv
@@ -136,8 +137,10 @@ class UNet(nn.Module):
         x = self.up1(x3, x2)
         # Upscale + skip connection from initial double conv
         x = self.up2(x, x1)
-        # Output layer
+        # Output convolution
         logits = self.outc(x)
+        # Final upsampling to 128x128
+        logits = self.final_up(logits)
         return logits
 
 
