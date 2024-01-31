@@ -121,26 +121,11 @@ class UNet(nn.Module):
     def __init__(self, n_channels, n_classes):
         super(UNet, self).__init__()
         # Initial double conv to reduce channels from 256 to 64
-        self.inc = DoubleConv(n_channels, 64)
+        self.channelconv1 = DoubleConv(n_channels, 64)
         # 64x64x64
-        self.down1 = Down(64, 128)
-        # 128x32x32
-        self.down2 = Down(128, 256)
-        # 256x16x16
-        self.down3 = Down(256, 512)
-        # 512x8x8
-        # Upscaling back to 256 channels and 16x16
-        self.up1 = Up(512, 256, 256)
-        # 256x16x16
-        # Upscaling back to 128 channels and 32x32
-        self.up2 = Up(256, 128, 128)
-        # 128x32x32
-        # Upscaling back to 64 channels and 64x64
-        self.up3 = Up(128, 64, 64)
-        # Output layer to get the required number of classes
-        self.outc = OutConv(64, n_classes)
-        # Final upsampling to 128x128
-        self.final_up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+        self.channelconv2 = DoubleConv(64, 32)
+        # 32x64x64
+
 
     def forward(self, x):
         # Initial double conv
@@ -356,6 +341,7 @@ def train(args, predictor):
             _, mask = cv2.threshold(mask, 128, 1, cv2.THRESH_BINARY)
 
             if augment_data:
+                process_and_store(image, mask)
                 for _ in range(num_augmentations):
                     # Apply augmentations
                     augmented_image, augmented_mask = augment(image, mask)
