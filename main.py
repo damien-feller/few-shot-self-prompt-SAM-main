@@ -158,7 +158,7 @@ class UNet(nn.Module):
         # Output convolution
         logits = self.outc(x)
         # Final upsampling to 128x128
-        logits = self.final_up(logits)
+        #logits = self.final_up(logits)
         return logits
 
 
@@ -338,7 +338,7 @@ def train(args, predictor):
 
         def process_and_store(img, msk):
             # Resize and process the mask and image
-            resized_mask = cv2.resize(msk, dsize=(128, 128), interpolation=cv2.INTER_NEAREST)
+            resized_mask = cv2.resize(msk, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
             resized_img = cv2.resize(img, dsize=(1024, 1024), interpolation=cv2.INTER_NEAREST)
             original_images.append(resized_img)
 
@@ -396,7 +396,7 @@ def train(args, predictor):
 
     # Loss and optimizer functions
     #criterion = TverskyLoss(alpha=0.5, beta=0.5)
-    criterion = FocalLoss()
+    criterion = DiceLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate, weight_decay=1e-5)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.2, patience=25, verbose=True)
 
