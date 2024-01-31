@@ -116,12 +116,16 @@ class UNet(nn.Module):
         # 128x32x32
         self.down2 = Down(128, 256)
         # 256x16x16
+        self.down3 = Down(256, 512)
+        # 512x8x8
+        # Upscaling back to 256 channels and 16x16
+        self.up1 = Up(512, 256, 256)
+        # 256x16x16
         # Upscaling back to 128 channels and 32x32
-        self.up1 = Up(256, 128, 128)
+        self.up2 = Up(256, 128, 128)
         # 128x32x32
         # Upscaling back to 64 channels and 64x64
-        self.up2 = Up(128, 64, 64)
-        # 64x64x64
+        self.up3 = Up(128, 64, 64)
         # Output layer to get the required number of classes
         self.outc = OutConv(64, n_classes)
         # Final upsampling to 128x128
@@ -133,10 +137,13 @@ class UNet(nn.Module):
         # Downscale
         x2 = self.down1(x1)
         x3 = self.down2(x2)
-        # Upscale + skip connection from corresponding downscale
-        x = self.up1(x3, x2)
-        # Upscale + skip connection from initial double conv
-        x = self.up2(x, x1)
+        x4 = self.down3(x3)
+        # Upscale + skip connection from the last downscale layer
+        x = self.up1(x4, x3)
+        # Further upscale + skip connection from the second to last downscale layer
+        x = self.up2(x, x2)
+        # Final upscale + skip connection from the initial double conv layer
+        x = self.up3(x, x1)
         # Output convolution
         logits = self.outc(x)
         # Final upsampling to 128x128
