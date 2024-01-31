@@ -17,6 +17,9 @@ from utils.utils import *
 import time
 from sklearn.model_selection import train_test_split
 import albumentations as A
+import imgaug.augmenters as iaa
+import imgaug as ia
+
 
 # Set random seeds for reproducibility
 random.seed(42)
@@ -242,10 +245,10 @@ def augment(image, mask):
     transform = A.Compose([
         A.Rotate(limit=45, p=0.5),  # Rotation
         A.RandomScale(scale_limit=0.2, p=0.5),  # Scaling
-        A.GaussNoise(var_limit=(6, 27), p=0.5),  # Gaussian Noise
-        A.GaussianBlur(blur_limit=(3, 9), p=0.5),  # Gaussian Blur
-        A.RandomBrightnessContrast(brightness_limit=0.1, contrast_limit=0.1, p=0.5),  # Brightness & Contrast
-        A.RandomGamma(gamma_limit=(20, 60), p=0.5),  # Gamma Augmentation
+        #A.GaussNoise(var_limit=(6, 27), p=0.5),  # Gaussian Noise
+        #A.GaussianBlur(blur_limit=(3, 9), p=0.5),  # Gaussian Blur
+        #A.RandomBrightnessContrast(brightness_limit=0.1, contrast_limit=0.1, p=0.5),  # Brightness & Contrast
+        #A.RandomGamma(gamma_limit=(20, 60), p=0.5),  # Gamma Augmentation
         A.HorizontalFlip(p=0.5),  # Horizontal Mirroring
         A.VerticalFlip(p=0.5),  # Vertical Mirroring
     ])
@@ -356,7 +359,7 @@ def train(args, predictor):
         return image_embeddings, labels, original_images
 
     # Process training images with augmentation
-    train_embeddings, train_labels, train_images = process_images(train_fnames, augment_data=False)
+    train_embeddings, train_labels, train_images = process_images(train_fnames, augment_data=True)
 
     # Process validation images without augmentation
     val_embeddings, val_labels, val_images = process_images(val_fnames, augment_data=False)
