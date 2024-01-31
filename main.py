@@ -356,6 +356,7 @@ def train(args, predictor):
             _, mask = cv2.threshold(mask, 128, 1, cv2.THRESH_BINARY)
 
             if augment_data:
+                process_and_store(image, mask)
                 for _ in range(num_augmentations):
                     # Apply augmentations
                     augmented_image, augmented_mask = augment(image, mask)
