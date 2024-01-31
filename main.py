@@ -356,7 +356,7 @@ def train(args, predictor):
         return image_embeddings, labels, original_images
 
     # Process training images with augmentation
-    train_embeddings, train_labels, train_images = process_images(train_fnames, augment_data=True)
+    train_embeddings, train_labels, train_images = process_images(train_fnames, augment_data=args.augmentation)
 
     # Process validation images without augmentation
     val_embeddings, val_labels, val_images = process_images(val_fnames, augment_data=False)
@@ -496,6 +496,7 @@ def main():
     parser.add_argument('--learning_rate', type=float, default=1e-3, help='learning rate for the optimizer')
     parser.add_argument('--threshold', type=float, default=0.5, help='threshold for binary segmentation')
     parser.add_argument('--augmentation_num', type=float, default=20, help='number of image augmentations to perform')
+    parser.add_argument('--augmentation', type=bool, default=True, help='toggle augmenation')
     args = parser.parse_args()
 
     # set random seed
