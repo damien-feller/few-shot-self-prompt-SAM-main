@@ -31,10 +31,18 @@ torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
 class CustomDataset(Dataset):
-    def __init__(self, embeddings, labels, original_images):
+    def __init__(self, embeddings, labels, original_images, mean=None, std=None):
         self.embeddings = embeddings
         self.labels = labels
         self.original_images = original_images  # Store the original images
+        self.mean = mean
+        self.std = std
+
+        if self.mean is not None and self.std is not None:
+            self.normalize_embeddings()
+
+    def normalize_embeddings(self):
+        self.embeddings = (self.embeddings - self.mean) / self.std
 
     def __len__(self):
         return len(self.embeddings)
@@ -370,8 +378,13 @@ def train(args, predictor):
     val_embeddings_tensor = torch.stack([torch.Tensor(e) for e in val_embeddings])
     val_labels_tensor = torch.stack([torch.Tensor(l) for l in val_labels])
 
-    train_dataset = CustomDataset(train_embeddings_tensor, train_labels_tensor, train_images)
-    val_dataset = CustomDataset(val_embeddings_tensor, val_labels_tensor, val_images)
+    # Calculate mean and std
+    mean = train_embeddings_tensor.mean()
+    std = train_embeddings_tensor.std()
+
+    # Normalize datasets
+    train_dataset = CustomDataset(train_embeddings_tensor, train_labels_tensor, train_images, mean, std)
+    val_dataset = CustomDataset(val_embeddings_tensor, val_labels_tensor, val_images, mean, std)
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
