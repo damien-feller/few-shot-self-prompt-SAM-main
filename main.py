@@ -156,7 +156,7 @@ def train(args, predictor):
     fnames = fnames[:num_image]
 
     # Split file names into training and validation sets
-    train_fnames, val_fnames = train_test_split(fnames, test_size=0.2, random_state=42)
+    train_fnames, val_fnames = train_test_split(fnames, test_size=0.4, random_state=42)
 
     # image augmentation and embedding processing
     num_augmentations = int(args.augmentation_num)  # Number of augmented versions to create per image
