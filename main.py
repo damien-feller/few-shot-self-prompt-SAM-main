@@ -222,8 +222,8 @@ def train(args, predictor):
     # Define the kernel for dilation
     kernel = np.ones((3, 3), np.uint8)
 
-    eroded_mask = cv2.erode(predicted_masks_svm, kernel, iterations=3)
-    predicted_masks_svm = cv2.dilate(eroded_mask, kernel, iterations=5)
+    predicted_masks_svm = cv2.dilate(predicted_masks_svm, kernel, iterations=5)
+    predicted_masks_svm = cv2.erode(predicted_masks_svm, kernel, iterations=3)
 
     # Evaluate the SVM model
     accuracy_svm = accuracy_score(val_labels_flat, predicted_masks_svm.reshape(-1))
