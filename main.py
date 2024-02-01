@@ -230,6 +230,7 @@ def train(args, predictor):
 
     # Predict on the validation set
     predicted_masks_svm = predict_and_reshape(svm_model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
+    pred_original =predicted_masks_svm
 
     # Define the kernel for dilation
     kernel = np.ones((3, 3), np.uint8)
@@ -239,8 +240,13 @@ def train(args, predictor):
 
     # Evaluate the SVM model
     accuracy_svm = accuracy_score(val_labels_flat, predicted_masks_svm.reshape(-1))
-    print(f'SVM Accuracy: {accuracy_svm}')
+    print(f'SVM Accuracy (Dilation + Erosion): {accuracy_svm}')
     print(classification_report(val_labels_flat, predicted_masks_svm.reshape(-1)))
+
+    # Evaluate the SVM model
+    accuracy_svm = accuracy_score(val_labels_flat, pred_original.reshape(-1))
+    print(f'SVM Accuracy: {accuracy_svm}')
+    print(classification_report(val_labels_flat, pred_original.reshape(-1)))
 
     # # Train a logistic regression model
     # logistic_regression_model = LogisticRegression(max_iter = 10000)
