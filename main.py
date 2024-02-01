@@ -135,12 +135,12 @@ def visualize_predictions(images, masks, model, num_samples=3, val=False):
         pred = cv2.erode(pred, kernel, iterations=3)
 
         plt.figure(figsize=(6, 4))
-        plt.subplot(1, 1, 1)
+        plt.subplot(1, 3, 1)
         plt.imshow(mask, cmap='gray')
         plt.title("True Mask")
         plt.axis('off')
 
-        plt.subplot(1, 2, 3)
+        plt.subplot(1, 3, 2)
         plt.imshow(pred_original, cmap='gray')
         plt.title("Predicted Mask")
         plt.axis('off')
