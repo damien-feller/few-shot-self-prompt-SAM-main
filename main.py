@@ -20,6 +20,7 @@ import albumentations as A
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, classification_report
+from imblearn.over_sampling import RandomOverSampler
 
 # Set random seeds for reproducibility
 random.seed(42)
@@ -225,8 +226,13 @@ def train(args, predictor):
     val_embeddings_flat, val_labels_flat = create_dataset_for_SVM(val_embeddings_tensor.numpy(),
                                                                  val_labels_tensor.numpy())
 
+    # Perform oversampling on the training data
+    ros = RandomOverSampler(random_state=42)
+    train_embeddings_oversampled, train_labels_oversampled = ros.fit_resample(train_embeddings_flat, train_labels_flat)
+
+    # Now use the oversampled data to train the SVM
     svm_model = SVC(kernel='linear')  # Or any other kernel
-    svm_model.fit(train_embeddings_flat, train_labels_flat)
+    svm_model.fit(train_embeddings_oversampled, train_labels_oversampled)
 
     # Predict on the validation set
     predicted_masks_svm = predict_and_reshape(svm_model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
