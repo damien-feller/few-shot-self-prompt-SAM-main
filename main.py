@@ -130,9 +130,9 @@ def visualize_predictions(images, masks, model, num_samples=3, val=False):
         pred_original = pred
 
         # Define the kernel for dilation
-        kernel = np.ones((3, 3), np.uint8)
+        kernel = np.ones((2, 2), np.uint8)
 
-        pred = cv2.dilate(pred, kernel, iterations=5)
+        pred = cv2.dilate(pred, kernel, iterations=3)
         pred = cv2.erode(pred, kernel, iterations=3)
 
         plt.figure(figsize=(10, 4))
@@ -239,9 +239,9 @@ def train(args, predictor):
     pred_original =predicted_masks_svm
 
     # Define the kernel for dilation
-    kernel = np.ones((3, 3), np.uint8)
+    kernel = np.ones((2, 2), np.uint8)
 
-    predicted_masks_svm = cv2.dilate(predicted_masks_svm, kernel, iterations=5)
+    predicted_masks_svm = cv2.dilate(predicted_masks_svm, kernel, iterations=3)
     predicted_masks_svm = cv2.erode(predicted_masks_svm, kernel, iterations=3)
 
     # Evaluate the SVM model
