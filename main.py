@@ -263,7 +263,7 @@ def train(args, predictor):
 
     # Visualize SVM predictions on the validation dataset
     print("Validation Predictions with SVM:")
-    visualize_predictions(val_embeddings, val_labels, svm_model, val=True)
+    visualize_predictions(val_embeddings, val_labels, svm_model, num_samples=5, val=True)
 
     return svm_model
 
