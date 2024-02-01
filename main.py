@@ -234,8 +234,8 @@ def train(args, predictor):
     # Dice Scores
     svm_dice_val = dice_coeff(torch.Tensor(predicted_masks_svm), torch.Tensor(val_labels))
     print('SVM Dice: ', svm_dice_val)
-    log_dice_val = dice_coeff(torch.Tensor(predicted_masks_binary),torch.Tensor(val_labels))
-    print('Logsitic Regression Dice: ', svm_dice_val)
+    # log_dice_val = dice_coeff(torch.Tensor(predicted_masks_binary),torch.Tensor(val_labels))
+    # print('Logsitic Regression Dice: ', svm_dice_val)
 
     # # Evaluate the Logistic regression model
     # accuracy_svm = accuracy_score(val_labels_flat, predicted_masks_binary.reshape(-1))
