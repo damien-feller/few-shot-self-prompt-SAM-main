@@ -134,7 +134,7 @@ def visualize_predictions(images, masks, model, num_samples=3, val=False):
         pred = cv2.dilate(pred, kernel, iterations=5)
         pred = cv2.erode(pred, kernel, iterations=3)
 
-        plt.figure(figsize=(10, 8))
+        plt.figure(figsize=(10, 4))
         plt.subplot(1, 3, 1)
         plt.imshow(mask, cmap='gray')
         plt.title("True Mask")
