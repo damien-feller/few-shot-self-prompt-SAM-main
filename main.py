@@ -126,6 +126,7 @@ def visualize_predictions(images, masks, model, num_samples=3, val=False):
         pred_flat = model.predict(image_flat)
         # Reshape the prediction to the original mask shape
         pred = pred_flat.reshape(mask.shape)
+        pred_original = pred
 
         # Define the kernel for dilation
         kernel = np.ones((3, 3), np.uint8)
@@ -134,14 +135,19 @@ def visualize_predictions(images, masks, model, num_samples=3, val=False):
         pred = cv2.erode(pred, kernel, iterations=3)
 
         plt.figure(figsize=(6, 4))
-        plt.subplot(1, 2, 1)
+        plt.subplot(1, 1, 1)
         plt.imshow(mask, cmap='gray')
         plt.title("True Mask")
         plt.axis('off')
 
-        plt.subplot(1, 2, 2)
-        plt.imshow(pred, cmap='gray')
+        plt.subplot(1, 2, 3)
+        plt.imshow(pred_original, cmap='gray')
         plt.title("Predicted Mask")
+        plt.axis('off')
+
+        plt.subplot(1, 3, 3)
+        plt.imshow(pred, cmap='gray')
+        plt.title("Predicted Mask - Dilation + Erosion")
         plt.axis('off')
 
         if val == False:
