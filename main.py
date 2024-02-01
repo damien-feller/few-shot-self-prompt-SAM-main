@@ -219,6 +219,12 @@ def train(args, predictor):
     # Predict on the validation set
     predicted_masks_svm = predict_and_reshape(svm_model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
 
+    # Define the kernel for dilation
+    kernel = np.ones((3, 3), np.uint8)
+
+    eroded_mask = cv2.erode(predicted_masks_svm, kernel, iterations=3)
+    predicted_masks_svm = cv2.dilate(eroded_mask, kernel, iterations=5)
+
     # Evaluate the SVM model
     accuracy_svm = accuracy_score(val_labels_flat, predicted_masks_svm.reshape(-1))
     print(f'SVM Accuracy: {accuracy_svm}')
