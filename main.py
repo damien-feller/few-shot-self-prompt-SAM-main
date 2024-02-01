@@ -242,13 +242,13 @@ def train(args, predictor):
     # print(f'Logistic Regression Accuracy: {accuracy_svm}')
     # print(classification_report(val_labels_flat, predicted_masks_svm.reshape(-1)))
 
-    # Visualize Logistic regression predictions on the training dataset
-    print("Training Predictions with SVM:")
-    visualize_predictions(train_embeddings, train_labels, logistic_regression_model, val=False)
+    # # Visualize Logistic regression predictions on the training dataset
+    # print("Training Predictions with SVM:")
+    # visualize_predictions(train_embeddings, train_labels, logistic_regression_model, val=False)
 
     # Visualize SVM predictions on the validation dataset
-    # print("Validation Predictions with SVM:")
-    # visualize_predictions(val_embeddings, val_labels, svm_model, val=True)
+    print("Validation Predictions with SVM:")
+    visualize_predictions(val_embeddings, val_labels, svm_model, val=True)
 
     return svm_model
 
