@@ -112,6 +112,9 @@ def predict_and_reshape(model, X, original_shape):
     return predictions.reshape(original_shape)
 
 def visualize_predictions(images, masks, model, num_samples=3, val=False):
+    if len(images) < num_samples:
+        num_samples = len(images)
+
     indices = np.random.choice(range(len(images)), num_samples, replace=False)
 
     for i in indices:
