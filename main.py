@@ -128,7 +128,7 @@ def visualize_predictions(images, masks, model, num_samples=3, val=False):
         pred = pred_flat.reshape(mask.shape)
 
         # Define the kernel for dilation
-        kernel = np.ones((3, 3), np.uint8)
+        kernel = np.ones((2, 2), np.uint8)
 
         pred = cv2.dilate(pred, kernel, iterations=5)
         pred = cv2.erode(pred, kernel, iterations=3)
@@ -226,7 +226,7 @@ def train(args, predictor):
     predicted_masks_svm = predict_and_reshape(svm_model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
 
     # Define the kernel for dilation
-    kernel = np.ones((3, 3), np.uint8)
+    kernel = np.ones((2, 2), np.uint8)
 
     predicted_masks_svm = cv2.dilate(predicted_masks_svm, kernel, iterations=5)
     predicted_masks_svm = cv2.erode(predicted_masks_svm, kernel, iterations=3)
