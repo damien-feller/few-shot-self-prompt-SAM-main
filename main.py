@@ -248,22 +248,22 @@ def train(args, predictor):
     logistic_regression_model.fit(train_embeddings_oversampled, train_labels_oversampled)
 
     # Predict on the validation set
-    predicted_masks_svm = predict_and_reshape(logistic_regression_model, val_embeddings_scaled, (len(val_embeddings_tensor), 64, 64))
-    pred_original = predicted_masks_svm
+    predicted_masks_log = predict_and_reshape(logistic_regression_model, val_embeddings_scaled, (len(val_embeddings_tensor), 64, 64))
+    pred_original = predicted_masks_log
 
     # Apply thresholding (e.g., 0.5) to get binary predictions
-    predicted_masks_binary = (predicted_masks_logistic > args.threshold).astype(np.uint8)
+    predicted_masks_binary = (predicted_masks_log > args.threshold).astype(np.uint8)
 
     # Define the kernel for dilation
     kernel = np.ones((2, 2), np.uint8)
 
-    predicted_masks_svm = cv2.dilate(predicted_masks_svm, kernel, iterations=3)
-    predicted_masks_svm = cv2.erode(predicted_masks_svm, kernel, iterations=3)
+    predicted_masks_log = cv2.dilate(predicted_masks_binary, kernel, iterations=3)
+    predicted_masks_log = cv2.erode(predicted_masks_binary, kernel, iterations=3)
 
     # Evaluate the SVM model
-    accuracy_svm = accuracy_score(val_labels_flat, predicted_masks_svm.reshape(-1))
+    accuracy_svm = accuracy_score(val_labels_flat, predicted_masks_log.reshape(-1))
     print(f'SVM Accuracy (Dilation + Erosion): {accuracy_svm}')
-    print(classification_report(val_labels_flat, predicted_masks_svm.reshape(-1)))
+    print(classification_report(val_labels_flat, predicted_masks_log.reshape(-1)))
 
     # Evaluate the SVM model
     accuracy_svm = accuracy_score(val_labels_flat, pred_original.reshape(-1))
@@ -271,27 +271,16 @@ def train(args, predictor):
     print(classification_report(val_labels_flat, pred_original.reshape(-1)))
 
     # Dice Scores
-    svm_dice_val = dice_coeff(torch.Tensor(predicted_masks_svm), torch.Tensor(val_labels))
+    svm_dice_val = dice_coeff(torch.Tensor(predicted_masks_log), torch.Tensor(val_labels))
     print('SVM Dice (Dilation + Erosion): ', svm_dice_val)
     svm_dice_val = dice_coeff(torch.Tensor(pred_original), torch.Tensor(val_labels))
     print('SVM Dice: ', svm_dice_val)
-    # log_dice_val = dice_coeff(torch.Tensor(predicted_masks_binary),torch.Tensor(val_labels))
-    # print('Logsitic Regression Dice: ', svm_dice_val)
-
-    # # Evaluate the Logistic regression model
-    # accuracy_svm = accuracy_score(val_labels_flat, predicted_masks_binary.reshape(-1))
-    # print(f'Logistic Regression Accuracy: {accuracy_svm}')
-    # print(classification_report(val_labels_flat, predicted_masks_svm.reshape(-1)))
-
-    # # Visualize Logistic regression predictions on the training dataset
-    # print("Training Predictions with SVM:")
-    # visualize_predictions(train_embeddings, train_labels, logistic_regression_model, val=False)
 
     # Visualize SVM predictions on the validation dataset
     print("Validation Predictions with SVM:")
-    visualize_predictions(val_embeddings, val_labels, svm_model, num_samples=5, val=True)
+    visualize_predictions(val_embeddings, val_labels, logistic_regression_model, num_samples=5, val=True)
 
-    return svm_model
+    return logistic_regression_model
 
 
 def main():
