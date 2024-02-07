@@ -34,6 +34,7 @@ torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
 # Global scaler instance
+global scaler
 scaler = StandardScaler()
 
 class CustomDataset(Dataset):
