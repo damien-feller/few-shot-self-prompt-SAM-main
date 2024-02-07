@@ -47,7 +47,6 @@ class CustomDataset(Dataset):
         return image, label
 
 
-
 def get_embedding(img, predictor):
     predictor.set_image(img)
     img_emb = predictor.get_image_embedding()
@@ -90,52 +89,74 @@ def predict_and_reshape(model, X, original_shape):
     predictions = model.predict(X)
     return predictions.reshape(original_shape)
 
-def visualize_predictions(images, masks, model, num_samples=3, val=False):
+import torch
+import matplotlib.pyplot as plt
+import numpy as np
+import cv2
+
+def visualize_predictions(images, masks, model, num_samples=3, val=False, device='cuda:0', threshold=0.5):
     if len(images) < num_samples:
         num_samples = len(images)
 
     indices = np.random.choice(range(len(images)), num_samples, replace=False)
 
-    for i in indices:
-        image = images[i]
-        mask = masks[i]
+    model.eval()  # Ensure the model is in evaluation mode
+    with torch.no_grad():  # No need to track gradients
+        for i in indices:
+            image = torch.Tensor(images[i]).unsqueeze(0).to(device)  # Add batch dimension and transfer to device
+            mask = masks[i]
 
-        # Flatten the image for SVM prediction
-        image_flat = image.reshape(-1, image.shape[0])
-        # Scale the data
-        image_flat_scaled = scaler.transform(image_flat)
-        # Predictions
-        pred_flat = model.predict(image_flat_scaled)
-        # Reshape the prediction to the original mask shape
-        pred = pred_flat.reshape(mask.shape)
-        pred_original = pred
+            # Get predictions from the MLP model
+            output = model(image).squeeze().cpu().numpy()  # Remove batch dimension and transfer to cpu
+            pred_prob = output.squeeze()  # Assuming output is a single probability per input
+            pred_binary = (pred_prob > threshold).astype(np.uint8)  # Apply threshold to get binary prediction
 
-        # Define the kernel for dilation
-        kernel = np.ones((2, 2), np.uint8)
+            # Define the kernel for dilation and erosion
+            kernel = np.ones((2, 2), np.uint8)
 
-        pred = cv2.dilate(pred, kernel, iterations=3)
-        pred = cv2.erode(pred, kernel, iterations=3)
+            # Post-process predictions: Dilate and Erode
+            pred_processed = cv2.dilate(pred_binary, kernel, iterations=3)
+            pred_processed = cv2.erode(pred_processed, kernel, iterations=3)
 
-        plt.figure(figsize=(10, 4))
-        plt.subplot(1, 3, 1)
-        plt.imshow(mask, cmap='gray')
-        plt.title("True Mask")
-        plt.axis('off')
+            plt.figure(figsize=(10, 4))
+            plt.subplot(1, 3, 1)
+            plt.imshow(mask, cmap='gray')
+            plt.title("True Mask")
+            plt.axis('off')
 
-        plt.subplot(1, 3, 2)
-        plt.imshow(pred_original, cmap='gray')
-        plt.title("Predicted Mask")
-        plt.axis('off')
+            plt.subplot(1, 3, 2)
+            plt.imshow(pred_binary, cmap='gray')
+            plt.title("Predicted Mask")
+            plt.axis('off')
 
-        plt.subplot(1, 3, 3)
-        plt.imshow(pred, cmap='gray')
-        plt.title("Predicted Mask - D + E")
-        plt.axis('off')
+            plt.subplot(1, 3, 3)
+            plt.imshow(pred_processed, cmap='gray')
+            plt.title("Predicted Mask - D + E")
+            plt.axis('off')
 
-        if val == False:
-            plt.savefig(f"/content/visualisation/train_{i}.png")
-        else:
-            plt.savefig(f"/content/visualisation/val_{i}.png")
+            if val:
+                plt.savefig(f"/content/visualisation/val_{i}.png")
+            else:
+                plt.savefig(f"/content/visualisation/train_{i}.png")
+
+    plt.show()  # Show the plot as the last action
+
+
+class BinaryClassificationMLP(nn.Module):
+    def __init__(self, input_dim, hidden_dim1, hidden_dim2):
+        super(BinaryClassificationMLP, self).__init__()
+        self.layer1 = nn.Linear(input_dim, hidden_dim1)
+        self.relu1 = nn.ReLU()
+        self.layer2 = nn.Linear(hidden_dim1, hidden_dim2)
+        self.relu2 = nn.ReLU()
+        self.layer3 = nn.Linear(hidden_dim2, 1)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        x = self.relu1(self.layer1(x))
+        x = self.relu2(self.layer2(x))
+        x = self.sigmoid(self.layer3(x))
+        return x
 
 
 def train(args, predictor):
@@ -219,27 +240,61 @@ def train(args, predictor):
     ros = RandomOverSampler(random_state=42)
     train_embeddings_oversampled, train_labels_oversampled = ros.fit_resample(train_embeddings_scaled, train_labels_flat)
 
-    # Train a logistic regression model
-    logistic_regression_model = LogisticRegression(solver = 'lbfgs', max_iter = 50000, n_jobs = -1, verbose = 1)
-    logistic_regression_model.fit(train_embeddings_scaled, train_labels_flat)
+    # Instantiate the MLP model
+    mlp_model = BinaryClassificationMLP(input_dim=256, hidden_dim1=512, hidden_dim2=256).to(args.device)
 
-    # Predict on the validation set
-    predicted_masks_log = predict_and_reshape(logistic_regression_model, val_embeddings_scaled, (len(val_embeddings_tensor), 64, 64))
-    pred_original = predicted_masks_log
+    optimizer = torch.optim.Adam(mlp_model.parameters(), lr=args.learning_rate)
+    criterion = nn.BCELoss()
+
+    # Convert datasets to DataLoader for batch processing
+    train_dataset = CustomDataset(torch.Tensor(train_embeddings_scaled), torch.Tensor(train_labels_flat))
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+
+    # Training loop
+    mlp_model.train()
+    for epoch in range(args.epochs):
+        for embeddings, labels in train_loader:
+            embeddings, labels = embeddings.to(args.device), labels.to(args.device)
+            optimizer.zero_grad()
+            outputs = mlp_model(embeddings)
+            loss = criterion(outputs.squeeze(), labels.float())
+            loss.backward()
+            optimizer.step()
+
+        print(f'Epoch {epoch + 1}, Loss: {loss.item()}')
+
+    # Prepare the validation data loader
+    val_dataset = CustomDataset(torch.Tensor(val_embeddings_tensor), torch.Tensor(val_labels_tensor))
+    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
+
+    # Predict with the MLP model
+    mlp_model.eval()  # Set the model to evaluation mode
+    all_preds = []
+    with torch.no_grad():
+        for embeddings, _ in val_loader:
+            embeddings = embeddings.to(args.device)
+            outputs = mlp_model(embeddings).squeeze()
+            preds = torch.sigmoid(outputs) > args.threshold  # Apply threshold to get binary predictions
+            all_preds.append(preds.cpu())
+
+    # Concatenate all predictions
+    predicted_masks = torch.cat(all_preds).numpy().reshape(len(val_embeddings_tensor), 64, 64)
+
+    pred_original = predicted_masks
 
     # Apply thresholding (e.g., 0.5) to get binary predictions
-    predicted_masks_binary = (predicted_masks_log > args.threshold).astype(np.uint8)
+    predicted_masks_binary = (predicted_masks > args.threshold).astype(np.uint8)
 
     # Define the kernel for dilation
     kernel = np.ones((2, 2), np.uint8)
 
-    predicted_masks_log = cv2.dilate(predicted_masks_binary, kernel, iterations=3)
-    predicted_masks_log = cv2.erode(predicted_masks_binary, kernel, iterations=3)
+    predicted_masks = cv2.dilate(predicted_masks_binary, kernel, iterations=3)
+    predicted_masks = cv2.erode(predicted_masks_binary, kernel, iterations=3)
 
     # Evaluate the SVM model
-    accuracy_svm = accuracy_score(val_labels_flat, predicted_masks_log.reshape(-1))
+    accuracy_svm = accuracy_score(val_labels_flat, predicted_masks.reshape(-1))
     print(f'SVM Accuracy (Dilation + Erosion): {accuracy_svm}')
-    print(classification_report(val_labels_flat, predicted_masks_log.reshape(-1)))
+    print(classification_report(val_labels_flat, predicted_masks.reshape(-1)))
 
     # Evaluate the SVM model
     accuracy_svm = accuracy_score(val_labels_flat, pred_original.reshape(-1))
@@ -247,16 +302,16 @@ def train(args, predictor):
     print(classification_report(val_labels_flat, pred_original.reshape(-1)))
 
     # Dice Scores
-    svm_dice_val = dice_coeff(torch.Tensor(predicted_masks_log), torch.Tensor(val_labels))
+    svm_dice_val = dice_coeff(torch.Tensor(predicted_masks), torch.Tensor(val_labels))
     print('SVM Dice (Dilation + Erosion): ', svm_dice_val)
     svm_dice_val = dice_coeff(torch.Tensor(pred_original), torch.Tensor(val_labels))
     print('SVM Dice: ', svm_dice_val)
 
     # Visualize SVM predictions on the validation dataset
     print("Validation Predictions with SVM:")
-    visualize_predictions(val_embeddings, val_labels, logistic_regression_model, num_samples=5, val=True)
+    visualize_predictions(val_embeddings, val_labels, mlp_model, num_samples=5, val=True)
 
-    return logistic_regression_model
+    return mlp_model
 
 
 def main():
