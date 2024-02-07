@@ -34,7 +34,6 @@ torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
 # Global scaler instance
-global scaler
 scaler = StandardScaler()
 
 class CustomDataset(Dataset):
@@ -237,8 +236,10 @@ def train(args, predictor):
 
     # Create a scaler instance
     scaler = StandardScaler()
+    global scaler
     # Fit on training data and transform both training and validation data
-    train_embeddings_scaled = scaler.fit_transform(train_embeddings_flat)
+    scaler.fit(train_embeddings_flat)
+    train_embeddings_scaled = scaler.transform(train_embeddings_flat)
     val_embeddings_scaled = scaler.transform(val_embeddings_flat)
 
     # Perform oversampling on the training data
