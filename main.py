@@ -100,16 +100,24 @@ def visualize_predictions(images, masks, model, num_samples=3, val=False, device
 
     indices = np.random.choice(range(len(images)), num_samples, replace=False)
 
-    model.eval()  # Ensure the model is in evaluation mode
+    model.eval()  # Set the model to evaluation mode
     with torch.no_grad():  # No need to track gradients
         for i in indices:
-            image = torch.Tensor(images[i]).unsqueeze(0).to(device)  # Add batch dimension and transfer to device
+            image_vectors = images[i]  # Assuming this is a collection of vectors representing an image
             mask = masks[i]
 
-            # Get predictions from the MLP model
-            output = model(image).squeeze().cpu().numpy()  # Remove batch dimension and transfer to cpu
-            pred_prob = output.squeeze()  # Assuming output is a single probability per input
-            pred_binary = (pred_prob > threshold).astype(np.uint8)  # Apply threshold to get binary prediction
+            # Placeholder for model predictions
+            predictions = []
+
+            # Predict for each vector
+            for vector in image_vectors:
+                vector = torch.Tensor(vector).unsqueeze(0).to(device)  # Add batch dimension and transfer to device
+                output = model(vector).squeeze().cpu().numpy()  # Get prediction
+                predictions.append(output)
+
+            # Reconstruct the image from predictions
+            pred_image = np.array(predictions).reshape(mask.shape)  # Reshape predictions to original mask shape
+            pred_binary = (pred_image > threshold).astype(np.uint8)  # Apply threshold
 
             # Define the kernel for dilation and erosion
             kernel = np.ones((2, 2), np.uint8)
@@ -140,6 +148,7 @@ def visualize_predictions(images, masks, model, num_samples=3, val=False, device
                 plt.savefig(f"/content/visualisation/train_{i}.png")
 
     plt.show()  # Show the plot as the last action
+
 
 
 class BinaryClassificationMLP(nn.Module):
