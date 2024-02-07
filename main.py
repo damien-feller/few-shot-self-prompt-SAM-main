@@ -245,7 +245,7 @@ def train(args, predictor):
 
     # Train a logistic regression model
     logistic_regression_model = LogisticRegression(solver = 'lbfgs', max_iter = 50000, n_jobs = -1, verbose = 1)
-    logistic_regression_model.fit(train_embeddings_oversampled, train_labels_oversampled)
+    logistic_regression_model.fit(train_embeddings_flat, train_labels_flat)
 
     # Predict on the validation set
     predicted_masks_log = predict_and_reshape(logistic_regression_model, val_embeddings_scaled, (len(val_embeddings_tensor), 64, 64))
