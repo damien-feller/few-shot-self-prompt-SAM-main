@@ -33,9 +33,6 @@ torch.cuda.manual_seed_all(42)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
-# Global scaler instance
-scaler = StandardScaler()
-
 class CustomDataset(Dataset):
     def __init__(self, embeddings, labels):
         self.embeddings = embeddings
@@ -235,8 +232,8 @@ def train(args, predictor):
                                                                  val_labels_tensor.numpy())
 
     # Create a scaler instance
-    scaler = StandardScaler()
     global scaler
+    scaler = StandardScaler()
     # Fit on training data and transform both training and validation data
     scaler.fit(train_embeddings_flat)
     train_embeddings_scaled = scaler.transform(train_embeddings_flat)
