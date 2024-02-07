@@ -264,7 +264,7 @@ def train(args, predictor):
         print(f'Epoch {epoch + 1}, Loss: {loss.item()}')
 
     # Prepare the validation data loader
-    val_dataset = CustomDataset(torch.Tensor(val_embeddings_tensor), torch.Tensor(val_labels_tensor))
+    val_dataset = CustomDataset(torch.Tensor(val_embeddings_scaled), torch.Tensor(val_labels_flat))
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
 
     # Predict with the MLP model
