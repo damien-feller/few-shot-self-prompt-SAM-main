@@ -243,13 +243,16 @@ def train(args, predictor):
     ros = RandomOverSampler(random_state=42)
     train_embeddings_oversampled, train_labels_oversampled = ros.fit_resample(train_embeddings_scaled, train_labels_flat)
 
-    # Now use the oversampled data to train the SVM
-    svm_model = SVC(kernel='rbf', verbose = True)  # Or any other kernel
-    svm_model.fit(train_embeddings_oversampled, train_labels_oversampled)
+    # Train a logistic regression model
+    logistic_regression_model = LogisticRegression(solver = 'saga', max_iter = 10000)
+    logistic_regression_model.fit(train_embeddings_oversampled, train_labels_oversampled)
 
     # Predict on the validation set
-    predicted_masks_svm = predict_and_reshape(svm_model, val_embeddings_scaled, (len(val_embeddings_tensor), 64, 64))
-    pred_original =predicted_masks_svm
+    predicted_masks_svm = predict_and_reshape(logistic_regression_model, val_embeddings_scaled, (len(val_embeddings_tensor), 64, 64))
+    pred_original = predicted_masks_svm
+
+    # Apply thresholding (e.g., 0.5) to get binary predictions
+    predicted_masks_binary = (predicted_masks_logistic > args.threshold).astype(np.uint8)
 
     # Define the kernel for dilation
     kernel = np.ones((2, 2), np.uint8)
@@ -266,16 +269,6 @@ def train(args, predictor):
     accuracy_svm = accuracy_score(val_labels_flat, pred_original.reshape(-1))
     print(f'SVM Accuracy: {accuracy_svm}')
     print(classification_report(val_labels_flat, pred_original.reshape(-1)))
-
-    # # Train a logistic regression model
-    # logistic_regression_model = LogisticRegression(max_iter = 10000)
-    # logistic_regression_model.fit(train_embeddings_flat, train_labels_flat)
-    #
-    # # Predict on the validation set
-    # predicted_masks_logistic = logistic_regression_model.predict(val_embeddings_flat)
-    #
-    # # Apply thresholding (e.g., 0.5) to get binary predictions
-    # predicted_masks_binary = (predicted_masks_logistic > args.threshold).astype(np.uint8).reshape(len(val_embeddings), 64, 64)
 
     # Dice Scores
     svm_dice_val = dice_coeff(torch.Tensor(predicted_masks_svm), torch.Tensor(val_labels))
