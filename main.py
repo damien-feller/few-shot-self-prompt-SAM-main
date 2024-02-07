@@ -33,6 +33,9 @@ torch.cuda.manual_seed_all(42)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
+# Global scaler instance
+scaler = StandardScaler()
+
 class CustomDataset(Dataset):
     def __init__(self, embeddings, labels):
         self.embeddings = embeddings
@@ -123,8 +126,6 @@ def visualize_predictions(images, masks, model, num_samples=3, val=False):
     for i in indices:
         image = images[i]
         mask = masks[i]
-        # Create a scaler instance
-        scaler = StandardScaler()
 
         # Flatten the image for SVM prediction
         image_flat = image.reshape(-1, image.shape[0])
