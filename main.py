@@ -21,6 +21,8 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, classification_report
 from imblearn.over_sampling import RandomOverSampler
+from sklearn.preprocessing import StandardScaler
+
 
 # Set random seeds for reproducibility
 random.seed(42)
@@ -124,7 +126,10 @@ def visualize_predictions(images, masks, model, num_samples=3, val=False):
 
         # Flatten the image for SVM prediction
         image_flat = image.reshape(-1, image.shape[0])
-        pred_flat = model.predict(image_flat)
+        # Scale the data
+        image_flat_scaled = scaler.transform(image_flat)
+        # Predictions
+        pred_flat = model.predict(image_flat_scaled)
         # Reshape the prediction to the original mask shape
         pred = pred_flat.reshape(mask.shape)
         pred_original = pred
@@ -226,16 +231,22 @@ def train(args, predictor):
     val_embeddings_flat, val_labels_flat = create_dataset_for_SVM(val_embeddings_tensor.numpy(),
                                                                  val_labels_tensor.numpy())
 
+    # Create a scaler instance
+    scaler = StandardScaler()
+    # Fit on training data and transform both training and validation data
+    train_embeddings_scaled = scaler.fit_transform(train_embeddings_flat)
+    val_embeddings_scaled = scaler.transform(val_embeddings_flat)
+
     # Perform oversampling on the training data
     ros = RandomOverSampler(random_state=42)
-    train_embeddings_oversampled, train_labels_oversampled = ros.fit_resample(train_embeddings_flat, train_labels_flat)
+    train_embeddings_oversampled, train_labels_oversampled = ros.fit_resample(train_embeddings_scaled, train_labels_flat)
 
     # Now use the oversampled data to train the SVM
     svm_model = SVC(kernel='rbf', verbose = True)  # Or any other kernel
     svm_model.fit(train_embeddings_oversampled, train_labels_oversampled)
 
     # Predict on the validation set
-    predicted_masks_svm = predict_and_reshape(svm_model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
+    predicted_masks_svm = predict_and_reshape(svm_model, val_embeddings_scaled, (len(val_embeddings_tensor), 64, 64))
     pred_original =predicted_masks_svm
 
     # Define the kernel for dilation
