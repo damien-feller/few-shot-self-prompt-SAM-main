@@ -220,7 +220,7 @@ def train(args, predictor):
     train_embeddings_oversampled, train_labels_oversampled = ros.fit_resample(train_embeddings_scaled, train_labels_flat)
 
     # Initialize the Random Forest model
-    rf_model = RandomForestClassifier(n_estimators=300, verbose=1, n_jobs=-1, random_state=42)
+    rf_model = RandomForestClassifier(n_estimators=100, verbose=1, n_jobs=-1, random_state=42)
     rf_model.fit(train_embeddings_oversampled, train_labels_oversampled)
 
     # Predict on the validation set
