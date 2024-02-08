@@ -22,6 +22,7 @@ from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, classification_report
 from imblearn.over_sampling import RandomOverSampler
 from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
 
 
 # Set random seeds for reproducibility
@@ -218,12 +219,12 @@ def train(args, predictor):
     ros = RandomOverSampler(random_state=42)
     train_embeddings_oversampled, train_labels_oversampled = ros.fit_resample(train_embeddings_scaled, train_labels_flat)
 
-    # Now use the oversampled data to train the SVM
-    svm_model = SVC(kernel='rbf', verbose = True)  # Or any other kernel
-    svm_model.fit(train_embeddings_oversampled, train_labels_oversampled)
+    # Initialize the Random Forest model
+    rf_model = RandomForestClassifier(n_estimators=100, verbose=1, n_jobs=-1, random_state=42)
+    rf_model.fit(train_embeddings_oversampled, train_labels_oversampled)
 
     # Predict on the validation set
-    predicted_masks_svm = predict_and_reshape(svm_model, val_embeddings_scaled, (len(val_embeddings_tensor), 64, 64))
+    predicted_masks_svm = predict_and_reshape(rf_model, val_embeddings_scaled, (len(val_embeddings_tensor), 64, 64))
     pred_original =predicted_masks_svm
 
     # Define the kernel for dilation
@@ -271,9 +272,9 @@ def train(args, predictor):
 
     # Visualize SVM predictions on the validation dataset
     print("Validation Predictions with SVM:")
-    visualize_predictions(val_embeddings, val_labels, svm_model, num_samples=5, val=True)
+    visualize_predictions(val_embeddings, val_labels, rf_model, num_samples=5, val=True)
 
-    return svm_model
+    return rf_model
 
 
 def main():
