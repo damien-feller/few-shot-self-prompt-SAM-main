@@ -247,7 +247,7 @@ def train(args, predictor):
     train_embeddings_oversampled, train_labels_oversampled = ros.fit_resample(train_embeddings_scaled, train_labels_flat)
 
     # Instantiate the MLP model
-    mlp_model = BinaryClassificationMLP(input_dim=256, hidden_dim1=256, hidden_dim2=256).to(args.device)
+    mlp_model = BinaryClassificationMLP(input_dim=256, hidden_dim1=128, hidden_dim2=128).to(args.device)
 
     optimizer = torch.optim.Adam(mlp_model.parameters(), lr=args.learning_rate)
     criterion = nn.BCELoss()
