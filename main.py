@@ -83,7 +83,7 @@ def predict_and_reshape(model, X, original_shape):
 
 def visualize_predictions(images, masks, model, num_samples=3, val=False, device='cuda:0', threshold=0.5):
     if len(masks) < num_samples:
-        num_samples = len(images)
+        num_samples = len(masks)
 
     indices = np.random.choice(range(len(masks)), num_samples, replace=False)
 
