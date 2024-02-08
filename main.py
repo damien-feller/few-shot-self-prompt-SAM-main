@@ -154,14 +154,13 @@ class BinaryClassificationMLP(nn.Module):
         super(BinaryClassificationMLP, self).__init__()
         self.layer1 = nn.Linear(input_dim, hidden_dim1)
         self.relu1 = nn.ReLU()
-        self.layer2 = nn.Linear(hidden_dim1, hidden_dim2)
-        self.relu2 = nn.ReLU()
-        self.layer3 = nn.Linear(hidden_dim2, 1)
+        # self.layer2 = nn.Linear(hidden_dim1, hidden_dim2)
+        # self.relu2 = nn.ReLU()
+        self.layer3 = nn.Linear(hidden_dim1, 1)
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
         x = self.relu1(self.layer1(x))
-        x = self.relu2(self.layer2(x))
         x = self.sigmoid(self.layer3(x))
         return x
 
@@ -248,7 +247,7 @@ def train(args, predictor):
     train_embeddings_oversampled, train_labels_oversampled = ros.fit_resample(train_embeddings_scaled, train_labels_flat)
 
     # Instantiate the MLP model
-    mlp_model = BinaryClassificationMLP(input_dim=256, hidden_dim1=512, hidden_dim2=256).to(args.device)
+    mlp_model = BinaryClassificationMLP(input_dim=256, hidden_dim1=256, hidden_dim2=256).to(args.device)
 
     optimizer = torch.optim.Adam(mlp_model.parameters(), lr=args.learning_rate)
     criterion = nn.BCELoss()
