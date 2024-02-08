@@ -1,27 +1,19 @@
-import cv2
-import numpy
-import torch
-import torch.nn.functional as F
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
-import torchvision.models as models
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.model_selection import KFold
 import os
 import random
 from tqdm import tqdm
 from segment_anything import SamAutomaticMaskGenerator, sam_model_registry, SamPredictor
 import argparse
-from utils.utils import *
-import time
 from sklearn.model_selection import train_test_split
 import albumentations as A
-from sklearn.linear_model import LogisticRegression
-from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, classification_report
 from imblearn.over_sampling import RandomOverSampler
 from sklearn.preprocessing import StandardScaler
+import torch
+import matplotlib.pyplot as plt
+import numpy as np
+import cv2
 
 
 # Set random seeds for reproducibility
@@ -88,11 +80,6 @@ def create_dataset_for_SVM(embeddings, labels):
 def predict_and_reshape(model, X, original_shape):
     predictions = model.predict(X)
     return predictions.reshape(original_shape)
-
-import torch
-import matplotlib.pyplot as plt
-import numpy as np
-import cv2
 
 def visualize_predictions(images, masks, model, num_samples=3, val=False, device='cuda:0', threshold=0.5):
     if len(images) < num_samples:
@@ -259,9 +246,14 @@ def train(args, predictor):
     train_dataset = CustomDataset(torch.Tensor(train_embeddings_scaled), torch.Tensor(train_labels_flat))
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
 
+    val_dataset = CustomDataset(torch.Tensor(val_embeddings_scaled), torch.Tensor(val_labels_flat))
+    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=True)
+
     # Training loop
     mlp_model.train()
     for epoch in range(args.epochs):
+        mlp_model.train()  # Set model to training mode
+        total_train_loss = 0
         for embeddings, labels in train_loader:
             embeddings, labels = embeddings.to(args.device), labels.to(args.device)
             optimizer.zero_grad()
@@ -269,8 +261,24 @@ def train(args, predictor):
             loss = criterion(outputs.squeeze(), labels.float())
             loss.backward()
             optimizer.step()
+            total_train_loss += loss.item()
 
-        print(f'Epoch {epoch + 1}, Loss: {loss.item()}')
+        avg_train_loss = total_train_loss / len(train_loader)
+
+        # Validation loop
+        mlp_model.eval()  # Set model to evaluation mode
+        total_val_loss = 0
+        with torch.no_grad():
+            for embeddings, labels in val_loader:
+                embeddings, labels = embeddings.to(args.device), labels.to(args.device)
+                outputs = mlp_model(embeddings)
+                val_loss = criterion(outputs.squeeze(), labels.float())
+                total_val_loss += val_loss.item()
+
+        avg_val_loss = total_val_loss / len(val_loader)
+
+        # Print training and validation loss
+        print(f'Epoch {epoch + 1}, Training Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f}')
 
     # Prepare the validation data loader
     val_dataset = CustomDataset(torch.Tensor(val_embeddings_scaled), torch.Tensor(val_labels_flat))
@@ -318,7 +326,7 @@ def train(args, predictor):
 
     # Visualize SVM predictions on the validation dataset
     print("Validation Predictions with SVM:")
-    visualize_predictions(val_embeddings, val_labels, mlp_model, num_samples=5, val=True)
+    visualize_predictions(val_embeddings_scaled, val_labels, mlp_model, num_samples=5, val=True)
 
     return mlp_model
 
