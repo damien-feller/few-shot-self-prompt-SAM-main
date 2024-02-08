@@ -136,6 +136,17 @@ def visualize_predictions(images, masks, model, num_samples=3, val=False, device
 
     plt.show()  # Show the plot as the last action
 
+def plot_and_save_losses(train_losses, val_losses, filename):
+    plt.figure(figsize=(10, 6))
+    plt.plot(train_losses, label='Training Loss')
+    plt.plot(val_losses, label='Validation Loss')
+    plt.title('Training and Validation Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(filename)
+    plt.show()
 
 
 class BinaryClassificationMLP(nn.Module):
@@ -251,6 +262,9 @@ def train(args, predictor):
 
     # Training loop
     mlp_model.train()
+    # Initialize lists to store losses
+    train_losses = []
+    val_losses = []
     for epoch in range(args.epochs):
         mlp_model.train()  # Set model to training mode
         total_train_loss = 0
@@ -264,6 +278,7 @@ def train(args, predictor):
             total_train_loss += loss.item()
 
         avg_train_loss = total_train_loss / len(train_loader)
+        train_losses.append(avg_train_loss)
 
         # Validation loop
         mlp_model.eval()  # Set model to evaluation mode
@@ -276,6 +291,7 @@ def train(args, predictor):
                 total_val_loss += val_loss.item()
 
         avg_val_loss = total_val_loss / len(val_loader)
+        val_losses.append(avg_val_loss)
 
         # Print training and validation loss
         print(f'Epoch {epoch + 1}, Training Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f}')
@@ -293,6 +309,8 @@ def train(args, predictor):
             outputs = mlp_model(embeddings).squeeze()
             preds = torch.sigmoid(outputs) > args.threshold  # Apply threshold to get binary predictions
             all_preds.append(preds.cpu())
+
+    plot_and_save_losses(train_losses, val_losses, 'training_validation_loss.png')
 
     # Concatenate all predictions
     predicted_masks = torch.cat(all_preds).numpy().reshape(len(val_embeddings_tensor), 64, 64)
