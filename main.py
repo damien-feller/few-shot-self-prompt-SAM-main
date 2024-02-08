@@ -82,10 +82,10 @@ def predict_and_reshape(model, X, original_shape):
     return predictions.reshape(original_shape)
 
 def visualize_predictions(images, masks, model, num_samples=3, val=False, device='cuda:0', threshold=0.5):
-    if len(images) < num_samples:
+    if len(masks) < num_samples:
         num_samples = len(images)
 
-    indices = np.random.choice(range(len(images)), num_samples, replace=False)
+    indices = np.random.choice(range(len(masks)), num_samples, replace=False)
 
     model.eval()  # Set the model to evaluation mode
     with torch.no_grad():  # No need to track gradients
