@@ -114,7 +114,7 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         pred = cv2.erode(pred, kernel, iterations=3)
 
         plt.figure(figsize=(12, 4))
-        plt.subplot(1, 4, 2)
+        plt.subplot(1, 4, 1)
         plt.imshow(org_img[i])
         plt.title("Original Image")
         plt.axis('off')
