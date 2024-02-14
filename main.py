@@ -119,7 +119,6 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         plt.title("Original Image")
         plt.axis('off')
 
-        plt.figure(figsize=(10, 4))
         plt.subplot(1, 4, 2)
         plt.imshow(mask, cmap='gray')
         plt.title("True Mask")
