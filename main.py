@@ -195,7 +195,7 @@ def train(args, predictor):
         return image_embeddings, labels, org_img
 
     # Process training images with augmentation
-    train_embeddings, train_labels = process_images(train_fnames, augment_data=True)
+    train_embeddings, train_labels, train_images = process_images(train_fnames, augment_data=True)
 
     # Process validation images without augmentation
     val_embeddings, val_labels, val_images = process_images(val_fnames, augment_data=False)
