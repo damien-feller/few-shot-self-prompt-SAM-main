@@ -101,10 +101,8 @@ def visualize_predictions(images, masks, model, num_samples=3, val=False):
 
         # Flatten the image for SVM prediction
         image_flat = image.reshape(-1, image.shape[0])
-        # Scale the data
-        image_flat_scaled = scaler.transform(image_flat)
         # Predictions
-        pred_flat = model.predict(image_flat_scaled)
+        pred_flat = model.predict(image_flat)
         # Reshape the prediction to the original mask shape
         pred = pred_flat.reshape(mask.shape)
         pred_original = pred
@@ -206,17 +204,9 @@ def train(args, predictor):
     val_embeddings_flat, val_labels_flat = create_dataset_for_SVM(val_embeddings_tensor.numpy(),
                                                                  val_labels_tensor.numpy())
 
-    # Create a scaler instance
-    global scaler
-    scaler = StandardScaler()
-    # Fit on training data and transform both training and validation data
-    scaler.fit(train_embeddings_flat)
-    train_embeddings_scaled = scaler.transform(train_embeddings_flat)
-    val_embeddings_scaled = scaler.transform(val_embeddings_flat)
-
     # Perform oversampling on the training data
     ros = RandomOverSampler(random_state=42)
-    train_embeddings_oversampled, train_labels_oversampled = ros.fit_resample(train_embeddings_scaled, train_labels_flat)
+    train_embeddings_oversampled, train_labels_oversampled = ros.fit_resample(train_embeddings_flat, train_labels_flat)
 
     # Now use the oversampled data to train the SVM
     svm_model = SVC(kernel='rbf', verbose = True)  # Or any other kernel
