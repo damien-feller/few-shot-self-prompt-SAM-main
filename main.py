@@ -166,6 +166,7 @@ def train(args, predictor):
             # Resize and process the mask and image
             resized_mask = cv2.resize(msk, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
             resized_img = cv2.resize(img, dsize=(1024, 1024), interpolation=cv2.INTER_NEAREST)
+            org_img = resized_img
 
             # Process the image to create an embedding
             img_emb = get_embedding(resized_img, predictor)
@@ -190,13 +191,13 @@ def train(args, predictor):
                 # For validation data, do not apply augmentation
                 process_and_store(image, mask)
 
-        return image_embeddings, labels
+        return image_embeddings, labels, org_img
 
     # Process training images with augmentation
     train_embeddings, train_labels = process_images(train_fnames, augment_data=True)
 
     # Process validation images without augmentation
-    val_embeddings, val_labels = process_images(val_fnames, augment_data=False)
+    val_embeddings, val_labels, val_images = process_images(val_fnames, augment_data=False)
 
     # Convert to tensors
     train_embeddings_tensor = torch.stack([torch.Tensor(e) for e in train_embeddings])
@@ -267,7 +268,7 @@ def train(args, predictor):
 
     # Visualize SVM predictions on the validation dataset
     print("Validation Predictions with SVM:")
-    visualize_predictions(val_embeddings, val_labels, svm_model, num_samples=5, val=True)
+    visualize_predictions(val_images, val_embeddings, val_labels, svm_model, num_samples=5, val=True)
 
     return svm_model
 
