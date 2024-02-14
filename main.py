@@ -213,7 +213,7 @@ def train(args, predictor):
     svm_model.fit(train_embeddings_oversampled, train_labels_oversampled)
 
     # Predict on the validation set
-    predicted_masks_svm = predict_and_reshape(svm_model, val_embeddings_scaled, (len(val_embeddings_tensor), 64, 64))
+    predicted_masks_svm = predict_and_reshape(svm_model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
     pred_original =predicted_masks_svm
 
     # Define the kernel for dilation
