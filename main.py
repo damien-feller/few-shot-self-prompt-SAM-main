@@ -89,7 +89,7 @@ def predict_and_reshape(model, X, original_shape):
     predictions = model.predict(X)
     return predictions.reshape(original_shape)
 
-def visualize_predictions(images, masks, model, num_samples=3, val=False):
+def visualize_predictions(org_img, images, masks, model, num_samples=3, val=False):
     if len(images) < num_samples:
         num_samples = len(images)
 
@@ -113,18 +113,24 @@ def visualize_predictions(images, masks, model, num_samples=3, val=False):
         pred = cv2.dilate(pred, kernel, iterations=3)
         pred = cv2.erode(pred, kernel, iterations=3)
 
+        plt.figure(figsize=(12, 4))
+        plt.subplot(1, 4, 2)
+        plt.imshow(org_img)
+        plt.title("Original Image")
+        plt.axis('off')
+
         plt.figure(figsize=(10, 4))
-        plt.subplot(1, 3, 1)
+        plt.subplot(1, 4, 2)
         plt.imshow(mask, cmap='gray')
         plt.title("True Mask")
         plt.axis('off')
 
-        plt.subplot(1, 3, 2)
+        plt.subplot(1, 4, 3)
         plt.imshow(pred_original, cmap='gray')
         plt.title("Predicted Mask")
         plt.axis('off')
 
-        plt.subplot(1, 3, 3)
+        plt.subplot(1, 4, 4)
         plt.imshow(pred, cmap='gray')
         plt.title("Predicted Mask - D + E")
         plt.axis('off')
