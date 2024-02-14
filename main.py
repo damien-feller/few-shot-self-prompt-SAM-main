@@ -161,18 +161,19 @@ def train(args, predictor):
     def process_images(file_names, augment_data=True):
         image_embeddings = []
         labels = []
+        org_img = []
 
         def process_and_store(img, msk):
             # Resize and process the mask and image
             resized_mask = cv2.resize(msk, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
             resized_img = cv2.resize(img, dsize=(1024, 1024), interpolation=cv2.INTER_NEAREST)
-            org_img = resized_img
 
             # Process the image to create an embedding
             img_emb = get_embedding(resized_img, predictor)
             img_emb = img_emb.cpu().numpy().transpose((2, 0, 3, 1)).reshape((256, 64, 64))
             image_embeddings.append(img_emb)
             labels.append(resized_mask)
+            org_img.append(resized_img)
 
         for fname in tqdm(file_names):
             # Read data
