@@ -73,6 +73,7 @@ def visualize_umap(embeddings, labels, n_neighbors=15, min_dist=0.1, n_component
     plt.colorbar(scatter, spacing='proportional', label='Class')
     plt.title('UMAP projection of the dataset')
     plt.show()
+    plt.savefig(f"/content/UMAP.png")
 
 
 
