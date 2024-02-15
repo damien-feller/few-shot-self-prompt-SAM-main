@@ -53,9 +53,9 @@ def process_images(file_names, data_path, predictor, num_augmentations=0):
         resized_img = cv2.resize(image, dsize=(1024, 1024), interpolation=cv2.INTER_NEAREST)
 
         # Get embedding
-        img_emb = get_embedding(resized_img, predictor)
+        img_emb = get_embedding(resized_img, predictor).cpu().numpy().transpose((2, 0, 3, 1)).reshape((256, 64, 64))
         print(fname)
-        embeddings.append(img_emb.cpu().numpy())
+        embeddings.append(img_emb)
         labels.append(resized_mask)
 
     return np.array(embeddings), np.array(labels)
