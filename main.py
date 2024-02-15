@@ -1,27 +1,15 @@
 import cv2
-import numpy
-import torch
-import torch.nn.functional as F
-import torch.nn as nn
-from torch.utils.data import Dataset, DataLoader
-import torchvision.models as models
 import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.model_selection import KFold
+import torch
+from torch.utils.data import Dataset, DataLoader
 import os
 import random
 from tqdm import tqdm
 from segment_anything import SamAutomaticMaskGenerator, sam_model_registry, SamPredictor
 import argparse
-from utils.utils import *
-import time
-from sklearn.model_selection import train_test_split
-import albumentations as A
-from sklearn.linear_model import LogisticRegression
-from sklearn.svm import SVC
-from sklearn.metrics import accuracy_score, classification_report
-from imblearn.over_sampling import RandomOverSampler
 from sklearn.preprocessing import StandardScaler
+import umap
+import matplotlib.pyplot as plt
 
 
 # Set random seeds for reproducibility
@@ -51,224 +39,41 @@ def get_embedding(img, predictor):
     predictor.set_image(img)
     img_emb = predictor.get_image_embedding()
     return img_emb
+def process_images(file_names, data_path, predictor, num_augmentations=0):
+    embeddings = []
+    labels = []
+
+    for fname in tqdm(file_names[0:500]):
+        # Read data
+        image = cv2.imread(os.path.join(data_path, 'images', fname))
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        mask = cv2.imread(os.path.join(data_path, 'masks', fname), cv2.IMREAD_GRAYSCALE)
+        _, mask = cv2.threshold(mask, 128, 1, cv2.THRESH_BINARY)
+        resized_mask = cv2.resize(mask, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
+        resized_img = cv2.resize(image, dsize=(1024, 1024), interpolation=cv2.INTER_NEAREST)
+
+        # Get embedding
+        img_emb = get_embedding(resized_img, predictor)
+        embeddings.append(img_emb.cpu().numpy())
+        labels.append(resized_mask)
+
+    return np.array(embeddings), np.array(labels)
 
 
-def augment(image, mask):
-    # Define an augmentation pipeline
-    transform = A.Compose([
-        A.Rotate(limit=30, p=0.5),  # Rotation
-        A.RandomScale(scale_limit=0.2, p=0.5),  # Scaling
-        A.GaussNoise(var_limit=(5, 25), p=0.5),  # Gaussian Noise
-        A.GaussianBlur(blur_limit=(1, 5), p=0.5),  # Gaussian Blur
-        A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.5),  # Brightness & Contrast
-        A.RandomGamma(gamma_limit=(20, 60), p=0.5),  # Gamma Augmentation
-        A.HorizontalFlip(p=0.5),  # Horizontal Mirroring
-        A.VerticalFlip(p=0.5),  # Vertical Mirroring
-    ])
-
-    augmented = transform(image=image, mask=mask)
-    return augmented['image'], augmented['mask']
-
-def dice_coeff(pred, target):
-    smooth = 1.
-    pred_flat = pred.view(-1)
-    target_flat = target.view(-1)
-    intersection = (pred_flat * target_flat).sum()
-    return (2. * intersection + smooth) / (pred_flat.sum() + target_flat.sum() + smooth)
-
-def create_dataset_for_SVM(embeddings, labels):
-    # Flatten the embeddings and labels to create a dataset for RF
-    # embeddings shape: (N, 256, 64, 64) -> (N*64*64, 256)
-    # labels shape: (N, 64, 64) -> (N*64*64,)
+def visualize_umap(embeddings, labels, n_neighbors=15, min_dist=0.1, n_components=2):
     N, C, H, W = embeddings.shape
     embeddings_flat = embeddings.reshape(-1, C)
     labels_flat = labels.reshape(-1)
-    return embeddings_flat, labels_flat
+    reducer = umap.UMAP(n_neighbors=n_neighbors, min_dist=min_dist, n_components=n_components)
+    #scaled_embeddings = StandardScaler().fit_transform(embeddings.reshape(embeddings.shape[0], -1))
+    embedding = reducer.fit_transform(embeddings_flat)
 
-def predict_and_reshape(model, X, original_shape):
-    predictions = model.predict(X)
-    return predictions.reshape(original_shape)
+    plt.figure(figsize=(12, 8))
+    scatter = plt.scatter(embedding[:, 0], embedding[:, 1], c=labels_flat, cmap='Spectral', s=5)
+    plt.colorbar(scatter, spacing='proportional', label='Class')
+    plt.title('UMAP projection of the dataset')
+    plt.show()
 
-def visualize_predictions(org_img, images, masks, model, num_samples=3, val=False):
-    if len(images) < num_samples:
-        num_samples = len(images)
-
-    indices = np.random.choice(range(len(images)), num_samples, replace=False)
-
-    for i in indices:
-        image = images[i]
-        mask = masks[i]
-
-        # Flatten the image for SVM prediction
-        image_flat = image.reshape(-1, image.shape[0])
-        # Predictions
-        pred_flat = model.predict(image_flat)
-        # Reshape the prediction to the original mask shape
-        pred = pred_flat.reshape(mask.shape)
-        pred_original = pred
-
-        # Define the kernel for dilation
-        kernel = np.ones((2, 2), np.uint8)
-
-        pred = cv2.dilate(pred, kernel, iterations=3)
-        pred = cv2.erode(pred, kernel, iterations=3)
-
-        plt.figure(figsize=(12, 4))
-        plt.subplot(1, 4, 1)
-        plt.imshow(org_img[i])
-        plt.title("Original Image")
-        plt.axis('off')
-
-        plt.subplot(1, 4, 2)
-        plt.imshow(mask, cmap='gray')
-        plt.title("True Mask")
-        plt.axis('off')
-
-        plt.subplot(1, 4, 3)
-        plt.imshow(pred_original, cmap='gray')
-        plt.title("Predicted Mask")
-        plt.axis('off')
-
-        plt.subplot(1, 4, 4)
-        plt.imshow(pred, cmap='gray')
-        plt.title("Predicted Mask - D + E")
-        plt.axis('off')
-
-        if val == False:
-            plt.savefig(f"/content/visualisation/train_{i}.png")
-        else:
-            plt.savefig(f"/content/visualisation/val_{i}.png")
-
-
-def train(args, predictor):
-    data_path = args.data_path
-    assert os.path.exists(data_path), 'data path does not exist!'
-
-    num_image = args.k
-
-    fnames = os.listdir(os.path.join(data_path, 'images'))
-    # get k random indices from fnames
-    random.shuffle(fnames)
-    train_fnames = fnames[:num_image]
-    val_fnames = fnames[-100:]
-
-    # image augmentation and embedding processing
-    num_augmentations = int(args.augmentation_num)  # Number of augmented versions to create per image
-
-    def process_images(file_names, augment_data=True):
-        image_embeddings = []
-        labels = []
-        org_img = []
-
-        def process_and_store(img, msk):
-            # Resize and process the mask and image
-            resized_mask = cv2.resize(msk, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
-            resized_img = cv2.resize(img, dsize=(1024, 1024), interpolation=cv2.INTER_NEAREST)
-
-            # Process the image to create an embedding
-            img_emb = get_embedding(resized_img, predictor)
-            img_emb = img_emb.cpu().numpy().transpose((2, 0, 3, 1)).reshape((256, 64, 64))
-            image_embeddings.append(img_emb)
-            labels.append(resized_mask)
-            org_img.append(resized_img)
-
-        for fname in tqdm(file_names):
-            # Read data
-            image = cv2.imread(os.path.join(data_path, 'images', fname))
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            mask = cv2.imread(os.path.join(data_path, 'masks', fname), cv2.IMREAD_GRAYSCALE)
-            _, mask = cv2.threshold(mask, 128, 1, cv2.THRESH_BINARY)
-
-            if augment_data:
-                process_and_store(image, mask)
-                for _ in range(num_augmentations):
-                    # Apply augmentations
-                    augmented_image, augmented_mask = augment(image, mask)
-                    process_and_store(augmented_image, augmented_mask)
-            else:
-                # For validation data, do not apply augmentation
-                process_and_store(image, mask)
-
-        return image_embeddings, labels, org_img
-
-    # Process training images with augmentation
-    train_embeddings, train_labels, train_images = process_images(train_fnames, augment_data=True)
-
-    # Process validation images without augmentation
-    val_embeddings, val_labels, val_images = process_images(val_fnames, augment_data=False)
-
-    # Convert to tensors
-    train_embeddings_tensor = torch.stack([torch.Tensor(e) for e in train_embeddings])
-    train_labels_tensor = torch.stack([torch.Tensor(l) for l in train_labels])
-    val_embeddings_tensor = torch.stack([torch.Tensor(e) for e in val_embeddings])
-    val_labels_tensor = torch.stack([torch.Tensor(l) for l in val_labels])
-
-    # Use the same function as defined for Random Forest
-    train_embeddings_flat, train_labels_flat = create_dataset_for_SVM(train_embeddings_tensor.numpy(),
-                                                                     train_labels_tensor.numpy())
-    val_embeddings_flat, val_labels_flat = create_dataset_for_SVM(val_embeddings_tensor.numpy(),
-                                                                 val_labels_tensor.numpy())
-
-    # Perform oversampling on the training data
-    ros = RandomOverSampler(random_state=42)
-    train_embeddings_oversampled, train_labels_oversampled = ros.fit_resample(train_embeddings_flat, train_labels_flat)
-
-    # Now use the oversampled data to train the SVM
-    svm_model = SVC(kernel='rbf', verbose = True)  # Or any other kernel
-    svm_model.fit(train_embeddings_flat, train_labels_flat)
-
-    # Predict on the validation set
-    predicted_masks_svm = predict_and_reshape(svm_model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
-    pred_original =predicted_masks_svm
-
-    # Define the kernel for dilation
-    kernel = np.ones((2, 2), np.uint8)
-
-    predicted_masks_svm = cv2.dilate(predicted_masks_svm, kernel, iterations=3)
-    predicted_masks_svm = cv2.erode(predicted_masks_svm, kernel, iterations=3)
-
-    # Evaluate the SVM model
-    accuracy_svm = accuracy_score(val_labels_flat, predicted_masks_svm.reshape(-1))
-    print(f'SVM Accuracy (Dilation + Erosion): {accuracy_svm}')
-    print(classification_report(val_labels_flat, predicted_masks_svm.reshape(-1)))
-
-    # Evaluate the SVM model
-    accuracy_svm = accuracy_score(val_labels_flat, pred_original.reshape(-1))
-    print(f'SVM Accuracy: {accuracy_svm}')
-    print(classification_report(val_labels_flat, pred_original.reshape(-1)))
-
-    # # Train a logistic regression model
-    # logistic_regression_model = LogisticRegression(max_iter = 10000)
-    # logistic_regression_model.fit(train_embeddings_flat, train_labels_flat)
-    #
-    # # Predict on the validation set
-    # predicted_masks_logistic = logistic_regression_model.predict(val_embeddings_flat)
-    #
-    # # Apply thresholding (e.g., 0.5) to get binary predictions
-    # predicted_masks_binary = (predicted_masks_logistic > args.threshold).astype(np.uint8).reshape(len(val_embeddings), 64, 64)
-
-    # Dice Scores
-    svm_dice_val = dice_coeff(torch.Tensor(predicted_masks_svm), torch.Tensor(val_labels))
-    print('SVM Dice (Dilation + Erosion): ', svm_dice_val)
-    svm_dice_val = dice_coeff(torch.Tensor(pred_original), torch.Tensor(val_labels))
-    print('SVM Dice: ', svm_dice_val)
-    # log_dice_val = dice_coeff(torch.Tensor(predicted_masks_binary),torch.Tensor(val_labels))
-    # print('Logsitic Regression Dice: ', svm_dice_val)
-
-    # # Evaluate the Logistic regression model
-    # accuracy_svm = accuracy_score(val_labels_flat, predicted_masks_binary.reshape(-1))
-    # print(f'Logistic Regression Accuracy: {accuracy_svm}')
-    # print(classification_report(val_labels_flat, predicted_masks_svm.reshape(-1)))
-
-    # # Visualize Logistic regression predictions on the training dataset
-    # print("Training Predictions with SVM:")
-    # visualize_predictions(train_embeddings, train_labels, logistic_regression_model, val=False)
-
-    # Visualize SVM predictions on the validation dataset
-    print("Validation Predictions with SVM:")
-    visualize_predictions(val_images, val_embeddings, val_labels, svm_model, num_samples=5, val=True)
-
-    return svm_model
 
 
 def main():
@@ -289,19 +94,16 @@ def main():
     parser.add_argument('--augmentation_num', type=float, default=20, help='number of image augmentations to perform')
     args = parser.parse_args()
 
-    # set random seed
-    random.seed(42)
-    
-    # register the SAM model
-    sam = sam_model_registry[args.model_type](checkpoint=args.checkpoint).to(args.device)
-    global predictor
+    # Initialize SAM predictor
+    sam = sam_model_registry[args.model_type](checkpoint=args.checkpoint).to('cpu')  # Assuming CPU for simplicity
     predictor = SamPredictor(sam)
-    print('SAM model loaded!', '\n')
-    
-    if args.visualize:
-        model = train(args, predictor)
-    else:
-        test(args, predictor)
+
+    # Load dataset
+    fnames = os.listdir(os.path.join(args.data_path, 'images'))
+    embeddings, labels = process_images(fnames, args.data_path, predictor)
+
+    # UMAP visualization
+    visualize_umap(embeddings, labels)
 
 
 if __name__ == '__main__':
