@@ -43,7 +43,7 @@ def process_images(file_names, data_path, predictor, num_augmentations=0):
     embeddings = []
     labels = []
 
-    for fname in tqdm(file_names[0:100]):
+    for fname in tqdm(file_names[0:5]):
         # Read data
         image = cv2.imread(os.path.join(data_path, 'images', fname))
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
