@@ -149,10 +149,8 @@ def train(args, predictor):
     fnames = os.listdir(os.path.join(data_path, 'images'))
     # get k random indices from fnames
     random.shuffle(fnames)
-    fnames = fnames[:num_image]
-
-    # Split file names into training and validation sets
-    train_fnames, val_fnames = train_test_split(fnames, test_size=0.4, random_state=42)
+    train_fnames = fnames[:num_image]
+    val_fnames = fnames[-100:]
 
     # image augmentation and embedding processing
     num_augmentations = int(args.augmentation_num)  # Number of augmented versions to create per image
