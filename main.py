@@ -54,6 +54,7 @@ def process_images(file_names, data_path, predictor, num_augmentations=0):
 
         # Get embedding
         img_emb = get_embedding(resized_img, predictor)
+        print(fname)
         embeddings.append(img_emb.cpu().numpy())
         labels.append(resized_mask)
 
