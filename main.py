@@ -103,6 +103,7 @@ def main():
     fnames = os.listdir(os.path.join(args.data_path, 'images'))
     embeddings, labels = process_images(fnames, args.data_path, predictor)
 
+
     # UMAP visualization
     visualize_umap(embeddings, labels)
 
