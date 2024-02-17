@@ -102,7 +102,7 @@ def main():
     args = parser.parse_args()
 
     # Initialize SAM predictor
-    sam = sam_model_registry[args.model_type](checkpoint=args.checkpoint).to('cpu')  # Assuming CPU for simplicity
+    sam = sam_model_registry[args.model_type](checkpoint=args.checkpoint).to(args.device)
     predictor = SamPredictor(sam)
 
     # Load dataset
