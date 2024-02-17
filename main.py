@@ -66,11 +66,23 @@ def process_images(file_names, data_path, predictor, num_augmentations=0):
 
 
 def visualize_umap(embeddings, labels, n_neighbors=15, min_dist=0.1, n_components=2):
-    N, C, H, W = embeddings.shape
-    embeddings_flat = embeddings.reshape(-1, C)
-    labels_flat = labels.reshape(-1)
+    # Convert list of embeddings and labels to NumPy arrays
+    embeddings_array = np.array(embeddings)
+    labels_array = np.array(labels)
+
+    # Since embeddings are expected to be 4D (N, C, H, W), ensure they are correctly reshaped
+    # Check if embeddings_array is already in the expected shape or needs reshaping
+    if embeddings_array.ndim == 4:
+        N, C, H, W = embeddings_array.shape
+        print(embeddings_array.shape)
+        embeddings_flat = embeddings_array.reshape(N, -1)
+        print(embeddings_flat.shape)
+    else:
+        # Handle case where embeddings might not be in the expected format
+        raise ValueError("Embeddings array is not in the expected shape of (N, C, H, W)")
+
+    labels_flat = labels_array.flatten()
     reducer = umap.UMAP(n_neighbors=n_neighbors, min_dist=min_dist, n_components=n_components)
-    #scaled_embeddings = StandardScaler().fit_transform(embeddings.reshape(embeddings.shape[0], -1))
     embedding = reducer.fit_transform(embeddings_flat)
     print(embedding.shape)
 
