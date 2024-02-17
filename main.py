@@ -75,7 +75,7 @@ def visualize_umap(embeddings, labels, n_neighbors=15, min_dist=0.1, n_component
     if embeddings_array.ndim == 4:
         N, C, H, W = embeddings_array.shape
         print(embeddings_array.shape)
-        embeddings_flat = embeddings_array.reshape(N, -1)
+        embeddings_flat = embeddings_array.reshape(C, -1)
         print(embeddings_flat.shape)
     else:
         # Handle case where embeddings might not be in the expected format
