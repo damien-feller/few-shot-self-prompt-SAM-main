@@ -83,7 +83,7 @@ def visualize_umap(embeddings, labels, n_neighbors=15, min_dist=0.1, n_component
 
     labels_flat = labels_array.flatten()
     reducer = umap.UMAP(n_neighbors=n_neighbors, min_dist=min_dist, n_components=n_components)
-    embedding = reducer.fit_transform(embeddings_flat)
+    embedding = reducer.fit_transform(np.transpose(embeddings_flat))
     print(embedding.shape)
 
     plt.figure(figsize=(12, 8))
