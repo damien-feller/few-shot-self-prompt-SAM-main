@@ -98,7 +98,7 @@ def visualize_umap(embeddings, labels, n_neighbors=15, min_dist=0.1, n_component
         marker=dict(
             size=12,
             color=labels_flat,  # set color to an array/list of desired values
-            colorscale='bwr',  # choose a colorscale
+            colorscale='turbo',  # choose a colorscale
             opacity=0.8
         )
     )])
