@@ -72,7 +72,7 @@ def visualize_umap(embeddings, labels, n_neighbors=15, min_dist=0.1, n_component
     reducer = umap.UMAP(n_neighbors=n_neighbors, min_dist=min_dist, n_components=n_components)
     #scaled_embeddings = StandardScaler().fit_transform(embeddings.reshape(embeddings.shape[0], -1))
     embedding = reducer.fit_transform(embeddings_flat)
-    embedding.shape
+    print(embedding.shape)
 
     plt.figure(figsize=(12, 8))
     scatter = plt.scatter(embedding[:, 0], embedding[:, 1], c=labels_flat, cmap='Spectral', s=5)
