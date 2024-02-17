@@ -10,6 +10,7 @@ import argparse
 from sklearn.preprocessing import StandardScaler
 import umap
 import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 
 
 # Set random seeds for reproducibility
