@@ -40,8 +40,19 @@ def get_embedding(img, predictor):
     img_emb = predictor.get_image_embedding()
     return img_emb
 def process_images(file_names, data_path, predictor, num_augmentations=0):
-    embeddings = []
+    image_embeddings = []
     labels = []
+
+    def process_and_store(img, msk):
+        # Resize and process the mask and image
+        resized_mask = cv2.resize(msk, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
+        resized_img = cv2.resize(img, dsize=(1024, 1024), interpolation=cv2.INTER_NEAREST)
+
+        # Process the image to create an embedding
+        img_emb = get_embedding(resized_img, predictor)
+        img_emb = img_emb.cpu().numpy().transpose((2, 0, 3, 1)).reshape((256, 64, 64))
+        image_embeddings.append(img_emb)
+        labels.append(resized_mask)
 
     for fname in tqdm(file_names[0:5]):
         # Read data
@@ -49,34 +60,9 @@ def process_images(file_names, data_path, predictor, num_augmentations=0):
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         mask = cv2.imread(os.path.join(data_path, 'masks', fname), cv2.IMREAD_GRAYSCALE)
         _, mask = cv2.threshold(mask, 128, 1, cv2.THRESH_BINARY)
-        resized_mask = cv2.resize(mask, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
-        resized_img = cv2.resize(image, dsize=(1024, 1024), interpolation=cv2.INTER_NEAREST)
+        process_and_store(image, mask)
 
-        # Get embedding
-        img_emb = get_embedding(resized_img, predictor).cpu().numpy().transpose((2, 0, 3, 1)).reshape((256, 64, 64))
-        embeddings.append(img_emb)
-        labels.append(resized_mask)
-
-        def process_and_store(img, msk):
-            # Resize and process the mask and image
-            resized_mask = cv2.resize(msk, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
-            resized_img = cv2.resize(img, dsize=(1024, 1024), interpolation=cv2.INTER_NEAREST)
-
-            # Process the image to create an embedding
-            img_emb = get_embedding(resized_img, predictor)
-            img_emb = img_emb.cpu().numpy().transpose((2, 0, 3, 1)).reshape((256, 64, 64))
-            image_embeddings.append(img_emb)
-            labels.append(resized_mask)
-            org_img.append(resized_img)
-
-        for fname in tqdm(file_names[0:5]):
-            # Read data
-            image = cv2.imread(os.path.join(data_path, 'images', fname))
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            mask = cv2.imread(os.path.join(data_path, 'masks', fname), cv2.IMREAD_GRAYSCALE)
-            _, mask = cv2.threshold(mask, 128, 1, cv2.THRESH_BINARY)
-
-    return np.array(embeddings), np.array(labels)
+    return image_embeddings, labels
 
 
 def visualize_umap(embeddings, labels, n_neighbors=15, min_dist=0.1, n_components=2):
