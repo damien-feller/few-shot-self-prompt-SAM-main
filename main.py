@@ -69,6 +69,13 @@ def process_images(file_names, data_path, predictor, num_augmentations=0):
             labels.append(resized_mask)
             org_img.append(resized_img)
 
+        for fname in tqdm(file_names[0:5]):
+            # Read data
+            image = cv2.imread(os.path.join(data_path, 'images', fname))
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            mask = cv2.imread(os.path.join(data_path, 'masks', fname), cv2.IMREAD_GRAYSCALE)
+            _, mask = cv2.threshold(mask, 128, 1, cv2.THRESH_BINARY)
+
     return np.array(embeddings), np.array(labels)
 
 
