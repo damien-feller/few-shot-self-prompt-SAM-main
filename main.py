@@ -65,7 +65,7 @@ def process_images(file_names, data_path, predictor, num_augmentations=0):
     return image_embeddings, labels
 
 
-def visualize_umap(embeddings, labels, n_neighbors=15, min_dist=0.1, n_components=2):
+def visualize_umap(embeddings, labels, n_neighbors=15, min_dist=0.1, n_components=3):
     # Convert list of embeddings and labels to NumPy arrays
     embeddings_array = np.array(embeddings)
     labels_array = np.array(labels)
@@ -83,11 +83,32 @@ def visualize_umap(embeddings, labels, n_neighbors=15, min_dist=0.1, n_component
     reducer = umap.UMAP(n_neighbors=n_neighbors, min_dist=min_dist, n_components=n_components)
     embedding = reducer.fit_transform(np.transpose(embeddings_flat))
 
-    plt.figure(figsize=(12, 8))
-    scatter = plt.scatter(embedding[:, 0], embedding[:, 1], c=labels_flat, cmap='Spectral', s=5)
-    plt.colorbar(scatter, spacing='proportional', label='Class')
-    plt.title('UMAP projection of the dataset')
-    plt.savefig(f"/content/UMAP.png")
+    # plt.figure(figsize=(12, 8))
+    # scatter = plt.scatter(embedding[:, 0], embedding[:, 1], c=labels_flat, cmap='bwr', s=5)
+    # plt.colorbar(scatter, spacing='proportional', label='Class')
+    # plt.title('UMAP projection of the dataset')
+    # plt.savefig(f"/content/UMAP.png")
+
+    fig = go.Figure(data=[go.Scatter3d(
+        x=embedding[:, 0],
+        y=embedding[:, 1],
+        z=embedding[:, 2],
+        mode='markers',
+        marker=dict(
+            size=12,
+            color=labels_flat,  # set color to an array/list of desired values
+            colorscale='bwr',  # choose a colorscale
+            opacity=0.8
+        )
+    )])
+
+    # Updating the layout of the plot
+    fig.update_layout(margin=dict(l=0, r=0, b=0, t=0), scene=dict(
+        xaxis_title='X Axis',
+        yaxis_title='Y Axis',
+        zaxis_title='Z Axis'))
+
+    fig.show()
 
 
 
