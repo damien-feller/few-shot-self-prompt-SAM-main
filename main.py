@@ -82,13 +82,11 @@ def visualize_umap(embeddings, labels, n_neighbors=15, min_dist=0.1, n_component
     labels_flat = labels_array.flatten()
     reducer = umap.UMAP(n_neighbors=n_neighbors, min_dist=min_dist, n_components=n_components)
     embedding = reducer.fit_transform(np.transpose(embeddings_flat))
-    print(embedding)
 
     plt.figure(figsize=(12, 8))
     scatter = plt.scatter(embedding[:, 0], embedding[:, 1], c=labels_flat, cmap='Spectral', s=5)
     plt.colorbar(scatter, spacing='proportional', label='Class')
     plt.title('UMAP projection of the dataset')
-    plt.show()
     plt.savefig(f"/content/UMAP.png")
 
 
