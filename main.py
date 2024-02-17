@@ -109,7 +109,7 @@ def visualize_umap(embeddings, labels, n_neighbors=15, min_dist=0.1, n_component
         yaxis_title='Y Axis',
         zaxis_title='Z Axis'))
 
-    fig.show()
+    fig.write_html("/content/my_plotly_figure.html")
 
 
 
