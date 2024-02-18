@@ -93,9 +93,7 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
     if len(images) < num_samples:
         num_samples = len(images)
 
-    indices = np.random.choice(range(len(images)), num_samples, replace=False)
-
-    for i in indices:
+    for i in range(num_samples):
         image = images[i]
         mask = masks[i]
 
