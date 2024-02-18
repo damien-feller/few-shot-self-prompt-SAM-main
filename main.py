@@ -270,8 +270,8 @@ def train(args, predictor):
         all_metrics.append(metrics)
 
         # Visualize SVM predictions on the validation dataset
-        print("Validation Predictions with SVM:")
-        visualize_predictions(val_images, val_embeddings, val_labels, svm_model, num_samples=5, val=True, eval_num=i)
+        #print("Validation Predictions with SVM:")
+        #visualize_predictions(val_images, val_embeddings, val_labels, svm_model, num_samples=5, val=True, eval_num=i)
 
     # Define the file path, e.g., by including a timestamp
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
