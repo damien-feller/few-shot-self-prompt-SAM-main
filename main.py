@@ -263,7 +263,7 @@ def train(args, predictor):
             'positive_precision': report['1']['precision'],
             'negative_recall': report['0']['recall'],
             'positive_recall': report['1']['recall'],
-            'f1_score': report['weighted avg']['f1-score']
+            'f1_score': report['weighted avg']['f1-score'],
             'dice_score': svm_dice_val
         }
 
