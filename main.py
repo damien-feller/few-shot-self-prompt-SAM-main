@@ -143,6 +143,7 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
 
 
 def train(args, predictor):
+    all_metrics = []
     data_path = args.data_path
     assert os.path.exists(data_path), 'data path does not exist!'
 
@@ -266,6 +267,7 @@ def train(args, predictor):
             'f1_score': report['weighted avg']['f1-score'],
             'dice_score': svm_dice_val
         }
+        all_metrics.append(metrics)
 
         # Visualize SVM predictions on the validation dataset
         print("Validation Predictions with SVM:")
@@ -278,15 +280,15 @@ def train(args, predictor):
     # Check if the file exists to write headers only once
     file_exists = os.path.isfile(filename)
 
-    with open(filename, 'a', newline='') as csvfile:
-        fieldnames = ['eval_num', 'accuracy', 'negative_precision', 'positive_precision', 'negative_recall', 'positive_recall', 'f1_score', 'dice_score']
+    with open(filename, 'w', newline='') as csvfile:  # Note: using 'w' to overwrite or create new
+        fieldnames = ['eval_num', 'accuracy', 'negative_precision', 'positive_precision',
+                      'negative_recall', 'positive_recall', 'f1_score', 'dice_score']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
-        # Write header only if the file did not exist prior to opening
-        if not file_exists:
-            writer.writeheader()
+        writer.writeheader()  # Write the header
 
-        writer.writerow(metrics)
+        for metrics in all_metrics:
+            writer.writerow(metrics)  # Write each model's metrics
 
     return svm_model
 
