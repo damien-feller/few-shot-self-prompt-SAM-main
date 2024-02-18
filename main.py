@@ -89,7 +89,7 @@ def predict_and_reshape(model, X, original_shape):
     predictions = model.predict(X)
     return predictions.reshape(original_shape)
 
-def visualize_predictions(org_img, images, masks, model, num_samples=3, val=False):
+def visualize_predictions(org_img, images, masks, model, num_samples=3, val=False, eval_num=0):
     if len(images) < num_samples:
         num_samples = len(images)
 
@@ -135,9 +135,9 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         plt.axis('off')
 
         if val == False:
-            plt.savefig(f"/content/visualisation/train_{i}.png")
+            plt.savefig(f"/content/visualisation/Fold{eval_num}-train_{i}.png")
         else:
-            plt.savefig(f"/content/visualisation/val_{i}.png")
+            plt.savefig(f"/content/visualisation/Fold{eval_num}-val_{i}.png")
 
 
 def train(args, predictor):
@@ -149,8 +149,13 @@ def train(args, predictor):
     fnames = os.listdir(os.path.join(data_path, 'images'))
     # get k random indices from fnames
     random.shuffle(fnames)
-    train_fnames = fnames[:num_image]
-    val_fnames = fnames[-100:]
+    val_fnames = fnames[-25:]
+    fnames[-25:] = []
+
+    #create a number of different training sets
+    train_fnames = []
+    for i in range(args.evaluation_num):
+        train_fnames[i] = fnames[(i*num_image):(i+1)*num_image]
 
     # image augmentation and embedding processing
     num_augmentations = int(args.augmentation_num)  # Number of augmented versions to create per image
@@ -191,82 +196,64 @@ def train(args, predictor):
 
         return image_embeddings, labels, org_img
 
-    # Process training images with augmentation
-    train_embeddings, train_labels, train_images = process_images(train_fnames, augment_data=True)
-
     # Process validation images without augmentation
     val_embeddings, val_labels, val_images = process_images(val_fnames, augment_data=False)
 
-    # Convert to tensors
-    train_embeddings_tensor = torch.stack([torch.Tensor(e) for e in train_embeddings])
-    train_labels_tensor = torch.stack([torch.Tensor(l) for l in train_labels])
+    # Convert to tensor
     val_embeddings_tensor = torch.stack([torch.Tensor(e) for e in val_embeddings])
     val_labels_tensor = torch.stack([torch.Tensor(l) for l in val_labels])
 
-    # Use the same function as defined for Random Forest
-    train_embeddings_flat, train_labels_flat = create_dataset_for_SVM(train_embeddings_tensor.numpy(),
-                                                                     train_labels_tensor.numpy())
     val_embeddings_flat, val_labels_flat = create_dataset_for_SVM(val_embeddings_tensor.numpy(),
                                                                  val_labels_tensor.numpy())
+    for i in range(args.evaluation_num):
+        # Process training images with augmentation
+        train_embeddings, train_labels, train_images = process_images(train_fnames[i], augment_data=True)
 
-    # Perform oversampling on the training data
-    ros = RandomOverSampler(random_state=42)
-    train_embeddings_oversampled, train_labels_oversampled = ros.fit_resample(train_embeddings_flat, train_labels_flat)
+        # Convert to tensors
+        train_embeddings_tensor = torch.stack([torch.Tensor(e) for e in train_embeddings])
+        train_labels_tensor = torch.stack([torch.Tensor(l) for l in train_labels])
 
-    # Now use the oversampled data to train the SVM
-    svm_model = SVC(kernel='rbf', verbose = True)  # Or any other kernel
-    svm_model.fit(train_embeddings_flat, train_labels_flat)
+        # Use the same function as defined for Random Forest
+        train_embeddings_flat, train_labels_flat = create_dataset_for_SVM(train_embeddings_tensor.numpy(),
+                                                                         train_labels_tensor.numpy())
 
-    # Predict on the validation set
-    predicted_masks_svm = predict_and_reshape(svm_model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
-    pred_original =predicted_masks_svm
+        # Perform oversampling on the training data
+        #ros = RandomOverSampler(random_state=42)
+        #train_embeddings_oversampled, train_labels_oversampled = ros.fit_resample(train_embeddings_flat, train_labels_flat)
 
-    # Define the kernel for dilation
-    kernel = np.ones((2, 2), np.uint8)
+        # Now use the oversampled data to train the SVM
+        svm_model = SVC(kernel='rbf', verbose = True)  # Or any other kernel
+        svm_model.fit(train_embeddings_flat, train_labels_flat)
 
-    predicted_masks_svm = cv2.dilate(predicted_masks_svm, kernel, iterations=3)
-    predicted_masks_svm = cv2.erode(predicted_masks_svm, kernel, iterations=3)
+        # Predict on the validation set
+        predicted_masks_svm = predict_and_reshape(svm_model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
+        pred_original =predicted_masks_svm
 
-    # Evaluate the SVM model
-    accuracy_svm = accuracy_score(val_labels_flat, predicted_masks_svm.reshape(-1))
-    print(f'SVM Accuracy (Dilation + Erosion): {accuracy_svm}')
-    print(classification_report(val_labels_flat, predicted_masks_svm.reshape(-1)))
+        # Define the kernel for dilation
+        kernel = np.ones((2, 2), np.uint8)
 
-    # Evaluate the SVM model
-    accuracy_svm = accuracy_score(val_labels_flat, pred_original.reshape(-1))
-    print(f'SVM Accuracy: {accuracy_svm}')
-    print(classification_report(val_labels_flat, pred_original.reshape(-1)))
+        predicted_masks_svm = cv2.dilate(predicted_masks_svm, kernel, iterations=3)
+        predicted_masks_svm = cv2.erode(predicted_masks_svm, kernel, iterations=3)
 
-    # # Train a logistic regression model
-    # logistic_regression_model = LogisticRegression(max_iter = 10000)
-    # logistic_regression_model.fit(train_embeddings_flat, train_labels_flat)
-    #
-    # # Predict on the validation set
-    # predicted_masks_logistic = logistic_regression_model.predict(val_embeddings_flat)
-    #
-    # # Apply thresholding (e.g., 0.5) to get binary predictions
-    # predicted_masks_binary = (predicted_masks_logistic > args.threshold).astype(np.uint8).reshape(len(val_embeddings), 64, 64)
+        # Evaluate the SVM model
+        accuracy_svm = accuracy_score(val_labels_flat, predicted_masks_svm.reshape(-1))
+        print(f'SVM Accuracy (Dilation + Erosion): {accuracy_svm}')
+        print(classification_report(val_labels_flat, predicted_masks_svm.reshape(-1)))
 
-    # Dice Scores
-    svm_dice_val = dice_coeff(torch.Tensor(predicted_masks_svm), torch.Tensor(val_labels))
-    print('SVM Dice (Dilation + Erosion): ', svm_dice_val)
-    svm_dice_val = dice_coeff(torch.Tensor(pred_original), torch.Tensor(val_labels))
-    print('SVM Dice: ', svm_dice_val)
-    # log_dice_val = dice_coeff(torch.Tensor(predicted_masks_binary),torch.Tensor(val_labels))
-    # print('Logsitic Regression Dice: ', svm_dice_val)
+        # Evaluate the SVM model
+        accuracy_svm = accuracy_score(val_labels_flat, pred_original.reshape(-1))
+        print(f'SVM Accuracy: {accuracy_svm}')
+        print(classification_report(val_labels_flat, pred_original.reshape(-1)))
 
-    # # Evaluate the Logistic regression model
-    # accuracy_svm = accuracy_score(val_labels_flat, predicted_masks_binary.reshape(-1))
-    # print(f'Logistic Regression Accuracy: {accuracy_svm}')
-    # print(classification_report(val_labels_flat, predicted_masks_svm.reshape(-1)))
+        # Dice Scores
+        svm_dice_val = dice_coeff(torch.Tensor(predicted_masks_svm), torch.Tensor(val_labels))
+        print('SVM Dice (Dilation + Erosion): ', svm_dice_val)
+        svm_dice_val = dice_coeff(torch.Tensor(pred_original), torch.Tensor(val_labels))
+        print('SVM Dice: ', svm_dice_val)
 
-    # # Visualize Logistic regression predictions on the training dataset
-    # print("Training Predictions with SVM:")
-    # visualize_predictions(train_embeddings, train_labels, logistic_regression_model, val=False)
-
-    # Visualize SVM predictions on the validation dataset
-    print("Validation Predictions with SVM:")
-    visualize_predictions(val_images, val_embeddings, val_labels, svm_model, num_samples=5, val=True)
+        # Visualize SVM predictions on the validation dataset
+        print("Validation Predictions with SVM:")
+        visualize_predictions(val_images, val_embeddings, val_labels, svm_model, num_samples=5, val=True, eval_num=i)
 
     return svm_model
 
@@ -287,6 +274,7 @@ def main():
     parser.add_argument('--learning_rate', type=float, default=1e-3, help='learning rate for the optimizer')
     parser.add_argument('--threshold', type=float, default=0.5, help='threshold for binary segmentation')
     parser.add_argument('--augmentation_num', type=float, default=20, help='number of image augmentations to perform')
+    parser.add_argument('--evaluation_num', type=float, default=5, help='number of models to trian for evaluation')
     args = parser.parse_args()
 
     # set random seed
