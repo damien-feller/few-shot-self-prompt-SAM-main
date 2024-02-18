@@ -22,6 +22,10 @@ from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, classification_report
 from imblearn.over_sampling import RandomOverSampler
 from sklearn.preprocessing import StandardScaler
+import os
+import csv
+from datetime import datetime
+
 
 
 # Set random seeds for reproducibility
@@ -236,24 +240,53 @@ def train(args, predictor):
         predicted_masks_svm = cv2.erode(predicted_masks_svm, kernel, iterations=3)
 
         # Evaluate the SVM model
-        accuracy_svm = accuracy_score(val_labels_flat, predicted_masks_svm.reshape(-1))
-        print(f'SVM Accuracy (Dilation + Erosion): {accuracy_svm}')
-        print(classification_report(val_labels_flat, predicted_masks_svm.reshape(-1)))
+        #accuracy_svm = accuracy_score(val_labels_flat, predicted_masks_svm.reshape(-1))
+        # print(f'SVM Accuracy (Dilation + Erosion): {accuracy_svm}')
+        # print(classification_report(val_labels_flat, predicted_masks_svm.reshape(-1)))
 
         # Evaluate the SVM model
-        accuracy_svm = accuracy_score(val_labels_flat, pred_original.reshape(-1))
-        print(f'SVM Accuracy: {accuracy_svm}')
-        print(classification_report(val_labels_flat, pred_original.reshape(-1)))
+        report = classification_report(val_labels_flat, pred_original.reshape(-1), output_dict=True)
+        #accuracy_svm = accuracy_score(val_labels_flat, pred_original.reshape(-1))
+        # print(f'SVM Accuracy: {accuracy_svm}')
+        # print(classification_report(val_labels_flat, pred_original.reshape(-1)))
 
         # Dice Scores
-        svm_dice_val = dice_coeff(torch.Tensor(predicted_masks_svm), torch.Tensor(val_labels))
-        print('SVM Dice (Dilation + Erosion): ', svm_dice_val)
+        # svm_dice_val = dice_coeff(torch.Tensor(predicted_masks_svm), torch.Tensor(val_labels))
+        # print('SVM Dice (Dilation + Erosion): ', svm_dice_val)
         svm_dice_val = dice_coeff(torch.Tensor(pred_original), torch.Tensor(val_labels))
-        print('SVM Dice: ', svm_dice_val)
+        #print('SVM Dice: ', svm_dice_val)
+
+        metrics = {
+            'eval_num': i,  # Evaluation number or model identifier
+            'accuracy': report['accuracy'],
+            'negative_precision': report['0']['precision'],
+            'positive_precision': report['1']['precision'],
+            'negative_recall': report['0']['recall'],
+            'positive_recall': report['1']['recall'],
+            'f1_score': report['weighted avg']['f1-score']
+            'dice_score': svm_dice_val
+        }
 
         # Visualize SVM predictions on the validation dataset
         print("Validation Predictions with SVM:")
         visualize_predictions(val_images, val_embeddings, val_labels, svm_model, num_samples=5, val=True, eval_num=i)
+
+    # Define the file path, e.g., by including a timestamp
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename = f'/content/model_metrics_{timestamp}.csv'
+
+    # Check if the file exists to write headers only once
+    file_exists = os.path.isfile(filename)
+
+    with open(filename, 'a', newline='') as csvfile:
+        fieldnames = ['eval_num', 'accuracy', 'precision', 'recall', 'f1_score']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        # Write header only if the file did not exist prior to opening
+        if not file_exists:
+            writer.writeheader()
+
+        writer.writerow(metrics)
 
     return svm_model
 
