@@ -274,7 +274,7 @@ def main():
     parser.add_argument('--learning_rate', type=float, default=1e-3, help='learning rate for the optimizer')
     parser.add_argument('--threshold', type=float, default=0.5, help='threshold for binary segmentation')
     parser.add_argument('--augmentation_num', type=float, default=20, help='number of image augmentations to perform')
-    parser.add_argument('--evaluation_num', type=float, default=5, help='number of models to trian for evaluation')
+    parser.add_argument('--evaluation_num', type=int, default=5, help='number of models to trian for evaluation')
     args = parser.parse_args()
 
     # set random seed
