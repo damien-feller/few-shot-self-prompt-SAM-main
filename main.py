@@ -279,7 +279,7 @@ def train(args, predictor):
     file_exists = os.path.isfile(filename)
 
     with open(filename, 'a', newline='') as csvfile:
-        fieldnames = ['eval_num', 'accuracy', 'precision', 'recall', 'f1_score']
+        fieldnames = ['eval_num', 'accuracy', 'negative_precision', 'positive_precision', 'negative_recall', 'positive_recall', 'f1_score', 'dice_score']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
         # Write header only if the file did not exist prior to opening
