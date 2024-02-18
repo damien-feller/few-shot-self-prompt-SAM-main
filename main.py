@@ -253,7 +253,7 @@ def train(args, predictor):
         # Dice Scores
         # svm_dice_val = dice_coeff(torch.Tensor(predicted_masks_svm), torch.Tensor(val_labels))
         # print('SVM Dice (Dilation + Erosion): ', svm_dice_val)
-        svm_dice_val = dice_coeff(torch.Tensor(pred_original), torch.Tensor(val_labels))
+        svm_dice_val = dice_coeff(torch.Tensor(np.array(pred_original)), torch.Tensor(np.array(val_labels)))
         #print('SVM Dice: ', svm_dice_val)
 
         metrics = {
