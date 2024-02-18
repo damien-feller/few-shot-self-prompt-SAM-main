@@ -152,10 +152,12 @@ def train(args, predictor):
     val_fnames = fnames[-25:]
     fnames[-25:] = []
 
+
     #create a number of different training sets
     train_fnames = []
     for i in range(args.evaluation_num):
-        train_fnames[i] = fnames[(i*num_image):(i+1)*num_image]
+        segment = fnames[(i * num_image):(i + 1) * num_image]
+        train_fnames.append(segment)
 
     # image augmentation and embedding processing
     num_augmentations = int(args.augmentation_num)  # Number of augmented versions to create per image
