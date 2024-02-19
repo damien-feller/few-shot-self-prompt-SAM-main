@@ -261,12 +261,12 @@ def train(args, predictor):
                                                                          train_labels_tensor.numpy())
 
         # Perform oversampling on the training data
-        #ros = RandomOverSampler(random_state=42)
-        #train_embeddings_oversampled, train_labels_oversampled = ros.fit_resample(train_embeddings_flat, train_labels_flat)
+        ros = RandomOverSampler(random_state=42)
+        train_embeddings_oversampled, train_labels_oversampled = ros.fit_resample(train_embeddings_flat, train_labels_flat)
 
         # Now use the oversampled data to train the SVM
         svm_model = SVC(kernel='rbf', verbose = True)  # Or any other kernel
-        svm_model.fit(train_embeddings_flat, train_labels_flat)
+        svm_model.fit(train_embeddings_oversampled, train_labels_oversampled)
 
         # Predict on the validation set
         predicted_masks_svm = predict_and_reshape(svm_model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
