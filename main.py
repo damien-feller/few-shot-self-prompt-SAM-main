@@ -93,6 +93,44 @@ def predict_and_reshape(model, X, original_shape):
     predictions = model.predict(X)
     return predictions.reshape(original_shape)
 
+
+def calculate_iou(pred_box, gt_box):
+    """
+    Calculate the Intersection over Union (IoU) of two bounding boxes.
+
+    Parameters:
+    - pred_box (tuple): A tuple (x1, y1, x2, y2) representing the top-left and bottom-right coordinates of the predicted bounding box.
+    - gt_box (tuple): A tuple (x1, y1, x2, y2) representing the top-left and bottom-right coordinates of the ground truth bounding box.
+
+    Returns:
+    - float: The IoU between the two bounding boxes.
+    """
+
+    # Unpack the coordinates
+    x1_pred, y1_pred, x2_pred, y2_pred = pred_box
+    x1_gt, y1_gt, x2_gt, y2_gt = gt_box
+
+    # Calculate the (x, y) coordinates of the intersection rectangle
+    x1_inter = max(x1_pred, x1_gt)
+    y1_inter = max(y1_pred, y1_gt)
+    x2_inter = min(x2_pred, x2_gt)
+    y2_inter = min(y2_pred, y2_gt)
+
+    # Calculate the area of intersection rectangle
+    inter_area = max(0, x2_inter - x1_inter) * max(0, y2_inter - y1_inter)
+
+    # Calculate the area of both the prediction and ground-truth rectangles
+    pred_area = (x2_pred - x1_pred) * (y2_pred - y1_pred)
+    gt_area = (x2_gt - x1_gt) * (y2_gt - y1_gt)
+
+    # Calculate the area of the union
+    union_area = pred_area + gt_area - inter_area
+
+    # Calculate the IoU
+    iou = inter_area / union_area
+
+    return iou
+
 def visualize_predictions(org_img, images, masks, model, num_samples=3, val=False, eval_num=0):
     if len(images) < num_samples:
         num_samples = len(images)
