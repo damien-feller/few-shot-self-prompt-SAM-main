@@ -194,72 +194,101 @@ def train(args, predictor):
 
         return image_embeddings, labels
 
-    # Process training images with augmentation
-    train_embeddings, train_labels = process_images(train_fnames, augment_data=True)
-
     # Process validation images without augmentation
-    val_embeddings, val_labels = process_images(val_fnames, augment_data=False)
+    val_embeddings, val_labels, val_images = process_images(val_fnames, augment_data=False)
 
-    # Convert to tensors
-    train_embeddings_tensor = torch.stack([torch.Tensor(e) for e in train_embeddings])
-    train_labels_tensor = torch.stack([torch.Tensor(l) for l in train_labels])
+    # Convert to tensor
     val_embeddings_tensor = torch.stack([torch.Tensor(e) for e in val_embeddings])
     val_labels_tensor = torch.stack([torch.Tensor(l) for l in val_labels])
 
-    # Use the same function as defined for Random Forest
-    train_embeddings_flat, train_labels_flat = create_dataset_for_SVM(train_embeddings_tensor.numpy(),
-                                                                     train_labels_tensor.numpy())
     val_embeddings_flat, val_labels_flat = create_dataset_for_SVM(val_embeddings_tensor.numpy(),
-                                                                 val_labels_tensor.numpy())
+                                                                  val_labels_tensor.numpy())
+    for i in range(args.evaluation_num):
+        # Process training images with augmentation
+        train_embeddings, train_labels, train_images = process_images(train_fnames[i], augment_data=True)
 
-    # Create a scaler instance
-    global scaler
-    scaler = StandardScaler()
-    # Fit on training data and transform both training and validation data
-    scaler.fit(train_embeddings_flat)
-    train_embeddings_scaled = scaler.transform(train_embeddings_flat)
-    val_embeddings_scaled = scaler.transform(val_embeddings_flat)
+        # Convert to tensors
+        train_embeddings_tensor = torch.stack([torch.Tensor(e) for e in train_embeddings])
+        train_labels_tensor = torch.stack([torch.Tensor(l) for l in train_labels])
 
-    # Perform oversampling on the training data
-    ros = RandomOverSampler(random_state=42)
-    train_embeddings_oversampled, train_labels_oversampled = ros.fit_resample(train_embeddings_scaled, train_labels_flat)
+        # Use the same function as defined for Random Forest
+        train_embeddings_flat, train_labels_flat = create_dataset_for_SVM(train_embeddings_tensor.numpy(),
+                                                                          train_labels_tensor.numpy())
 
-    # Train a logistic regression model
-    logistic_regression_model = LogisticRegression(solver = 'lbfgs', max_iter = 50000, n_jobs = -1, verbose = 1)
-    logistic_regression_model.fit(train_embeddings_scaled, train_labels_flat)
+        # Perform oversampling on the training data
+        # ros = RandomOverSampler(random_state=42)
+        # train_embeddings_oversampled, train_labels_oversampled = ros.fit_resample(train_embeddings_flat, train_labels_flat)
 
-    # Predict on the validation set
-    predicted_masks_log = predict_and_reshape(logistic_regression_model, val_embeddings_scaled, (len(val_embeddings_tensor), 64, 64))
-    pred_original = predicted_masks_log
+        # Train a logistic regression model
+        logistic_regression_model = LogisticRegression(solver='lbfgs', max_iter=50000, n_jobs=-1, verbose=1)
+        logistic_regression_model.fit(train_embeddings_flat, train_labels_flat)
 
-    # Apply thresholding (e.g., 0.5) to get binary predictions
-    predicted_masks_binary = (predicted_masks_log > args.threshold).astype(np.uint8)
+        # Predict on the validation set
+        predicted_masks_log = predict_and_reshape(logistic_regression_model, val_embeddings_scaled,
+                                                  (len(val_embeddings_tensor), 64, 64))
 
-    # Define the kernel for dilation
-    kernel = np.ones((2, 2), np.uint8)
+        # Apply thresholding (e.g., 0.5) to get binary predictions
+        predicted_masks_binary = (predicted_masks_log > args.threshold).astype(np.uint8)
+        pred_original = predicted_masks_binary
 
-    predicted_masks_log = cv2.dilate(predicted_masks_binary, kernel, iterations=3)
-    predicted_masks_log = cv2.erode(predicted_masks_binary, kernel, iterations=3)
+        # Define the kernel for dilation
+        kernel = np.ones((2, 2), np.uint8)
 
-    # Evaluate the SVM model
-    accuracy_svm = accuracy_score(val_labels_flat, predicted_masks_log.reshape(-1))
-    print(f'SVM Accuracy (Dilation + Erosion): {accuracy_svm}')
-    print(classification_report(val_labels_flat, predicted_masks_log.reshape(-1)))
+        # predicted_masks_svm = cv2.dilate(predicted_masks_svm, kernel, iterations=3)
+        # predicted_masks_svm = cv2.erode(predicted_masks_svm, kernel, iterations=3)
 
-    # Evaluate the SVM model
-    accuracy_svm = accuracy_score(val_labels_flat, pred_original.reshape(-1))
-    print(f'SVM Accuracy: {accuracy_svm}')
-    print(classification_report(val_labels_flat, pred_original.reshape(-1)))
+        # Evaluate the SVM model
+        # accuracy_svm = accuracy_score(val_labels_flat, predicted_masks_svm.reshape(-1))
+        # print(f'SVM Accuracy (Dilation + Erosion): {accuracy_svm}')
+        # print(classification_report(val_labels_flat, predicted_masks_svm.reshape(-1)))
 
-    # Dice Scores
-    svm_dice_val = dice_coeff(torch.Tensor(predicted_masks_log), torch.Tensor(val_labels))
-    print('SVM Dice (Dilation + Erosion): ', svm_dice_val)
-    svm_dice_val = dice_coeff(torch.Tensor(pred_original), torch.Tensor(val_labels))
-    print('SVM Dice: ', svm_dice_val)
+        # Evaluate the SVM model
+        report = classification_report(val_labels_flat, pred_original.reshape(-1), target_names=['0', '1'],
+                                       output_dict=True)
+        # accuracy_svm = accuracy_score(val_labels_flat, pred_original.reshape(-1))
+        # print(f'SVM Accuracy: {accuracy_svm}')
+        # print(classification_report(val_labels_flat, pred_original.reshape(-1)))
 
-    # Visualize SVM predictions on the validation dataset
-    print("Validation Predictions with SVM:")
-    visualize_predictions(val_embeddings, val_labels, logistic_regression_model, num_samples=5, val=True)
+        # Dice Scores
+        # svm_dice_val = dice_coeff(torch.Tensor(predicted_masks_svm), torch.Tensor(val_labels))
+        # print('SVM Dice (Dilation + Erosion): ', svm_dice_val)
+        svm_dice_val = dice_coeff(torch.Tensor(np.array(pred_original)), torch.Tensor(np.array(val_labels)))
+        # print('SVM Dice: ', svm_dice_val)
+
+        metrics = {
+            'eval_num': i,  # Evaluation number or model identifier
+            'accuracy': report['accuracy'],
+            'negative_precision': report['0']['precision'],
+            'positive_precision': report['1']['precision'],
+            'negative_recall': report['0']['recall'],
+            'positive_recall': report['1']['recall'],
+            'f1_score': report['weighted avg']['f1-score'],
+            'dice_score': svm_dice_val
+        }
+        all_metrics.append(metrics)
+
+        # Visualize SVM predictions on the validation dataset
+        # print("Validation Predictions with SVM:")
+        if i == 0:
+            visualize_predictions(val_images, val_embeddings, val_labels, logistic_regression_model, num_samples=25, val=True,
+                                  eval_num=i)
+
+    # Define the file path, e.g., by including a timestamp
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename = f'/content/model_metrics_{timestamp}.csv'
+
+    # Check if the file exists to write headers only once
+    file_exists = os.path.isfile(filename)
+
+    with open(filename, 'w', newline='') as csvfile:  # Note: using 'w' to overwrite or create new
+        fieldnames = ['eval_num', 'accuracy', 'negative_precision', 'positive_precision',
+                      'negative_recall', 'positive_recall', 'f1_score', 'dice_score']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        writer.writeheader()  # Write the header
+
+        for metrics in all_metrics:
+            writer.writerow(metrics)  # Write each model's metrics
 
     return logistic_regression_model
 
