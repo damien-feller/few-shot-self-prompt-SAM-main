@@ -139,6 +139,7 @@ def visualize_predictions(images, masks, model, num_samples=3, val=False):
 
 
 def train(args, predictor):
+    all_metrics = []
     data_path = args.data_path
     assert os.path.exists(data_path), 'data path does not exist!'
 
@@ -147,10 +148,14 @@ def train(args, predictor):
     fnames = os.listdir(os.path.join(data_path, 'images'))
     # get k random indices from fnames
     random.shuffle(fnames)
-    fnames = fnames[:num_image]
+    val_fnames = fnames[-25:]
+    fnames[-25:] = []
 
-    # Split file names into training and validation sets
-    train_fnames, val_fnames = train_test_split(fnames, test_size=0.4, random_state=42)
+    # create a number of different training sets
+    train_fnames = []
+    for i in range(args.evaluation_num):
+        segment = fnames[(i * num_image):(i + 1) * num_image]
+        train_fnames.append(segment)
 
     # image augmentation and embedding processing
     num_augmentations = int(args.augmentation_num)  # Number of augmented versions to create per image
