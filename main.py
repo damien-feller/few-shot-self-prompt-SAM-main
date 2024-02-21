@@ -354,7 +354,7 @@ def train(args, predictor):
 
     with open(filename, 'w', newline='') as csvfile:  # Note: using 'w' to overwrite or create new
         fieldnames = ['eval_num', 'accuracy', 'negative_precision', 'positive_precision',
-                      'negative_recall', 'positive_recall', 'f1_score', 'dice_score']
+                      'negative_recall', 'positive_recall', 'f1_score','BB IoU','Time per Sample', 'dice_score']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
         writer.writeheader()  # Write the header
