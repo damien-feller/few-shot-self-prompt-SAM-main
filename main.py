@@ -272,7 +272,7 @@ def train(args, predictor):
         start_time = time.time()  # Start timing
         predicted_masks_svm = predict_and_reshape(svm_model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
         end_time = time.time()  # End timing
-        prediction_time = (end_time - start_time) / len(val_fnames)
+        prediction_time = (end_time - start_time) / 25
         pred_original =predicted_masks_svm
 
         # Define the kernel for dilation
@@ -289,7 +289,7 @@ def train(args, predictor):
         # prompt the sam with the bounding box
         BBIoUs = []
         for i in range(len(predicted_masks_svm)):
-            H, W, _ = predicted_masks_svm[i].shape
+            H, W = predicted_masks_svm[i].shape
             y_indices, x_indices = np.where(predicted_masks_svm[i] > 0)
             y_val, x_val = np.where(val_labels[i] > 0)
             if np.all(predicted_masks_svm[i] == 0):
