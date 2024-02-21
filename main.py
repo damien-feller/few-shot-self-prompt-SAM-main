@@ -93,43 +93,43 @@ def predict_and_reshape(model, X, original_shape):
     predictions = model.predict(X)
     return predictions.reshape(original_shape)
 
-
-def calculate_iou(pred_box, gt_box):
+def calculate_iou(ground_truth, prediction):
     """
     Calculate the Intersection over Union (IoU) of two bounding boxes.
 
     Parameters:
-    - pred_box (tuple): A tuple (x1, y1, x2, y2) representing the top-left and bottom-right coordinates of the predicted bounding box.
-    - gt_box (tuple): A tuple (x1, y1, x2, y2) representing the top-left and bottom-right coordinates of the ground truth bounding box.
+    ground_truth (tuple): A tuple of (x1, y1, x2, y2) representing the bottom left and top right corners of the ground truth bounding box.
+    prediction (tuple): A tuple of (x1, y1, x2, y2) representing the bottom left and top right corners of the predicted bounding box.
 
     Returns:
-    - float: The IoU between the two bounding boxes.
+    float: The IoU score.
     """
 
     # Unpack the coordinates
-    x1_pred, y1_pred, x2_pred, y2_pred = pred_box
-    x1_gt, y1_gt, x2_gt, y2_gt = gt_box
+    gt_x1, gt_y1, gt_x2, gt_y2 = ground_truth
+    pred_x1, pred_y1, pred_x2, pred_y2 = prediction
 
     # Calculate the (x, y) coordinates of the intersection rectangle
-    x1_inter = max(x1_pred, x1_gt)
-    y1_inter = max(y1_pred, y1_gt)
-    x2_inter = min(x2_pred, x2_gt)
-    y2_inter = min(y2_pred, y2_gt)
+    inter_x1 = max(gt_x1, pred_x1)
+    inter_y1 = max(gt_y1, pred_y1)
+    inter_x2 = min(gt_x2, pred_x2)
+    inter_y2 = min(gt_y2, pred_y2)
 
-    # Calculate the area of intersection rectangle
-    inter_area = max(0, x2_inter - x1_inter) * max(0, y2_inter - y1_inter)
+    # Compute the area of intersection rectangle
+    inter_area = max(0, inter_x2 - inter_x1) * max(0, inter_y2 - inter_y1)
 
-    # Calculate the area of both the prediction and ground-truth rectangles
-    pred_area = (x2_pred - x1_pred) * (y2_pred - y1_pred)
-    gt_area = (x2_gt - x1_gt) * (y2_gt - y1_gt)
+    # Compute the area of both the prediction and ground truth rectangles
+    gt_area = (gt_x2 - gt_x1) * (gt_y2 - gt_y1)
+    pred_area = (pred_x2 - pred_x1) * (pred_y2 - pred_y1)
 
-    # Calculate the area of the union
-    union_area = pred_area + gt_area - inter_area
+    # Compute the union area by taking both areas and subtracting the intersection area
+    union_area = gt_area + pred_area - inter_area
 
-    # Calculate the IoU
+    # Compute the IoU by dividing the intersection area by the union area
     iou = inter_area / union_area
 
     return iou
+
 
 def visualize_predictions(org_img, images, masks, model, num_samples=3, val=False, eval_num=0):
     if len(images) < num_samples:
@@ -269,7 +269,10 @@ def train(args, predictor):
         svm_model.fit(train_embeddings_flat, train_labels_flat)
 
         # Predict on the validation set
+        start_time = time.time()  # Start timing
         predicted_masks_svm = predict_and_reshape(svm_model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
+        end_time = time.time()  # End timing
+        prediction_time = (end_time - start_time) / len(val_fnames)
         pred_original =predicted_masks_svm
 
         # Define the kernel for dilation
@@ -282,6 +285,34 @@ def train(args, predictor):
         #accuracy_svm = accuracy_score(val_labels_flat, predicted_masks_svm.reshape(-1))
         # print(f'SVM Accuracy (Dilation + Erosion): {accuracy_svm}')
         # print(classification_report(val_labels_flat, predicted_masks_svm.reshape(-1)))
+
+        # prompt the sam with the bounding box
+        BBIoUs = []
+        for i in range(len(predicted_masks_svm)):
+            H, W, _ = predicted_masks_svm[i].shape
+            y_indices, x_indices = np.where(predicted_masks_svm[i] > 0)
+            y_val, x_val = np.where(val_labels[i] > 0)
+            if np.all(predicted_masks_svm[i] == 0):
+                bbox = np.array([0, 0, H, W])
+            else:
+                x_minVal, x_maxVal = np.min(x_val), np.max(x_val)
+                y_minVal, y_maxVal = np.min(y_val), np.max(y_val)
+                # x_minVal = max(0, x_minVal - np.random.randint(0, 20))
+                # x_max = min(W, x_max + np.random.randint(0, 20))
+                # y_min = max(0, y_min - np.random.randint(0, 20))
+                # y_max = min(H, y_max + np.random.randint(0, 20))
+                bboxVal = np.array([x_minVal, y_minVal, x_maxVal, y_maxVal])
+
+                x_min, x_max = np.min(x_indices), np.max(x_indices)
+                y_min, y_max = np.min(y_indices), np.max(y_indices)
+                # x_min = max(0, x_min - np.random.randint(0, 20))
+                # x_max = min(W, x_max + np.random.randint(0, 20))
+                # y_min = max(0, y_min - np.random.randint(0, 20))
+                # y_max = min(H, y_max + np.random.randint(0, 20))
+                bbox = np.array([x_min, y_min, x_max, y_max])
+                BBIoU = calculate_iou(bboxVal, bbox)
+                BBIoUs.append(BBIoU)
+
 
         # Evaluate the SVM model
         report = classification_report(val_labels_flat, pred_original.reshape(-1),target_names = ['0','1'], output_dict=True)
@@ -303,6 +334,8 @@ def train(args, predictor):
             'negative_recall': report['0']['recall'],
             'positive_recall': report['1']['recall'],
             'f1_score': report['weighted avg']['f1-score'],
+            'BB IoU': np.mean(BBIoUs),
+            'Time per Sample': prediction_time,
             'dice_score': svm_dice_val
         }
         all_metrics.append(metrics)
