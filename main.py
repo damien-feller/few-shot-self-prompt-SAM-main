@@ -288,11 +288,11 @@ def train(args, predictor):
 
         # prompt the sam with the bounding box
         BBIoUs = []
-        for i in range(len(predicted_masks_svm)):
-            H, W = predicted_masks_svm[i].shape
-            y_indices, x_indices = np.where(predicted_masks_svm[i] > 0)
-            y_val, x_val = np.where(val_labels[i] > 0)
-            if np.all(predicted_masks_svm[i] == 0):
+        for j in range(len(predicted_masks_svm)):
+            H, W = predicted_masks_svm[j].shape
+            y_indices, x_indices = np.where(predicted_masks_svm[j] > 0)
+            y_val, x_val = np.where(val_labels[j] > 0)
+            if np.all(predicted_masks_svm[j] == 0):
                 bbox = np.array([0, 0, H, W])
             else:
                 x_minVal, x_maxVal = np.min(x_val), np.max(x_val)
