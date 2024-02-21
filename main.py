@@ -336,7 +336,7 @@ def train(args, predictor):
             'f1_score': report['weighted avg']['f1-score'],
             'BB IoU': np.mean(BBIoUs),
             'Time per Sample': prediction_time,
-            'dice_score': svm_dice_val
+            'dice_score': svm_dice_val.numpy()
         }
         all_metrics.append(metrics)
 
