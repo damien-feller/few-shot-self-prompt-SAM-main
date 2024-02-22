@@ -265,7 +265,7 @@ def train(args, predictor):
         train_embeddings_oversampled, train_labels_oversampled = ros.fit_resample(train_embeddings_flat, train_labels_flat)
 
         # Train a logistic regression model
-        print('Training model')
+        print('Training model:', i)
         logistic_regression_model = LogisticRegression(solver='saga', max_iter=50000, n_jobs=-1)
         logistic_regression_model.fit(train_embeddings_flat, train_labels_flat)
 
