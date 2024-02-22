@@ -143,7 +143,7 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         # Flatten the image for SVM prediction
         image_flat = image.reshape(-1, image.shape[0])
         # Predictions
-        pred_flat = model.predict(image_flat)
+        pred_flat = model.predict(image_flat.gpu())
         pred_flat = (pred_flat > 0.5).astype(np.uint8)
         # Reshape the prediction to the original mask shape
         pred = pred_flat.reshape(mask.shape)
@@ -273,7 +273,7 @@ def train(args, predictor):
 
         # Predict on the validation set
         start_time = time.time()  # Start timing
-        predicted_masks_svm = predict_and_reshape(model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
+        predicted_masks_svm = predict_and_reshape(model, val_embeddings_flat.gpu(), (len(val_embeddings_tensor), 64, 64))
         predicted_masks_svm = (predicted_masks_svm > args.threshold).astype(np.uint8)
         end_time = time.time()  # End timing
         prediction_time = (end_time - start_time) / 25
