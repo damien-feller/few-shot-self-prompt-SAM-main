@@ -264,16 +264,21 @@ def train(args, predictor):
         ros = RandomOverSampler(random_state=42)
         train_embeddings_oversampled, train_labels_oversampled = ros.fit_resample(train_embeddings_flat, train_labels_flat)
 
-        # Now use the oversampled data to train the SVM
-        svm_model = SVC(kernel='rbf', verbose = True)  # Or any other kernel
-        svm_model.fit(train_embeddings_flat, train_labels_flat)
+        # Train a logistic regression model
+        logistic_regression_model = LogisticRegression(solver='lbfgs', max_iter=50000, n_jobs=-1, verbose=1)
+        logistic_regression_model.fit(train_embeddings_flat, train_labels_flat)
 
         # Predict on the validation set
         start_time = time.time()  # Start timing
-        predicted_masks_svm = predict_and_reshape(svm_model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
-        end_time = time.time()  # End timing
+        predicted_masks_log = predict_and_reshape(logistic_regression_model, val_embeddings_flat,
+                                                  (len(val_embeddings_tensor), 64, 64))
+
+        # Apply thresholding (e.g., 0.5) to get binary predictions
+        predicted_masks_binary = (predicted_masks_log > args.threshold).astype(np.uint8)
+        end_time = time.time()
+        pred_original = predicted_masks_binary
+
         prediction_time = (end_time - start_time) / 25
-        pred_original =predicted_masks_svm
 
         # Define the kernel for dilation
         kernel = np.ones((2, 2), np.uint8)
