@@ -144,6 +144,7 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         image_flat = image.reshape(-1, image.shape[0])
         # Predictions
         pred_flat = model.predict(image_flat)
+        pred_flat = (pred_flat > 0.5).astype(np.uint8)
         # Reshape the prediction to the original mask shape
         pred = pred_flat.reshape(mask.shape)
         pred_original = pred
@@ -267,7 +268,7 @@ def train(args, predictor):
 
         # Initialize the XGBoost classifier model
         model = xgb.XGBClassifier(objective='binary:logistic', colsample_bytree=0.3, learning_rate=0.1,
-                                  max_depth=5, alpha=10, n_estimators=100, verbosity=2, device = "cuda", predictor='gpu_predictor')
+                                  max_depth=5, alpha=10, n_estimators=100, verbosity=2, device = "cuda")
         model.fit(train_embeddings_flat, train_labels_flat)
 
         # Predict on the validation set
