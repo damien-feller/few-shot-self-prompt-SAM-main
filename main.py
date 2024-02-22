@@ -26,6 +26,8 @@ import os
 import csv
 from datetime import datetime
 import xgboost as xgb
+import seaborn as sns
+import pandas as pd
 
 
 
@@ -93,6 +95,28 @@ def create_dataset_for_SVM(embeddings, labels):
 def predict_and_reshape(model, X, original_shape):
     predictions = model.predict(X)
     return predictions.reshape(original_shape)
+
+def plot_feature_importance(importance, names, model_type, eval_num=0):
+    # Create arrays from feature importance and feature names
+    feature_importance = np.array(importance)
+    feature_names = np.array(names)
+
+    # Create a DataFrame using a Dictionary
+    data={'feature_names':feature_names,'feature_importance':feature_importance}
+    fi_df = pd.DataFrame(data)
+
+    # Sort the DataFrame in order decreasing feature importance
+    fi_df.sort_values(by=['feature_importance'], ascending=False,inplace=True)
+
+    # Define size of bar plot
+    plt.figure(figsize=(10,8))
+    # Plot Searborn bar chart
+    sns.barplot(x=fi_df['feature_importance'], y=fi_df['feature_names'])
+    # Add chart labels
+    plt.title(model_type + ' - Feature Importance')
+    plt.xlabel('FEATURE IMPORTANCE')
+    plt.ylabel('FEATURE NAMES')
+    plt.savefig(f"/content/visualisation/feature importance{eval_num}.png")
 
 def calculate_iou(ground_truth, prediction):
     """
@@ -270,6 +294,10 @@ def train(args, predictor):
         model = xgb.XGBClassifier(objective='binary:logistic', colsample_bytree=0.3, learning_rate=0.1,
                                   max_depth=5, alpha=10, n_estimators=100, verbosity=2, device = "cuda")
         model.fit(train_embeddings_flat, train_labels_flat)
+
+        feature_importance = model.feature_importances_
+        feature_names = [f"Feature {k}" for k in range(train_embeddings_flat.shape[1])]
+        plot_feature_importance(feature_importance, feature_names, 'XGBoost', i)
 
         # Predict on the validation set
         start_time = time.time()  # Start timing
