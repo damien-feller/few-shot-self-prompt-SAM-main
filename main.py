@@ -266,7 +266,7 @@ def train(args, predictor):
 
         # Now use the oversampled data to train the SVM
         svm_model = SVC(kernel='rbf', verbose = True)  # Or any other kernel
-        svm_model.fit(train_embeddings_oversampled, train_labels_oversampled)
+        svm_model.fit(train_embeddings_flat, train_labels_flat)
 
         # Predict on the validation set
         start_time = time.time()  # Start timing
