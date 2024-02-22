@@ -105,11 +105,11 @@ def plot_feature_importance(importance, names, model_type, eval_num=0):
     data={'feature_names':feature_names,'feature_importance':feature_importance}
     fi_df = pd.DataFrame(data)
 
-    # Sort the DataFrame in order decreasing feature importance
-    fi_df.sort_values(by=['feature_importance'], ascending=False,inplace=True)
+    # Keep the original order of features
+    fi_df = fi_df.set_index('feature_names')
 
     # Define size of bar plot
-    plt.figure(figsize=(10,8))
+    plt.figure(figsize=(20,16))
     # Plot Searborn bar chart
     sns.barplot(x=fi_df['feature_importance'], y=fi_df['feature_names'])
     # Add chart labels
