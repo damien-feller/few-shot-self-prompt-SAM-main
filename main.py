@@ -111,11 +111,14 @@ def plot_feature_importance(importance, names, model_type, eval_num=0):
     # Define size of bar plot
     plt.figure(figsize=(20,16))
     # Plot Searborn bar chart
-    sns.barplot(x=fi_df['feature_importance'], y=fi_df['feature_names'])
+    sns.barplot(x=fi_df['feature_importance'], y=fi_df.index, order=fi_df.index, orient='h')
     # Add chart labels
-    plt.title(model_type + ' - Feature Importance')
+    plt.title(model_type + ' - Feature Importance (Ordered by Feature Number)')
     plt.xlabel('FEATURE IMPORTANCE')
     plt.ylabel('FEATURE NAMES')
+
+    # Improve layout for large number of features
+    plt.tight_layout()
     plt.savefig(f"/content/visualisation/feature importance{eval_num}.png")
 
 def calculate_iou(ground_truth, prediction):
