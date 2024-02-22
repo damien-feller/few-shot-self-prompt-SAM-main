@@ -96,7 +96,7 @@ def predict_and_reshape(model, X, original_shape):
     predictions = model.predict(X)
     return predictions.reshape(original_shape)
 
-def plot_feature_importance(importance, names, model_type, eval_num=0):
+def plot_feature_importance(importance, names, model_type):
     # Create arrays from feature importance and feature names
     feature_importance = np.array(importance)
     feature_names = np.array(names)
@@ -119,7 +119,7 @@ def plot_feature_importance(importance, names, model_type, eval_num=0):
 
     # Improve layout for large number of features
     plt.tight_layout()
-    plt.savefig(f"/content/visualisation/feature importance{eval_num}.png")
+    plt.savefig(f"/content/visualisation/feature importance.png")
 
 def calculate_iou(ground_truth, prediction):
     """
@@ -211,6 +211,7 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
 
 def train(args, predictor):
     all_metrics = []
+    feature_importance = []
     data_path = args.data_path
     assert os.path.exists(data_path), 'data path does not exist!'
 
@@ -298,9 +299,8 @@ def train(args, predictor):
                                   max_depth=5, alpha=10, n_estimators=100, verbosity=2, device = "cuda")
         model.fit(train_embeddings_flat, train_labels_flat)
 
-        feature_importance = model.feature_importances_
-        feature_names = [f"Feature {k}" for k in range(train_embeddings_flat.shape[1])]
-        plot_feature_importance(feature_importance, feature_names, 'XGBoost', i)
+        feature_imp = model.feature_importances_
+        feature_importance.append(feature_imp)
 
         # Predict on the validation set
         start_time = time.time()  # Start timing
@@ -379,6 +379,9 @@ def train(args, predictor):
         #print("Validation Predictions with SVM:")
         if i == 0:
             visualize_predictions(val_images, val_embeddings, val_labels, model, num_samples=25, val=True, eval_num=i)
+
+    feature_names = [f"Feature {k}" for k in range(train_embeddings_flat.shape[1])]
+    plot_feature_importance(np.mean(feature_importance), feature_names, 'XGBoost')
 
     # Define the file path, e.g., by including a timestamp
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
