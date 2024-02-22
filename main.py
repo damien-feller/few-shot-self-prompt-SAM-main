@@ -271,7 +271,8 @@ def train(args, predictor):
 
         # Predict on the validation set
         start_time = time.time()  # Start timing
-        predicted_masks_svm = predict_and_reshape(svm_model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
+        predicted_masks_svm = predict_and_reshape(model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
+        predicted_masks_svm = (predicted_masks_svm > args.threshold).astype(np.uint8)
         end_time = time.time()  # End timing
         prediction_time = (end_time - start_time) / 25
         pred_original =predicted_masks_svm
@@ -344,7 +345,7 @@ def train(args, predictor):
         # Visualize SVM predictions on the validation dataset
         #print("Validation Predictions with SVM:")
         if i == 0:
-            visualize_predictions(val_images, val_embeddings, val_labels, svm_model, num_samples=25, val=True, eval_num=i)
+            visualize_predictions(val_images, val_embeddings, val_labels, model, num_samples=25, val=True, eval_num=i)
 
     # Define the file path, e.g., by including a timestamp
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -363,7 +364,7 @@ def train(args, predictor):
         for metrics in all_metrics:
             writer.writerow(metrics)  # Write each model's metrics
 
-    return svm_model
+    return model
 
 
 def main():
