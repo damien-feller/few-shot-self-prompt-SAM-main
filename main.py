@@ -275,9 +275,9 @@ def train(args, predictor):
                                                   (len(val_embeddings_tensor), 64, 64))
 
         # Apply thresholding (e.g., 0.5) to get binary predictions
-        predicted_masks_binary = (predicted_masks_log > args.threshold).astype(np.uint8)
+        predicted_masks_svm = (predicted_masks_log > args.threshold).astype(np.uint8)
         end_time = time.time()
-        pred_original = predicted_masks_binary
+        pred_original = predicted_masks_svm
 
         prediction_time = (end_time - start_time) / 25
 
