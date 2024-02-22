@@ -96,30 +96,6 @@ def predict_and_reshape(model, X, original_shape):
     predictions = model.predict(X)
     return predictions.reshape(original_shape)
 
-def plot_feature_importance(importance, names, model_type):
-    # Create arrays from feature importance and feature names
-    feature_importance = np.array(importance)
-    feature_names = np.array(names)
-
-    # Create a DataFrame using a Dictionary
-    data={'feature_names':feature_names,'feature_importance':feature_importance}
-    fi_df = pd.DataFrame(data)
-
-    # Keep the original order of features
-    fi_df = fi_df.set_index('feature_names')
-
-    # Define size of bar plot
-    plt.figure(figsize=(20,16))
-    # Plot Searborn bar chart
-    sns.barplot(x=fi_df['feature_importance'], y=fi_df.index, order=fi_df.index, orient='h')
-    # Add chart labels
-    plt.title(model_type + ' - Feature Importance (Ordered by Feature Number)')
-    plt.xlabel('FEATURE IMPORTANCE')
-    plt.ylabel('FEATURE NAMES')
-
-    # Improve layout for large number of features
-    plt.tight_layout()
-    plt.savefig(f"/content/visualisation/feature importance.png")
 
 def calculate_iou(ground_truth, prediction):
     """
@@ -299,9 +275,6 @@ def train(args, predictor):
                                   max_depth=5, alpha=10, n_estimators=100, verbosity=2, device = "cuda")
         model.fit(train_embeddings_flat, train_labels_flat)
 
-        feature_imp = model.feature_importances_
-        feature_importance.append(feature_imp)
-
         # Predict on the validation set
         start_time = time.time()  # Start timing
         predicted_masks_svm = predict_and_reshape(model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
@@ -380,8 +353,6 @@ def train(args, predictor):
         if i == 0:
             visualize_predictions(val_images, val_embeddings, val_labels, model, num_samples=25, val=True, eval_num=i)
 
-    feature_names = [f"Feature {k}" for k in range(train_embeddings_flat.shape[1])]
-    plot_feature_importance(np.mean(feature_importance), feature_names, 'XGBoost')
 
     # Define the file path, e.g., by including a timestamp
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
