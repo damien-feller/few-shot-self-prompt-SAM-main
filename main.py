@@ -149,8 +149,14 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         pred_probs_flat = model.predict_proba(image_flat)[:, 1]  # Assuming 1 is the positive class
         # Reshape the prediction probabilities back to the original mask shape
         pred_probs = pred_probs_flat.reshape(mask.shape)
+        #Normalise data to 0 and 255
+        heatmap_normalized = cv2.normalize(pred_probs, None, 0, 255, cv2.NORM_MINMAX)
+        heatmap_normalized = np.uint8(heatmap_normalized)
+        adaptive_thresh = cv2.adaptiveThreshold(heatmap_normalized, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                                cv2.THRESH_BINARY, 9, 2)
+        fixed_thresh = predicted_masks_svm = (pred_probs > 0.5).astype(np.uint8)
 
-        fig, axes = plt.subplots(1, 4, figsize=(16, 4))  # Adjusting figure size for better visibility
+        fig, axes = plt.subplots(2, 4, figsize=(16, 8))  # Adjusting figure size for better visibility
 
         axes[0].imshow(org_img[i])
         axes[0].set_title("Original Image")
@@ -170,6 +176,14 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         axes[3].set_title("Probability Histogram")
         axes[3].set_xlabel("Probability")
         axes[3].set_ylabel("Pixel Count (log scale)")
+
+        axes[4].imshow(fixed_thresh, cmap='gray')
+        axes[4].set_title("Fixed Threshold = 0.5")
+        axes[4].axis('off')
+
+        axes[5].imshow(adaptive_thresh, cmap='gray')
+        axes[5].set_title("Adaptive Threshold")
+        axes[5].axis('off')
 
         plt.tight_layout()
         if val == False:
