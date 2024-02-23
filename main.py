@@ -165,11 +165,12 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         axes[2].set_title("Prediction Heat Map")
         axes[2].axis('off')
 
-        # Plotting histogram of prediction probabilities
-        axes[3].hist(pred_probs_flat, bins=100, color='blue', alpha=0.7)
+        # Plotting histogram of prediction probabilities with a logarithmic y-scale
+        axes[3].hist(pred_probs_flat, bins=50, color='blue', alpha=0.7, log=True)
         axes[3].set_title("Probability Histogram")
         axes[3].set_xlabel("Probability")
-        axes[3].set_ylabel("Pixel Count")
+        axes[3].set_ylabel("Pixel Count (log scale)")
+        axes[3].set_yscale('log')  # Set y-axis to logarithmic scale
 
         plt.tight_layout()
         if val == False:
