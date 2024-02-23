@@ -143,46 +143,37 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         image = images[i]
         mask = masks[i]
 
-        # Flatten the image for SVM prediction
+        # Flatten the image for prediction
         image_flat = image.reshape(-1, image.shape[0])
-        # Predictions
-        pred_flat = model.predict(image_flat)
-        pred_flat = (pred_flat > 0.5).astype(np.uint8)
-        # Reshape the prediction to the original mask shape
-        pred = pred_flat.reshape(mask.shape)
-        pred_original = pred
+        # Get prediction probabilities for the positive class
+        pred_probs_flat = model.predict_proba(image_flat)[:, 1]  # Assuming 1 is the positive class
+        # Reshape the prediction probabilities back to the original mask shape
+        pred_probs = pred_probs_flat.reshape(mask.shape)
 
-        # Define the kernel for dilation
-        kernel = np.ones((2, 2), np.uint8)
-
-        pred = cv2.dilate(pred, kernel, iterations=3)
-        pred = cv2.erode(pred, kernel, iterations=3)
-
-        plt.figure(figsize=(12, 4))
-        plt.subplot(1, 4, 1)
+        plt.figure(figsize=(12, 6))
+        plt.subplot(1, 3, 1)
         plt.imshow(org_img[i])
         plt.title("Original Image")
         plt.axis('off')
 
-        plt.subplot(1, 4, 2)
+        plt.subplot(1, 3, 2)
         plt.imshow(mask, cmap='gray')
         plt.title("True Mask")
         plt.axis('off')
 
-        plt.subplot(1, 4, 3)
-        plt.imshow(pred_original, cmap='gray')
-        plt.title("Predicted Mask")
+        plt.subplot(1, 3, 3)
+        # Display the prediction probabilities as a heat map
+        plt.imshow(pred_probs, cmap='jet')  # Using 'jet' colormap to represent probabilities
+        plt.colorbar(label='Probability')
+        plt.title("Prediction Heat Map")
         plt.axis('off')
 
-        plt.subplot(1, 4, 4)
-        plt.imshow(pred, cmap='gray')
-        plt.title("Predicted Mask - D + E")
-        plt.axis('off')
-
+        plt.tight_layout()
         if val == False:
             plt.savefig(f"/content/visualisation/Fold{eval_num}-train_{i}.png")
         else:
             plt.savefig(f"/content/visualisation/Fold{eval_num}-val_{i}.png")
+
 
 
 def train(args, predictor):
