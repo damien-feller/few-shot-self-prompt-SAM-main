@@ -150,23 +150,26 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         # Reshape the prediction probabilities back to the original mask shape
         pred_probs = pred_probs_flat.reshape(mask.shape)
 
-        plt.figure(figsize=(12, 6))
-        plt.subplot(1, 3, 1)
-        plt.imshow(org_img[i])
-        plt.title("Original Image")
-        plt.axis('off')
+        fig, axes = plt.subplots(1, 4, figsize=(16, 4))  # Adjusting figure size for better visibility
 
-        plt.subplot(1, 3, 2)
-        plt.imshow(mask, cmap='gray')
-        plt.title("True Mask")
-        plt.axis('off')
+        axes[0].imshow(org_img[i])
+        axes[0].set_title("Original Image")
+        axes[0].axis('off')
 
-        plt.subplot(1, 3, 3)
-        # Display the prediction probabilities as a heat map
-        plt.imshow(pred_probs, cmap='jet')  # Using 'jet' colormap to represent probabilities
-        plt.colorbar(label='Probability')
-        plt.title("Prediction Heat Map")
-        plt.axis('off')
+        axes[1].imshow(mask, cmap='gray')
+        axes[1].set_title("True Mask")
+        axes[1].axis('off')
+
+        im = axes[2].imshow(pred_probs, cmap='jet')  # Using 'jet' colormap to represent probabilities
+        fig.colorbar(im, ax=axes[2], fraction=0.046, pad=0.04, label='Probability')
+        axes[2].set_title("Prediction Heat Map")
+        axes[2].axis('off')
+
+        # Plotting histogram of prediction probabilities
+        axes[3].hist(pred_probs_flat, bins=100, color='blue', alpha=0.7)
+        axes[3].set_title("Probability Histogram")
+        axes[3].set_xlabel("Probability")
+        axes[3].set_ylabel("Pixel Count")
 
         plt.tight_layout()
         if val == False:
