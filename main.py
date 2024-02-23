@@ -59,7 +59,6 @@ def get_embedding(img, predictor):
     img_emb = predictor.get_image_embedding()
     return img_emb
 
-
 def augment(image, mask):
     # Define an augmentation pipeline
     transform = A.Compose([
@@ -154,7 +153,7 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         heatmap_normalized = np.uint8(heatmap_normalized)
         adaptive_thresh = cv2.adaptiveThreshold(heatmap_normalized, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                                 cv2.THRESH_BINARY, 9, 2)
-        fixed_thresh = predicted_masks_svm = (pred_probs > 0.5).astype(np.uint8)
+        fixed_thresh = (pred_probs > 0.5).astype(np.uint8)
 
         fig, axes = plt.subplots(2, 4, figsize=(16, 8))  # Adjusting figure size for better visibility
 
