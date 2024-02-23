@@ -155,34 +155,34 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
                                                 cv2.THRESH_BINARY, 9, 2)
         fixed_thresh = (pred_probs > 0.5).astype(np.uint8)
 
-        fig, axes = plt.subplots(2, 4, figsize=(16, 8))  # Adjusting figure size for better visibility
+        fig, axes = plt.subplots(2, 3, figsize=(16, 8))  # Adjusting figure size for better visibility
 
-        axes[0].imshow(org_img[i])
-        axes[0].set_title("Original Image")
-        axes[0].axis('off')
+        axes[0,0].imshow(org_img[i])
+        axes[0,0].set_title("Original Image")
+        axes[0,0].axis('off')
 
-        axes[1].imshow(mask, cmap='gray')
-        axes[1].set_title("True Mask")
-        axes[1].axis('off')
+        axes[0,1].imshow(mask, cmap='gray')
+        axes[0,1].set_title("True Mask")
+        axes[0,1].axis('off')
 
-        im = axes[2].imshow(pred_probs, cmap='jet')  # Using 'jet' colormap to represent probabilities
-        fig.colorbar(im, ax=axes[2], fraction=0.046, pad=0.04, label='Probability')
-        axes[2].set_title("Prediction Heat Map")
-        axes[2].axis('off')
+        im = axes[0,2].imshow(pred_probs, cmap='jet')  # Using 'jet' colormap to represent probabilities
+        fig.colorbar(im, ax=axes[0,2], fraction=0.046, pad=0.04, label='Probability')
+        axes[0,2].set_title("Prediction Heat Map")
+        axes[0,2].axis('off')
 
         # Plotting histogram of prediction probabilities with a logarithmic y-scale
-        axes[3].hist(pred_probs_flat, bins=50, color='blue', alpha=0.7)
-        axes[3].set_title("Probability Histogram")
-        axes[3].set_xlabel("Probability")
-        axes[3].set_ylabel("Pixel Count (log scale)")
+        axes[1,0].hist(pred_probs_flat, bins=50, color='blue', alpha=0.7)
+        axes[1,0].set_title("Probability Histogram")
+        axes[1,0].set_xlabel("Probability")
+        axes[1,0].set_ylabel("Pixel Count (log scale)")
 
-        axes[4].imshow(fixed_thresh, cmap='gray')
-        axes[4].set_title("Fixed Threshold = 0.5")
-        axes[4].axis('off')
+        axes[1,1].imshow(fixed_thresh, cmap='gray')
+        axes[1,1].set_title("Fixed Threshold = 0.5")
+        axes[1,1].axis('off')
 
-        axes[5].imshow(adaptive_thresh, cmap='gray')
-        axes[5].set_title("Adaptive Threshold")
-        axes[5].axis('off')
+        axes[1,2].imshow(adaptive_thresh, cmap='gray')
+        axes[1,2].set_title("Adaptive Threshold")
+        axes[1,2].axis('off')
 
         plt.tight_layout()
         if val == False:
