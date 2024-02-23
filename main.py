@@ -170,7 +170,6 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         axes[3].set_title("Probability Histogram")
         axes[3].set_xlabel("Probability")
         axes[3].set_ylabel("Pixel Count (log scale)")
-        axes[3].set_yscale('log')  # Set y-axis to logarithmic scale
 
         plt.tight_layout()
         if val == False:
