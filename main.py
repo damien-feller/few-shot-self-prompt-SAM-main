@@ -171,9 +171,8 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         axes[0, 1].set_title("True Mask")
         axes[0, 1].axis('off')
 
-        # Prediction Heat Map
-        im = axes[0, 2].imshow(pred_probs, cmap='jet')
-        fig.colorbar(im, ax=axes[0, 2], fraction=0.046, pad=0.04, label='Probability')
+        # Prediction Heat Map without colorbar
+        axes[0, 2].imshow(pred_probs, cmap='jet')
         axes[0, 2].set_title("Prediction Heat Map")
         axes[0, 2].axis('off')
 
@@ -183,8 +182,8 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         axes[0, 3].set_xlabel("Probability")
         axes[0, 3].set_ylabel("Pixel Count")
 
-        # Gaussian Filtered Heatmap and Threshold
-        axes[1, 0].imshow(gaussian_filtered, cmap='gray')
+        # Gaussian Filtered Heatmap without colorbar
+        axes[1, 0].imshow(gaussian_filtered, cmap='jet')
         axes[1, 0].set_title("Gaussian Filtered")
         axes[1, 0].axis('off')
 
@@ -192,8 +191,8 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         axes[1, 1].set_title("Gaussian Threshold")
         axes[1, 1].axis('off')
 
-        # Median Filtered Heatmap and Threshold
-        axes[1, 2].imshow(median_filtered, cmap='gray')
+        # Median Filtered Heatmap without colorbar
+        axes[1, 2].imshow(median_filtered, cmap='jet')
         axes[1, 2].set_title("Median Filtered")
         axes[1, 2].axis('off')
 
