@@ -220,8 +220,6 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         else:
             plt.savefig(f"/content/visualisation/Fold{eval_num}-val_{i}.png")
 
-        plt.show()  # Show the plot for each sample
-
 
 
 def train(args, predictor):
