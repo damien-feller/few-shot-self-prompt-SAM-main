@@ -145,50 +145,82 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         # Flatten the image for prediction
         image_flat = image.reshape(-1, image.shape[0])
         # Get prediction probabilities for the positive class
-        pred_probs_flat = model.predict_proba(image_flat)[:, 1]  # Assuming 1 is the positive class
+        pred_probs_flat = model.predict_proba(image_flat)[:, 1]
         # Reshape the prediction probabilities back to the original mask shape
         pred_probs = pred_probs_flat.reshape(mask.shape)
-        #Normalise data to 0 and 255
+        # Normalize data to 0 and 255
         heatmap_normalized = cv2.normalize(pred_probs, None, 0, 255, cv2.NORM_MINMAX)
         heatmap_normalized = np.uint8(heatmap_normalized)
+
+        # Apply Gaussian and Median Filtering
+        gaussian_filtered = cv2.GaussianBlur(heatmap_normalized, (5, 5), 0)
+        median_filtered = cv2.medianBlur(heatmap_normalized, 5)
+
+        # Apply threshold to the filtered heatmaps
+        _, gaussian_thresh = cv2.threshold(gaussian_filtered, 127, 255, cv2.THRESH_BINARY)
+        _, median_thresh = cv2.threshold(median_filtered, 127, 255, cv2.THRESH_BINARY)
+
+        fig, axes = plt.subplots(3, 4, figsize=(20, 15))  # Adjusting figure size for better visibility
+
+        # Original image and mask
+        axes[0, 0].imshow(org_img[i])
+        axes[0, 0].set_title("Original Image")
+        axes[0, 0].axis('off')
+
+        axes[0, 1].imshow(mask, cmap='gray')
+        axes[0, 1].set_title("True Mask")
+        axes[0, 1].axis('off')
+
+        # Prediction Heat Map
+        im = axes[0, 2].imshow(pred_probs, cmap='jet')
+        fig.colorbar(im, ax=axes[0, 2], fraction=0.046, pad=0.04, label='Probability')
+        axes[0, 2].set_title("Prediction Heat Map")
+        axes[0, 2].axis('off')
+
+        # Histogram of Prediction Probabilities
+        axes[0, 3].hist(pred_probs_flat, bins=50, color='blue', alpha=0.7, log=True)
+        axes[0, 3].set_title("Probability Histogram")
+        axes[0, 3].set_xlabel("Probability")
+        axes[0, 3].set_ylabel("Pixel Count")
+
+        # Gaussian Filtered Heatmap and Threshold
+        axes[1, 0].imshow(gaussian_filtered, cmap='gray')
+        axes[1, 0].set_title("Gaussian Filtered")
+        axes[1, 0].axis('off')
+
+        axes[1, 1].imshow(gaussian_thresh, cmap='gray')
+        axes[1, 1].set_title("Gaussian Threshold")
+        axes[1, 1].axis('off')
+
+        # Median Filtered Heatmap and Threshold
+        axes[1, 2].imshow(median_filtered, cmap='gray')
+        axes[1, 2].set_title("Median Filtered")
+        axes[1, 2].axis('off')
+
+        axes[1, 3].imshow(median_thresh, cmap='gray')
+        axes[1, 3].set_title("Median Threshold")
+        axes[1, 3].axis('off')
+
+        # Original Adaptive and Fixed Thresholds
         adaptive_thresh = cv2.adaptiveThreshold(heatmap_normalized, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                                cv2.THRESH_BINARY, 9, 2)
+                                                cv2.THRESH_BINARY, 11, 2)
         fixed_thresh = (pred_probs > 0.5).astype(np.uint8)
 
-        fig, axes = plt.subplots(2, 3, figsize=(16, 8))  # Adjusting figure size for better visibility
+        axes[2, 0].imshow(fixed_thresh, cmap='gray')
+        axes[2, 0].set_title("Fixed Threshold = 0.5")
+        axes[2, 0].axis('off')
 
-        axes[0,0].imshow(org_img[i])
-        axes[0,0].set_title("Original Image")
-        axes[0,0].axis('off')
-
-        axes[0,1].imshow(mask, cmap='gray')
-        axes[0,1].set_title("True Mask")
-        axes[0,1].axis('off')
-
-        im = axes[0,2].imshow(pred_probs, cmap='jet')  # Using 'jet' colormap to represent probabilities
-        fig.colorbar(im, ax=axes[0,2], fraction=0.046, pad=0.04, label='Probability')
-        axes[0,2].set_title("Prediction Heat Map")
-        axes[0,2].axis('off')
-
-        # Plotting histogram of prediction probabilities with a logarithmic y-scale
-        axes[1,0].hist(pred_probs_flat, bins=50, color='blue', alpha=0.7)
-        axes[1,0].set_title("Probability Histogram")
-        axes[1,0].set_xlabel("Probability")
-        axes[1,0].set_ylabel("Pixel Count (log scale)")
-
-        axes[1,1].imshow(fixed_thresh, cmap='gray')
-        axes[1,1].set_title("Fixed Threshold = 0.5")
-        axes[1,1].axis('off')
-
-        axes[1,2].imshow(adaptive_thresh, cmap='gray')
-        axes[1,2].set_title("Adaptive Threshold")
-        axes[1,2].axis('off')
+        axes[2, 1].imshow(adaptive_thresh, cmap='gray')
+        axes[2, 1].set_title("Adaptive Threshold")
+        axes[2, 1].axis('off')
 
         plt.tight_layout()
-        if val == False:
+        if not val:
             plt.savefig(f"/content/visualisation/Fold{eval_num}-train_{i}.png")
         else:
             plt.savefig(f"/content/visualisation/Fold{eval_num}-val_{i}.png")
+
+        plt.show()  # Show the plot for each sample
 
 
 
