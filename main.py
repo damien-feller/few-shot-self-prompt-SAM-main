@@ -178,40 +178,43 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
 
         # Histogram of Prediction Probabilities
         axes[0, 3].hist(pred_probs_flat, bins=50, color='blue', alpha=0.7, log=True)
-        axes[0, 3].set_title("Probability Histogram")
+        axes[0, 3].set_title("Probabilities Histogram")
         axes[0, 3].set_xlabel("Probability")
         axes[0, 3].set_ylabel("Pixel Count")
 
-        # Gaussian Filtered Heatmap without colorbar
+        # Gaussian Filtered Heatmap without colorbar and its histogram
         axes[1, 0].imshow(gaussian_filtered, cmap='jet')
         axes[1, 0].set_title("Gaussian Filtered")
         axes[1, 0].axis('off')
 
-        axes[1, 1].imshow(gaussian_thresh, cmap='gray')
-        axes[1, 1].set_title("Gaussian Threshold")
-        axes[1, 1].axis('off')
+        axes[1, 1].hist(gaussian_filtered.ravel(), bins=50, color='green', alpha=0.7, log=True)
+        axes[1, 1].set_title("Gaussian Histogram")
+        axes[1, 1].set_xlabel("Intensity")
+        axes[1, 1].set_ylabel("Pixel Count")
 
-        # Median Filtered Heatmap without colorbar
+        # Median Filtered Heatmap without colorbar and its histogram
         axes[1, 2].imshow(median_filtered, cmap='jet')
         axes[1, 2].set_title("Median Filtered")
         axes[1, 2].axis('off')
 
-        axes[1, 3].imshow(median_thresh, cmap='gray')
-        axes[1, 3].set_title("Median Threshold")
-        axes[1, 3].axis('off')
+        axes[1, 3].hist(median_filtered.ravel(), bins=50, color='red', alpha=0.7, log=True)
+        axes[1, 3].set_title("Median Histogram")
+        axes[1, 3].set_xlabel("Intensity")
+        axes[1, 3].set_ylabel("Pixel Count")
 
-        # Original Adaptive and Fixed Thresholds
-        adaptive_thresh = cv2.adaptiveThreshold(heatmap_normalized, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                                cv2.THRESH_BINARY, 11, 2)
-        fixed_thresh = (pred_probs > 0.5).astype(np.uint8)
-
-        axes[2, 0].imshow(fixed_thresh, cmap='gray')
-        axes[2, 0].set_title("Fixed Threshold = 0.5")
+        # Thresholded versions of the Gaussian and Median filtered heatmaps
+        axes[2, 0].imshow(gaussian_thresh, cmap='gray')
+        axes[2, 0].set_title("Gaussian Threshold")
         axes[2, 0].axis('off')
 
-        axes[2, 1].imshow(adaptive_thresh, cmap='gray')
-        axes[2, 1].set_title("Adaptive Threshold")
+        axes[2, 1].imshow(median_thresh, cmap='gray')
+        axes[2, 1].set_title("Median Threshold")
         axes[2, 1].axis('off')
+
+        # The last two slots in the third row are left empty as placeholders
+        # for potential future use or can be removed for a tighter layout
+        axes[2, 2].axis('off')
+        axes[2, 3].axis('off')
 
         plt.tight_layout()
         if not val:
