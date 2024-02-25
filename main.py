@@ -156,11 +156,12 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         gaussian_filtered = cv2.GaussianBlur(heatmap_normalized, (5, 5), 0)
         median_filtered = cv2.medianBlur(heatmap_normalized, 5)
 
-        # Apply threshold to the filtered heatmaps
+        # Apply threshold to the original and filtered heatmaps
+        _, heatmap_thresh = cv2.threshold(heatmap_normalized, 127, 255, cv2.THRESH_BINARY)
         _, gaussian_thresh = cv2.threshold(gaussian_filtered, 127, 255, cv2.THRESH_BINARY)
         _, median_thresh = cv2.threshold(median_filtered, 127, 255, cv2.THRESH_BINARY)
 
-        fig, axes = plt.subplots(3, 4, figsize=(20, 15))  # Adjusting figure size for better visibility
+        fig, axes = plt.subplots(4, 3, figsize=(15, 20))  # Adjusting figure size for better visibility
 
         # Original image and mask
         axes[0, 0].imshow(org_img[i])
@@ -171,50 +172,50 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         axes[0, 1].set_title("True Mask")
         axes[0, 1].axis('off')
 
-        # Prediction Heat Map without colorbar
-        axes[0, 2].imshow(pred_probs, cmap='jet')
-        axes[0, 2].set_title("Prediction Heat Map")
+        # Empty plot for symmetry
         axes[0, 2].axis('off')
 
-        # Histogram of Prediction Probabilities
-        axes[0, 3].hist(pred_probs_flat, bins=50, color='blue', alpha=0.7, log=True)
-        axes[0, 3].set_title("Probabilities Histogram")
-        axes[0, 3].set_xlabel("Probability")
-        axes[0, 3].set_ylabel("Pixel Count")
-
-        # Gaussian Filtered Heatmap without colorbar and its histogram
-        axes[1, 0].imshow(gaussian_filtered, cmap='jet')
-        axes[1, 0].set_title("Gaussian Filtered")
+        # Original Heatmap, Threshold, and Histogram
+        axes[1, 0].imshow(pred_probs, cmap='jet')
+        axes[1, 0].set_title("Original Heatmap")
         axes[1, 0].axis('off')
 
-        axes[1, 1].hist(gaussian_filtered.ravel(), bins=50, color='green', alpha=0.7, log=True)
-        axes[1, 1].set_title("Gaussian Histogram")
-        axes[1, 1].set_xlabel("Intensity")
-        axes[1, 1].set_ylabel("Pixel Count")
+        axes[1, 1].imshow(heatmap_thresh, cmap='gray')
+        axes[1, 1].set_title("Heatmap Threshold")
+        axes[1, 1].axis('off')
 
-        # Median Filtered Heatmap without colorbar and its histogram
-        axes[1, 2].imshow(median_filtered, cmap='jet')
-        axes[1, 2].set_title("Median Filtered")
-        axes[1, 2].axis('off')
+        axes[1, 2].hist(pred_probs_flat, bins=50, color='blue', alpha=0.7, log=True)
+        axes[1, 2].set_title("Heatmap Histogram")
+        axes[1, 2].set_xlabel("Intensity")
+        axes[1, 2].set_ylabel("Pixel Count")
 
-        axes[1, 3].hist(median_filtered.ravel(), bins=50, color='red', alpha=0.7, log=True)
-        axes[1, 3].set_title("Median Histogram")
-        axes[1, 3].set_xlabel("Intensity")
-        axes[1, 3].set_ylabel("Pixel Count")
-
-        # Thresholded versions of the Gaussian and Median filtered heatmaps
-        axes[2, 0].imshow(gaussian_thresh, cmap='gray')
-        axes[2, 0].set_title("Gaussian Threshold")
+        # Gaussian Filtered Heatmap, Threshold, and Histogram
+        axes[2, 0].imshow(gaussian_filtered, cmap='jet')
+        axes[2, 0].set_title("Gaussian Heatmap")
         axes[2, 0].axis('off')
 
-        axes[2, 1].imshow(median_thresh, cmap='gray')
-        axes[2, 1].set_title("Median Threshold")
+        axes[2, 1].imshow(gaussian_thresh, cmap='gray')
+        axes[2, 1].set_title("Gaussian Threshold")
         axes[2, 1].axis('off')
 
-        # The last two slots in the third row are left empty as placeholders
-        # for potential future use or can be removed for a tighter layout
-        axes[2, 2].axis('off')
-        axes[2, 3].axis('off')
+        axes[2, 2].hist(gaussian_filtered.ravel(), bins=50, color='green', alpha=0.7, log=True)
+        axes[2, 2].set_title("Gaussian Histogram")
+        axes[2, 2].set_xlabel("Intensity")
+        axes[2, 2].set_ylabel("Pixel Count")
+
+        # Median Filtered Heatmap, Threshold, and Histogram
+        axes[3, 0].imshow(median_filtered, cmap='jet')
+        axes[3, 0].set_title("Median Heatmap")
+        axes[3, 0].axis('off')
+
+        axes[3, 1].imshow(median_thresh, cmap='gray')
+        axes[3, 1].set_title("Median Threshold")
+        axes[3, 1].axis('off')
+
+        axes[3, 2].hist(median_filtered.ravel(), bins=50, color='red', alpha=0.7, log=True)
+        axes[3, 2].set_title("Median Histogram")
+        axes[3, 2].set_xlabel("Intensity")
+        axes[3, 2].set_ylabel("Pixel Count")
 
         plt.tight_layout()
         if not val:
