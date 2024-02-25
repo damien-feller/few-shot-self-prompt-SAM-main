@@ -28,6 +28,7 @@ from datetime import datetime
 import xgboost as xgb
 import seaborn as sns
 import pandas as pd
+from skimage import filters
 
 
 
@@ -156,6 +157,16 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         gaussian_filtered = cv2.GaussianBlur(heatmap_normalized, (5, 5), 0)
         median_filtered = cv2.medianBlur(heatmap_normalized, 5)
 
+        # Edge detection Sobel
+        edges_heat = filters.sobel(heatmap_normalized)
+        edges_gaussian = filters.sobel(gaussian_filtered)
+        edges_median = filters.sobel(median_filtered)
+
+        # Combine heatmap with edge
+        combo_heat = heatmap_normalized + (1*edges_heat)
+        combo_gaussian = heatmap_normalized + (1 * edges_gaussian)
+        combo_median = heatmap_normalized + (1 * edges_median)
+
         # Apply threshold to the original and filtered heatmaps
         _, heatmap_thresh = cv2.threshold(heatmap_normalized, 127, 255, cv2.THRESH_BINARY)
         _, gaussian_thresh = cv2.threshold(gaussian_filtered, 127, 255, cv2.THRESH_BINARY)
@@ -163,9 +174,12 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         _, otsu_heatmap_thresh = cv2.threshold(heatmap_normalized, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         _, otsu_gaussian_thresh = cv2.threshold(gaussian_filtered, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         _, otsu_median_thresh = cv2.threshold(median_filtered, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        _, combo_heat_thresh = cv2.threshold(combo_heat, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        _, combo_gaussian_thresh = cv2.threshold(combo_gaussian, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        _, combo_median_thresh = cv2.threshold(combo_median, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
 
-        fig, axes = plt.subplots(5, 3, figsize=(15, 25))  # Adjusting figure size for better visibility
+        fig, axes = plt.subplots(7, 3, figsize=(15, 35))  # Adjusting figure size for better visibility
 
         # Original image and mask
         axes[0, 0].imshow(org_img[i])
@@ -233,13 +247,37 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         axes[4, 2].set_title("Otsu Median Threshold")
         axes[4, 2].axis('off')
 
+        axes[4, 0].imshow(combo_heat, cmap='jet')
+        axes[4, 0].set_title("Combo Heatmap")
+        axes[4, 0].axis('off')
+
+        axes[4, 1].imshow(combo_gaussian, cmap='gray')
+        axes[4, 1].set_title("Combo Gaussian ")
+        axes[4, 1].axis('off')
+
+        axes[4, 2].imshow(combo_median, cmap='gray')
+        axes[4, 2].set_title("Combo Median")
+        axes[4, 2].axis('off')
+
+        axes[6, 0].imshow(otsu_heatmap_thresh, cmap='gray')
+        axes[6, 0].set_title("Combo Threshold")
+        axes[6, 0].axis('off')
+
+        axes[6, 1].imshow(otsu_gaussian_thresh, cmap='gray')
+        axes[6, 1].set_title("Combo Gaussian Threshold")
+        axes[6, 1].axis('off')
+
+        axes[6, 2].imshow(otsu_median_thresh, cmap='gray')
+        axes[6, 2].set_title("Combo Median Threshold")
+        axes[6, 2].axis('off')
+
         plt.tight_layout()
         if not val:
             plt.savefig(f"/content/visualisation/Fold{eval_num}-train_{i}.png")
         else:
             plt.savefig(f"/content/visualisation/Fold{eval_num}-val_{i}.png")
-            np.save(f"/content/image_{i}.npy", org_img)
-            np.save(f"/content/heatmap_{i}.npy", pred_probs)
+           # np.save(f"/content/image_{i}.npy", org_img)
+           # np.save(f"/content/heatmap_{i}.npy", pred_probs)
 
 
 
