@@ -160,8 +160,12 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         _, heatmap_thresh = cv2.threshold(heatmap_normalized, 127, 255, cv2.THRESH_BINARY)
         _, gaussian_thresh = cv2.threshold(gaussian_filtered, 127, 255, cv2.THRESH_BINARY)
         _, median_thresh = cv2.threshold(median_filtered, 127, 255, cv2.THRESH_BINARY)
+        _, otsu_heatmap_thresh = cv2.threshold(heatmap_normalized, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        _, otsu_gaussian_thresh = cv2.threshold(gaussian_filtered, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        _, otsu_median_thresh = cv2.threshold(median_filtered, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
-        fig, axes = plt.subplots(4, 3, figsize=(15, 20))  # Adjusting figure size for better visibility
+
+        fig, axes = plt.subplots(5, 3, figsize=(15, 25))  # Adjusting figure size for better visibility
 
         # Original image and mask
         axes[0, 0].imshow(org_img[i])
@@ -216,6 +220,18 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         axes[3, 2].set_title("Median Histogram")
         axes[3, 2].set_xlabel("Intensity")
         axes[3, 2].set_ylabel("Pixel Count")
+
+        axes[4, 0].imshow(otsu_heatmap_thresh, cmap='gray')
+        axes[4, 0].set_title("Otsu Threshold")
+        axes[4, 0].axis('off')
+
+        axes[4, 1].imshow(otsu_gaussian_thresh, cmap='gray')
+        axes[4, 1].set_title("Otsu Gaussian Threshold")
+        axes[4, 1].axis('off')
+
+        axes[4, 2].imshow(otsu_median_thresh, cmap='gray')
+        axes[4, 2].set_title("Otsu Median Threshold")
+        axes[4, 2].axis('off')
 
         plt.tight_layout()
         if not val:
