@@ -238,7 +238,6 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
             plt.savefig(f"/content/visualisation/Fold{eval_num}-train_{i}.png")
         else:
             plt.savefig(f"/content/visualisation/Fold{eval_num}-val_{i}.png")
-            np.save(f"/content/heatmap_{i}.npy", pred_probs)
 
 
 
