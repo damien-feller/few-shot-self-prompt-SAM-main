@@ -182,7 +182,7 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         _, combo_median_thresh = cv2.threshold(combo_median, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
 
-        fig, axes = plt.subplots(7, 3, figsize=(15, 40))  # Adjusting figure size for better visibility
+        fig, axes = plt.subplots(8, 3, figsize=(15, 40))  # Adjusting figure size for better visibility
 
         # Original image and mask
         axes[0, 0].imshow(org_img[i])
