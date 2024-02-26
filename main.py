@@ -265,15 +265,15 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         axes[5, 2].set_title("Combo Median")
         axes[5, 2].axis('off')
 
-        axes[6, 0].imshow(edges_heat, cmap='jet')
+        axes[6, 0].imshow(combo_heat, cmap='jet')
         axes[6, 0].set_title("Combo Heatmap")
         axes[6, 0].axis('off')
 
-        axes[6, 1].imshow(edges_gaussian, cmap='jet')
+        axes[6, 1].imshow(combo_gaussian, cmap='jet')
         axes[6, 1].set_title("Combo Gaussian ")
         axes[6, 1].axis('off')
 
-        axes[6, 2].imshow(edges_median, cmap='jet')
+        axes[6, 2].imshow(combo_median, cmap='jet')
         axes[6, 2].set_title("Combo Median")
         axes[6, 2].axis('off')
 
