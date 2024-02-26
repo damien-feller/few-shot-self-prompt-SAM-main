@@ -165,9 +165,9 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         # Combine heatmap with edge
         combo_heat = heatmap_normalized + (0.5*edges_heat)
         combo_heat = cv2.normalize(combo_heat, None, 0, 255, cv2.NORM_MINMAX).astype('uint8')
-        combo_gaussian = heatmap_normalized + (0.5 * edges_gaussian)
+        combo_gaussian = gaussian_filtered + (0.5 * edges_gaussian)
         combo_gaussian = cv2.normalize(combo_gaussian, None, 0, 255, cv2.NORM_MINMAX).astype('uint8')
-        combo_median = heatmap_normalized + (0.5 * edges_median)
+        combo_median = median_filtered + (0.5 * edges_median)
         combo_median = cv2.normalize(combo_median, None, 0, 255, cv2.NORM_MINMAX).astype('uint8')
 
         # Apply threshold to the original and filtered heatmaps
