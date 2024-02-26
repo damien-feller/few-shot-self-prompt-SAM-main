@@ -159,8 +159,11 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
 
         # Edge detection Sobel
         edges_heat = filters.sobel(heatmap_normalized)
+        edges_heat = cv2.normalize(edges_heat, None, 0, 255, cv2.NORM_MINMAX)
         edges_gaussian = filters.sobel(gaussian_filtered)
+        edges_gaussian = cv2.normalize(edges_gaussian, None, 0, 255, cv2.NORM_MINMAX)
         edges_median = filters.sobel(median_filtered)
+        edges_median = cv2.normalize(edges_median, None, 0, 255, cv2.NORM_MINMAX)
 
         # Combine heatmap with edge
         combo_heat = heatmap_normalized + (0.5*edges_heat)
