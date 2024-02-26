@@ -182,7 +182,7 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         _, combo_median_thresh = cv2.threshold(combo_median, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
 
-        fig, axes = plt.subplots(7, 3, figsize=(15, 35))  # Adjusting figure size for better visibility
+        fig, axes = plt.subplots(7, 3, figsize=(15, 40))  # Adjusting figure size for better visibility
 
         # Original image and mask
         axes[0, 0].imshow(org_img[i])
@@ -250,29 +250,41 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         axes[4, 2].set_title("Otsu Median Threshold")
         axes[4, 2].axis('off')
 
-        axes[5, 0].imshow(combo_heat, cmap='jet')
+        axes[5, 0].imshow(edges_heat, cmap='jet')
         axes[5, 0].set_title("Combo Heatmap")
         axes[5, 0].axis('off')
 
-        axes[5, 1].imshow(combo_gaussian, cmap='jet')
+        axes[5, 1].imshow(edges_gaussian, cmap='jet')
         axes[5, 1].set_title("Combo Gaussian ")
         axes[5, 1].axis('off')
 
-        axes[5, 2].imshow(combo_median, cmap='jet')
+        axes[5, 2].imshow(edges_median, cmap='jet')
         axes[5, 2].set_title("Combo Median")
         axes[5, 2].axis('off')
 
-        axes[6, 0].imshow(otsu_heatmap_thresh, cmap='gray')
-        axes[6, 0].set_title("Combo Threshold")
+        axes[6, 0].imshow(edges_heat, cmap='jet')
+        axes[6, 0].set_title("Combo Heatmap")
         axes[6, 0].axis('off')
 
-        axes[6, 1].imshow(otsu_gaussian_thresh, cmap='gray')
-        axes[6, 1].set_title("Combo Gaussian Threshold")
+        axes[6, 1].imshow(edges_gaussian, cmap='jet')
+        axes[6, 1].set_title("Combo Gaussian ")
         axes[6, 1].axis('off')
 
-        axes[6, 2].imshow(otsu_median_thresh, cmap='gray')
-        axes[6, 2].set_title("Combo Median Threshold")
+        axes[6, 2].imshow(edges_median, cmap='jet')
+        axes[6, 2].set_title("Combo Median")
         axes[6, 2].axis('off')
+
+        axes[7, 0].imshow(otsu_heatmap_thresh, cmap='gray')
+        axes[7, 0].set_title("Combo Threshold")
+        axes[7, 0].axis('off')
+
+        axes[7, 1].imshow(otsu_gaussian_thresh, cmap='gray')
+        axes[7, 1].set_title("Combo Gaussian Threshold")
+        axes[7, 1].axis('off')
+
+        axes[7, 2].imshow(otsu_median_thresh, cmap='gray')
+        axes[7, 2].set_title("Combo Median Threshold")
+        axes[7, 2].axis('off')
 
         plt.tight_layout()
         if not val:
