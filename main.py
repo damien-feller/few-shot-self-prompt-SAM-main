@@ -164,6 +164,8 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         edges_gaussian = cv2.normalize(edges_gaussian, None, 0, 255, cv2.NORM_MINMAX)
         edges_median = filters.sobel(median_filtered)
         edges_median = cv2.normalize(edges_median, None, 0, 255, cv2.NORM_MINMAX)
+        edges_img = filters.sobel(org_img[i])
+        edges_img = cv2.normalize(edges_img, None, 0, 255, cv2.NORM_MINMAX)
 
         # Combine heatmap with edge
         combo_heat = heatmap_normalized + (1*edges_heat)
@@ -196,7 +198,8 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         axes[0, 1].set_title("True Mask")
         axes[0, 1].axis('off')
 
-        # Empty plot for symmetry
+        axes[0, 2].imshow(edges_img, cmap='jet')
+        axes[0, 2].set_title("Image Edges")
         axes[0, 2].axis('off')
 
         # Original Heatmap, Threshold, and Histogram
