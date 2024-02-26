@@ -274,15 +274,15 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         axes[6, 2].set_title("Combo Median")
         axes[6, 2].axis('off')
 
-        axes[7, 0].imshow(otsu_heatmap_thresh, cmap='gray')
+        axes[7, 0].imshow(combo_heat_thresh, cmap='gray')
         axes[7, 0].set_title("Combo Threshold")
         axes[7, 0].axis('off')
 
-        axes[7, 1].imshow(otsu_gaussian_thresh, cmap='gray')
+        axes[7, 1].imshow(combo_gaussian_thresh, cmap='gray')
         axes[7, 1].set_title("Combo Gaussian Threshold")
         axes[7, 1].axis('off')
 
-        axes[7, 2].imshow(otsu_median_thresh, cmap='gray')
+        axes[7, 2].imshow(combo_median_thresh, cmap='gray')
         axes[7, 2].set_title("Combo Median Threshold")
         axes[7, 2].axis('off')
 
