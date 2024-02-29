@@ -530,9 +530,9 @@ def train(args, predictor):
         BBoxes_GT = []
 
         #resize the masks for bounding boxes
-        predicted_masks_svm_resized = []
-        otsu_original_resized = []
-        val_labels_resized= []
+        predicted_masks_svm_resized = [None] * len(predicted_masks_svm)
+        otsu_original_resized = [None] * len(otsu_original)
+        val_labels_resized = [None] * len(val_labels)
         for j in range(len(predicted_masks_svm)):
             predicted_masks_svm_resized[j] = cv2.resize(predicted_masks_svm[j], dsize=(1024, 1024), interpolation=cv2.INTER_NEAREST)
             otsu_original_resized[j] = cv2.resize(otsu_original[j], dsize=(1024, 1024),
