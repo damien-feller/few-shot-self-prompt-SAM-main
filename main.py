@@ -452,6 +452,8 @@ def train(args, predictor):
         prediction_time_otsu = (end_time - start_time) / 25
         otsu_original = predicted_masks_otsu
 
+        print(otsu_original.shape)
+
         # Define the kernel for dilation
         kernel = np.ones((2, 2), np.uint8)
 
