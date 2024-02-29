@@ -192,7 +192,7 @@ def SAM_predict(predictor, image=None, bounding_box=None, point_prompt=None):
     masks_pred, _, logits = predictor.predict(
         point_coords=input_point,
         point_labels=input_label,
-        box=bounding_box,
+        box=bounding_box[None, :],
         multimask_output=False,
     )
 
