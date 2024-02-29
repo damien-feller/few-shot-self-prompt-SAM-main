@@ -111,7 +111,6 @@ def predict_and_reshape_otsu(model, X, original_shape):
         heatmap_normalized = np.uint8(heatmap_normalized)
         median_filtered = cv2.medianBlur(heatmap_normalized, 5)
         _, otsu_thresh = cv2.threshold(median_filtered, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        otsu_thresh = (otsu_thresh / 255).astype(np.uint8)
 
         # Find contours
         contours, _ = cv2.findContours((otsu_thresh/255).astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -121,7 +120,8 @@ def predict_and_reshape_otsu(model, X, original_shape):
 
         # Create a mask for the largest contour
         mask_otsu = np.zeros_like(otsu_thresh)
-        cv2.drawContours(mask_otsu, [largest_contour], -1, color=1, thickness=cv2.FILLED)
+        cv2.drawContours(mask_otsu, [largest_contour], -1, color=255, thickness=cv2.FILLED)
+        mask_otsu = (mask_otsu / 255).astype(np.uint8)
 
         # Append the correctly shaped thresholded image to the results
         otsu_median_thresh.append(mask_otsu)
