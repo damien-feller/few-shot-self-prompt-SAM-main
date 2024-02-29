@@ -380,6 +380,7 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
 def train(args, predictor):
     all_metrics = []
     all_metrics_otsu = []
+    all_metrics_SAM = []
     feature_importance = []
     data_path = args.data_path
     assert os.path.exists(data_path), 'data path does not exist!'
@@ -499,6 +500,7 @@ def train(args, predictor):
         BBIoUs = []
         BBIoUOtsu = []
         BBoxes = []
+        BBoxes_Otsu = []
         BBoxes_GT = []
         for j in range(len(predicted_masks_svm)):
             H, W = predicted_masks_svm[j].shape
@@ -524,20 +526,25 @@ def train(args, predictor):
                 BBoxes.append(bbox)
                 BBoxes_GT.append(bboxVal)
                 BBIoUs.append(BBIoU)
+                BBoxes_Otsu.append(bboxOtsu)
                 BBIoU = calculate_iou(bboxVal, bboxOtsu)
                 BBIoUOtsu.append(BBIoU)
 
 
         # Get evaluations from SAM
-        # print('Evaluating using SAM')
-        # for j in range(len(val_images)):
-        #     masks_pred, logits = SAM_predict(predictor, val_images[j] , bounding_box=BBoxes[j], point_prompt=None)
+        print('Evaluating using SAM')
+        SAM_pred = []
+        for j in range(len(val_images)):
+            masks_pred, logits = SAM_predict(predictor, val_images[j] , bounding_box=BBoxes_Otsu[j], point_prompt=None)
+            SAM_pred.append(masks_pred)
 
 
 
         # Evaluate the SVM model
         report = classification_report(val_labels_flat, np.array(pred_original).reshape(-1),target_names = ['0','1'], output_dict=True)
         report_otsu = classification_report(val_labels_flat, np.array(otsu_original).reshape(-1), target_names=['0', '1'], output_dict=True)
+        report_SAM = classification_report(val_labels_flat, np.array(SAM_pred).reshape(-1),
+                                            target_names=['0', '1'], output_dict=True)
         #accuracy_svm = accuracy_score(val_labels_flat, pred_original.reshape(-1))
         # print(f'SVM Accuracy: {accuracy_svm}')
         # predicted_masks_train = predict_and_reshape(model, train_embeddings_flat, (len(train_embeddings_tensor), 64, 64))
@@ -549,6 +556,7 @@ def train(args, predictor):
         # print('SVM Dice (Dilation + Erosion): ', svm_dice_val)
         svm_dice_val = dice_coeff(torch.Tensor(np.array(pred_original)), torch.Tensor(np.array(val_labels)))
         otsu_dice_val = dice_coeff(torch.Tensor(np.array(otsu_original)), torch.Tensor(np.array(val_labels)))
+        SAM_dice_val = dice_coeff(torch.Tensor(np.array(SAM_pred)), torch.Tensor(np.array(val_labels)))
         #print('SVM Dice: ', svm_dice_val)
 
         metrics = {
@@ -578,6 +586,20 @@ def train(args, predictor):
             'dice_score': otsu_dice_val.numpy()
         }
         all_metrics_otsu.append(metrics_otsu)
+
+        metrics_SAM = {
+            'eval_num': i,  # Evaluation number or model identifier
+            'accuracy': report_SAM['accuracy'],
+            'negative_precision': report_SAM['0']['precision'],
+            'positive_precision': report_SAM['1']['precision'],
+            'negative_recall': report_SAM['0']['recall'],
+            'positive_recall': report_SAM['1']['recall'],
+            'f1_score': report_SAM['weighted avg']['f1-score'],
+            'BB IoU': np.mean(BBIoUOtsu),
+            'Time per Sample': prediction_time_otsu,
+            'dice_score': SAM_dice_val.numpy()
+        }
+        all_metrics_SAM.append(metrics_SAM)
 
         # Visualize SVM predictions on the validation dataset
         #print("Validation Predictions with SVM:")
@@ -616,7 +638,22 @@ def train(args, predictor):
         writer.writeheader()  # Write the header
 
         for metrics in all_metrics_otsu:
-            writer.writerow(metrics_otsu)  # Write each model's metrics
+            writer.writerow(metrics)  # Write each model's metrics
+
+    filename = f'/content/model_metrics_SAM_{timestamp}.csv'
+
+    # Check if the file exists to write headers only once
+    file_exists = os.path.isfile(filename)
+
+    with open(filename, 'w', newline='') as csvfile:  # Note: using 'w' to overwrite or create new
+        fieldnames = ['eval_num', 'accuracy', 'negative_precision', 'positive_precision',
+                      'negative_recall', 'positive_recall', 'f1_score', 'BB IoU', 'Time per Sample', 'dice_score']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        writer.writeheader()  # Write the header
+
+        for metrics in all_metrics_SAM:
+            writer.writerow(metrics)  # Write each model's metrics
 
     return model
 
