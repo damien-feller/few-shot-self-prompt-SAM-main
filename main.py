@@ -497,40 +497,41 @@ def train(args, predictor):
 
         # prompt the sam with the bounding box
         BBIoUs = []
+        BBIoUOtsu = []
         BBoxes = []
         BBoxes_GT = []
         for j in range(len(predicted_masks_svm)):
             H, W = predicted_masks_svm[j].shape
             y_indices, x_indices = np.where(predicted_masks_svm[j] > 0)
+            y_otsu, x_otsu = np.where(otsu_original[j] > 0)
             y_val, x_val = np.where(val_labels[j] > 0)
             if np.all(predicted_masks_svm[j] == 0):
                 bbox = np.array([0, 0, H, W])
             else:
                 x_minVal, x_maxVal = np.min(x_val), np.max(x_val)
                 y_minVal, y_maxVal = np.min(y_val), np.max(y_val)
-                # x_minVal = max(0, x_minVal - np.random.randint(0, 20))
-                # x_max = min(W, x_max + np.random.randint(0, 20))
-                # y_min = max(0, y_min - np.random.randint(0, 20))
-                # y_max = min(H, y_max + np.random.randint(0, 20))
                 bboxVal = np.array([x_minVal, y_minVal, x_maxVal, y_maxVal])
 
                 x_min, x_max = np.min(x_indices), np.max(x_indices)
                 y_min, y_max = np.min(y_indices), np.max(y_indices)
-                # x_min = max(0, x_min - np.random.randint(0, 20))
-                # x_max = min(W, x_max + np.random.randint(0, 20))
-                # y_min = max(0, y_min - np.random.randint(0, 20))
-                # y_max = min(H, y_max + np.random.randint(0, 20))
                 bbox = np.array([x_min, y_min, x_max, y_max])
+
+                x_minOtsu, x_maxOtsu = np.min(x_indices), np.max(x_indices)
+                y_minOtsu, y_maxOtsu = np.min(y_indices), np.max(y_indices)
+                bboxOtsu = np.array([x_minOtsu, y_minOtsu, x_maxOtsu, y_maxOtsu])
+
                 BBIoU = calculate_iou(bboxVal, bbox)
                 BBoxes.append(bbox)
                 BBoxes_GT.append(bboxVal)
                 BBIoUs.append(BBIoU)
+                BBIoU = calculate_iou(bboxVal, bboxOtsu)
+                BBIoUOtsu.append(BBIoU)
 
 
         # Get evaluations from SAM
         # print('Evaluating using SAM')
-        # for j in range(len(predicted_masks_svm)):
-        #     masks_pred, logits = SAM_predict(predictor, , bounding_box=None, point_prompt=None)
+        # for j in range(len(val_images)):
+        #     masks_pred, logits = SAM_predict(predictor, val_images[j] , bounding_box=BBoxes[j], point_prompt=None)
 
 
 
@@ -572,7 +573,7 @@ def train(args, predictor):
             'negative_recall': report_otsu['0']['recall'],
             'positive_recall': report_otsu['1']['recall'],
             'f1_score': report_otsu['weighted avg']['f1-score'],
-            'BB IoU': np.mean(BBIoUs),
+            'BB IoU': np.mean(BBIoUOtsu),
             'Time per Sample': prediction_time_otsu,
             'dice_score': otsu_dice_val.numpy()
         }
