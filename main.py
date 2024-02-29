@@ -93,12 +93,11 @@ def create_dataset_for_SVM(embeddings, labels):
     return embeddings_flat, labels_flat
 
 def predict_and_reshape_otsu(model, X, original_shape):
-    images = X.reshape(original_shape)
     otsu_median_thresh = []
 
     # Reshape the prediction probabilities back to the original mask shape
     for i in range(original_shape[0]):
-        image_flat = images[i].reshape(-1, images[i].shape[0])
+        image_flat = X[i].reshape(-1, X[i].shape[0])
         pred_probs_flat = model.predict_proba(image_flat)[:, 1]
         pred_probs = pred_probs_flat.reshape((64, 64))
         # Normalize data to 0 and 255
@@ -447,9 +446,8 @@ def train(args, predictor):
 
 
         # Predict on the validation set (OTSU)
-        print(np.array(val_embeddings_flat).shape())
         start_time = time.time()  # Start timing
-        predicted_masks_otsu = predict_and_reshape_otsu(model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
+        predicted_masks_otsu = predict_and_reshape_otsu(model, val_embeddings, (len(val_embeddings_tensor), 64, 64))
         end_time = time.time()  # End timing
         prediction_time_otsu = (end_time - start_time) / 25
         otsu_original = predicted_masks_otsu
