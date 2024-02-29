@@ -92,6 +92,17 @@ def create_dataset_for_SVM(embeddings, labels):
     labels_flat = labels.reshape(-1)
     return embeddings_flat, labels_flat
 
+def predict_and_reshape_otsu(model, X, original_shape):
+    predictions = model.predict_proba(X)
+    # Reshape the prediction probabilities back to the original mask shape
+    pred_probs = predictions.reshape(original_shape)
+    # Normalize data to 0 and 255
+    heatmap_normalized = cv2.normalize(pred_probs, None, 0, 255, cv2.NORM_MINMAX)
+    heatmap_normalized = np.uint8(heatmap_normalized)
+    median_filtered = cv2.medianBlur(heatmap_normalized, 5)
+    _, otsu_median_thresh = cv2.threshold(median_filtered, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    return otsu_median_thresh
+
 def predict_and_reshape(model, X, original_shape):
     predictions = model.predict(X)
     return predictions.reshape(original_shape)
@@ -395,11 +406,20 @@ def train(args, predictor):
 
         # Predict on the validation set
         start_time = time.time()  # Start timing
-        predicted_masks_svm = predict_and_reshape(model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
+        predicted_masks_svm = predict_and_reshape_otsu(model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
         predicted_masks_svm = (predicted_masks_svm > args.threshold).astype(np.uint8)
         end_time = time.time()  # End timing
         prediction_time = (end_time - start_time) / 25
         pred_original =predicted_masks_svm
+
+
+        # Predict on the validation set (OTSU)
+        # start_time = time.time()  # Start timing
+        # predicted_masks_svm = predict_and_reshape_otsu(model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
+        # predicted_masks_svm = (predicted_masks_svm > args.threshold).astype(np.uint8)
+        # end_time = time.time()  # End timing
+        # prediction_time = (end_time - start_time) / 25
+        # pred_original =predicted_masks_svm
 
         # Define the kernel for dilation
         kernel = np.ones((2, 2), np.uint8)
