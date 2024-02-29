@@ -92,21 +92,31 @@ def create_dataset_for_SVM(embeddings, labels):
     labels_flat = labels.reshape(-1)
     return embeddings_flat, labels_flat
 
+
 def predict_and_reshape_otsu(model, X, original_shape):
     otsu_median_thresh = []
 
-    # Reshape the prediction probabilities back to the original mask shape
+    # Loop over each example in the batch
     for i in range(original_shape[0]):
-        image_flat = X[i].reshape(-1, X[i].shape[0])
+        # Predict probabilities for each pixel being in the positive class
+        image_flat = X[i].reshape(-1, X[i].shape[1])  # Ensure this reshapes correctly
         pred_probs_flat = model.predict_proba(image_flat)[:, 1]
+
+        # Reshape probabilities back to the original image shape (assumed to be (64, 64) here)
         pred_probs = pred_probs_flat.reshape((64, 64))
-        # Normalize data to 0 and 255
-        heatmap_normalized = cv2.normalize(pred_probs[i], None, 0, 255, cv2.NORM_MINMAX)
+
+        # Normalize and apply Otsu's threshold
+        heatmap_normalized = cv2.normalize(pred_probs, None, 0, 255, cv2.NORM_MINMAX)
         heatmap_normalized = np.uint8(heatmap_normalized)
         median_filtered = cv2.medianBlur(heatmap_normalized, 5)
         _, otsu_thresh = cv2.threshold(median_filtered, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+        # Append the correctly shaped thresholded image to the results
         otsu_median_thresh.append(otsu_thresh)
+
+    # Ensure otsu_median_thresh is correctly shaped as a list of (64, 64) arrays
     return otsu_median_thresh
+
 
 def predict_and_reshape(model, X, original_shape):
     predictions = model.predict(X)
