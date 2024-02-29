@@ -95,7 +95,7 @@ def create_dataset_for_SVM(embeddings, labels):
 def predict_and_reshape_otsu(model, X, original_shape):
     predictions = model.predict_proba(X)
     # Reshape the prediction probabilities back to the original mask shape
-    pred_probs = predictions.reshape(original_shape)
+    pred_probs = predictions[:, 1].reshape(original_shape)
     # Normalize data to 0 and 255
     heatmap_normalized = cv2.normalize(pred_probs, None, 0, 255, cv2.NORM_MINMAX)
     heatmap_normalized = np.uint8(heatmap_normalized)
