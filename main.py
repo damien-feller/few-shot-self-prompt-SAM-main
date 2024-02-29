@@ -113,8 +113,18 @@ def predict_and_reshape_otsu(model, X, original_shape):
         _, otsu_thresh = cv2.threshold(median_filtered, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         otsu_thresh = (otsu_thresh / 255).astype(np.uint8)
 
+        # Find contours
+        contours, _ = cv2.findContours((otsu_thresh/255).astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        # Find the largest contour based on area
+        largest_contour = max(contours, key=cv2.contourArea)
+
+        # Create a mask for the largest contour
+        mask_otsu = np.zeros_like(otsu_thresh)
+        cv2.drawContours(mask_otsu, [largest_contour], -1, color=1, thickness=cv2.FILLED)
+
         # Append the correctly shaped thresholded image to the results
-        otsu_median_thresh.append(otsu_thresh)
+        otsu_median_thresh.append(mask_otsu)
 
     # Ensure otsu_median_thresh is correctly shaped as a list of (64, 64) arrays
     return otsu_median_thresh
@@ -520,14 +530,13 @@ def train(args, predictor):
         # Get evaluations from SAM
         print('Evaluating using SAM')
         for j in range(len(predicted_masks_svm)):
-            masks_pred, logits
+            masks_pred, logits = SAM_predict(predictor, , bounding_box=None, point_prompt=None)
 
 
 
         # Evaluate the SVM model
         report = classification_report(val_labels_flat, np.array(pred_original).reshape(-1),target_names = ['0','1'], output_dict=True)
-        report_otsu = classification_report(val_labels_flat, np.array(otsu_original).reshape(-1), target_names=['0', '1'],
-                                       output_dict=True)
+        report_otsu = classification_report(val_labels_flat, np.array(otsu_original).reshape(-1), target_names=['0', '1'], output_dict=True)
         #accuracy_svm = accuracy_score(val_labels_flat, pred_original.reshape(-1))
         # print(f'SVM Accuracy: {accuracy_svm}')
         # predicted_masks_train = predict_and_reshape(model, train_embeddings_flat, (len(train_embeddings_tensor), 64, 64))
