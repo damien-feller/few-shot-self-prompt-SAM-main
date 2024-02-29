@@ -405,21 +405,20 @@ def train(args, predictor):
         model.fit(train_embeddings_flat, train_labels_flat)
 
         # Predict on the validation set
-        start_time = time.time()  # Start timing
-        predicted_masks_svm = predict_and_reshape_otsu(model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
-        predicted_masks_svm = (predicted_masks_svm > args.threshold).astype(np.uint8)
-        end_time = time.time()  # End timing
-        prediction_time = (end_time - start_time) / 25
-        pred_original =predicted_masks_svm
-
-
-        # Predict on the validation set (OTSU)
         # start_time = time.time()  # Start timing
-        # predicted_masks_svm = predict_and_reshape_otsu(model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
+        # predicted_masks_svm = predict_and_reshape(model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
         # predicted_masks_svm = (predicted_masks_svm > args.threshold).astype(np.uint8)
         # end_time = time.time()  # End timing
         # prediction_time = (end_time - start_time) / 25
         # pred_original =predicted_masks_svm
+
+
+        # Predict on the validation set (OTSU)
+        start_time = time.time()  # Start timing
+        predicted_masks_svm = predict_and_reshape_otsu(model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
+        end_time = time.time()  # End timing
+        prediction_time = (end_time - start_time) / 25
+        pred_original =predicted_masks_svm
 
         # Define the kernel for dilation
         kernel = np.ones((2, 2), np.uint8)
