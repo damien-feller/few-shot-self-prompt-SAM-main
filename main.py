@@ -152,6 +152,32 @@ def calculate_iou(ground_truth, prediction):
     return iou
 
 
+def custom_predict(predictor, image=None, bounding_box=None, point_prompt=None):
+    # Check if an image is provided and set it
+    if image is not None:
+        predictor.set_image(image)
+
+    # Initialize variables for point_coords and point_labels
+    input_point = None
+    input_label = None
+
+    # Check if a point prompt is provided
+    if point_prompt is not None:
+        # Assuming point_prompt is a tuple or list in the form (x, y, label)
+        input_point = np.array([[point_prompt[0], point_prompt[1]]])
+        input_label = np.array([point_prompt[2]])
+
+    # Call predictor's predict method with the provided or default parameters
+    masks_pred, _, logits = predictor.predict(
+        point_coords=input_point,
+        point_labels=input_label,
+        box=bounding_box,
+        multimask_output=False,
+    )
+
+    return masks_pred, logits
+
+
 def visualize_predictions(org_img, images, masks, model, num_samples=3, val=False, eval_num=0):
     if len(images) < num_samples:
         num_samples = len(images)
@@ -421,6 +447,7 @@ def train(args, predictor):
 
 
         # Predict on the validation set (OTSU)
+        print(val_embeddings_flat.shape())
         start_time = time.time()  # Start timing
         predicted_masks_otsu = predict_and_reshape_otsu(model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
         end_time = time.time()  # End timing
