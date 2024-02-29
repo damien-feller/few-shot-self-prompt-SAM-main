@@ -240,6 +240,16 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         _, combo_gaussian_thresh = cv2.threshold(combo_gaussian, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         _, combo_median_thresh = cv2.threshold(combo_median, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
+        # Find contours
+        contours, _ = cv2.findContours(otsu_median_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        # Find the largest contour based on area
+        largest_contour = max(contours, key=cv2.contourArea)
+
+        # Create a mask for the largest contour
+        mask = np.zeros_like(otsu_median_thresh)
+        cv2.drawContours(mask, [largest_contour], -1, color=255, thickness=cv2.FILLED)
+
 
         fig, axes = plt.subplots(8, 3, figsize=(15, 40))  # Adjusting figure size for better visibility
 
@@ -306,7 +316,7 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         axes[4, 1].set_title("Otsu Gaussian Threshold")
         axes[4, 1].axis('off')
 
-        axes[4, 2].imshow(otsu_median_thresh, cmap='gray')
+        axes[4, 2].imshow(mask, cmap='gray')
         axes[4, 2].set_title("Otsu Median Threshold")
         axes[4, 2].axis('off')
 
