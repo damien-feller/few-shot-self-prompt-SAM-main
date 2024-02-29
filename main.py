@@ -408,20 +408,20 @@ def train(args, predictor):
         model.fit(train_embeddings_flat, train_labels_flat)
 
         # Predict on the validation set
-        # start_time = time.time()  # Start timing
-        # predicted_masks_svm = predict_and_reshape(model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
-        # predicted_masks_svm = (predicted_masks_svm > args.threshold).astype(np.uint8)
-        # end_time = time.time()  # End timing
-        # prediction_time = (end_time - start_time) / 25
-        # pred_original =predicted_masks_svm
+        start_time = time.time()  # Start timing
+        predicted_masks_svm = predict_and_reshape(model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
+        predicted_masks_svm = (predicted_masks_svm > args.threshold).astype(np.uint8)
+        end_time = time.time()  # End timing
+        prediction_time = (end_time - start_time) / 25
+        pred_original = predicted_masks_svm
 
 
         # Predict on the validation set (OTSU)
         start_time = time.time()  # Start timing
-        predicted_masks_svm = predict_and_reshape_otsu(model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
+        predicted_masks_otsu = predict_and_reshape_otsu(model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
         end_time = time.time()  # End timing
-        prediction_time = (end_time - start_time) / 25
-        pred_original =predicted_masks_svm
+        prediction_time_otsu = (end_time - start_time) / 25
+        otsu_original = predicted_masks_otsu
 
         # Define the kernel for dilation
         kernel = np.ones((2, 2), np.uint8)
@@ -464,6 +464,8 @@ def train(args, predictor):
 
         # Evaluate the SVM model
         report = classification_report(val_labels_flat, np.array(pred_original).reshape(-1),target_names = ['0','1'], output_dict=True)
+        report_otsu = classification_report(val_labels_flat, np.array(otsu_original).reshape(-1), target_names=['0', '1'],
+                                       output_dict=True)
         #accuracy_svm = accuracy_score(val_labels_flat, pred_original.reshape(-1))
         # print(f'SVM Accuracy: {accuracy_svm}')
         # predicted_masks_train = predict_and_reshape(model, train_embeddings_flat, (len(train_embeddings_tensor), 64, 64))
@@ -474,6 +476,7 @@ def train(args, predictor):
         # svm_dice_val = dice_coeff(torch.Tensor(predicted_masks_svm), torch.Tensor(val_labels))
         # print('SVM Dice (Dilation + Erosion): ', svm_dice_val)
         svm_dice_val = dice_coeff(torch.Tensor(np.array(pred_original)), torch.Tensor(np.array(val_labels)))
+        otsu_dice_val = dice_coeff(torch.Tensor(np.array(otsu_original)), torch.Tensor(np.array(val_labels)))
         #print('SVM Dice: ', svm_dice_val)
 
         metrics = {
@@ -489,6 +492,20 @@ def train(args, predictor):
             'dice_score': svm_dice_val.numpy()
         }
         all_metrics.append(metrics)
+
+        metrics_otsu = {
+            'eval_num': i,  # Evaluation number or model identifier
+            'accuracy': report_otsu['accuracy'],
+            'negative_precision': report_otsu['0']['precision'],
+            'positive_precision': report_otsu['1']['precision'],
+            'negative_recall': report_otsu['0']['recall'],
+            'positive_recall': report_otsu['1']['recall'],
+            'f1_score': report_otsu['weighted avg']['f1-score'],
+            'BB IoU': np.mean(BBIoUs),
+            'Time per Sample': prediction_time_otsu,
+            'dice_score': otsu_dice_val.numpy()
+        }
+        all_metrics_otsu.append(metrics_otsu)
 
         # Visualize SVM predictions on the validation dataset
         #print("Validation Predictions with SVM:")
