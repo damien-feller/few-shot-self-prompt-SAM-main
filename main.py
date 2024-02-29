@@ -536,9 +536,8 @@ def train(args, predictor):
         SAM_pred = []
         for j in range(len(val_images)):
             masks_pred, logits = SAM_predict(predictor, val_images[j] , bounding_box=BBoxes_Otsu[j], point_prompt=None)
-            print(type(masks_pred))
-            print(masks_pred)
-            mask_SAM = cv2.resize(np.array(masks_pred[0]), dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
+            mask_SAM = masks_pred[0].astype('uint8')
+            mask_SAM = cv2.resize(mask_SAM, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
             SAM_pred.append(mask_SAM)
 
 
