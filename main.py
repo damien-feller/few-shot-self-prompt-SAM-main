@@ -99,7 +99,7 @@ def predict_and_reshape_otsu(model, X, original_shape):
     # Loop over each example in the batch
     for i in range(original_shape[0]):
         # Predict probabilities for each pixel being in the positive class
-        image_flat = X[i].reshape(-1, X[i].shape[1])  # Ensure this reshapes correctly
+        image_flat = X[i].reshape(-1, X[i].shape[0])  # Ensure this reshapes correctly
         pred_probs_flat = model.predict_proba(image_flat)[:, 1]
 
         # Reshape probabilities back to the original image shape (assumed to be (64, 64) here)
@@ -367,8 +367,8 @@ def train(args, predictor):
     fnames = os.listdir(os.path.join(data_path, 'images'))
     # get k random indices from fnames
     random.shuffle(fnames)
-    val_fnames = fnames[-25:]
-    fnames[-25:] = []
+    val_fnames = fnames[-args.val_size:]
+    fnames[-args.val_size:] = []
 
 
     #create a number of different training sets
@@ -607,6 +607,7 @@ def main():
     parser.add_argument('--threshold', type=float, default=0.5, help='threshold for binary segmentation')
     parser.add_argument('--augmentation_num', type=float, default=20, help='number of image augmentations to perform')
     parser.add_argument('--evaluation_num', type=int, default=5, help='number of models to trian for evaluation')
+    parser.add_argument('--val_size', type=int, default=25, help='number of validation images')
     args = parser.parse_args()
 
     # set random seed
