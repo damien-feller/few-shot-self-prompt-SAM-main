@@ -93,16 +93,17 @@ def create_dataset_for_SVM(embeddings, labels):
     return embeddings_flat, labels_flat
 
 def predict_and_reshape_otsu(model, X, original_shape):
+    otsu_median_thresh = []
     predictions = model.predict_proba(X)
     # Reshape the prediction probabilities back to the original mask shape
     pred_probs = predictions[:, 1].reshape(original_shape)
-    # Normalize data to 0 and 255
-    heatmap_normalized = cv2.normalize(pred_probs, None, 0, 255, cv2.NORM_MINMAX)
-    heatmap_normalized = np.uint8(heatmap_normalized)
-    median_filtered = cv2.medianBlur(heatmap_normalized, 5)
-    median_filtered =  cv2.normalize(median_filtered, None, 0, 255, cv2.NORM_MINMAX)
-    median_filtered = np.uint8(median_filtered)
-    _, otsu_median_thresh = cv2.threshold(median_filtered, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    for i in range(original_shape[0]):
+        # Normalize data to 0 and 255
+        heatmap_normalized = cv2.normalize(pred_probs[i], None, 0, 255, cv2.NORM_MINMAX)
+        heatmap_normalized = np.uint8(heatmap_normalized)
+        median_filtered = cv2.medianBlur(heatmap_normalized, 5)
+        _, otsu_thresh = cv2.threshold(median_filtered, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        otsu_median_thresh.append(otsu_thresh)
     return otsu_median_thresh
 
 def predict_and_reshape(model, X, original_shape):
