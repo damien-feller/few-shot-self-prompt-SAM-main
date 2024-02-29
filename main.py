@@ -528,12 +528,24 @@ def train(args, predictor):
         BBoxes = []
         BBoxes_Otsu = []
         BBoxes_GT = []
+
+        #resize the masks for bounding boxes
+        predicted_masks_svm_resized = []
+        otsu_original_resized = []
+        val_labels_resized= []
         for j in range(len(predicted_masks_svm)):
-            H, W = predicted_masks_svm[j].shape
-            y_indices, x_indices = np.where(predicted_masks_svm[j] > 0)
-            y_otsu, x_otsu = np.where(otsu_original[j] > 0)
+            predicted_masks_svm_resized[j] = cv2.resize(predicted_masks_svm[j], dsize=(1024, 1024), interpolation=cv2.INTER_NEAREST)
+            otsu_original_resized[j] = cv2.resize(otsu_original[j], dsize=(1024, 1024),
+                                                     interpolation=cv2.INTER_NEAREST)
+            val_labels_resized[j] = cv2.resize(val_labels[j], dsize=(1024, 1024),
+                                                     interpolation=cv2.INTER_NEAREST)
+
+        for j in range(len(predicted_masks_svm)):
+            H, W = predicted_masks_svm_resized[j].shape
+            y_indices, x_indices = np.where(predicted_masks_svm_resized[j] > 0)
+            y_otsu, x_otsu = np.where(otsu_original_resized[j] > 0)
             y_val, x_val = np.where(val_labels[j] > 0)
-            if np.all(predicted_masks_svm[j] == 0):
+            if np.all(predicted_masks_svm_resized[j] == 0):
                 bbox = np.array([0, 0, H, W])
             else:
                 x_minVal, x_maxVal = np.min(x_val), np.max(x_val)
