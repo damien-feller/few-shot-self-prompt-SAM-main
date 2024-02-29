@@ -110,6 +110,7 @@ def predict_and_reshape_otsu(model, X, original_shape):
         heatmap_normalized = np.uint8(heatmap_normalized)
         median_filtered = cv2.medianBlur(heatmap_normalized, 5)
         _, otsu_thresh = cv2.threshold(median_filtered, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        otsu_thresh = (otsu_thresh / 255).astype(np.uint8)
 
         # Append the correctly shaped thresholded image to the results
         otsu_median_thresh.append(otsu_thresh)
@@ -458,7 +459,6 @@ def train(args, predictor):
         # Predict on the validation set (OTSU)
         start_time = time.time()  # Start timing
         predicted_masks_otsu = predict_and_reshape_otsu(model, val_embeddings, (len(val_embeddings_tensor), 64, 64))
-        predicted_masks_otsu = (predicted_masks_otsu > 128).astype(np.uint8)
         end_time = time.time()  # End timing
         prediction_time_otsu = (end_time - start_time) / 25
         otsu_original = predicted_masks_otsu
