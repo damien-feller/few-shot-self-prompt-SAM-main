@@ -534,11 +534,16 @@ def train(args, predictor):
         # Get evaluations from SAM
         print('Evaluating using SAM')
         SAM_pred = []
+        prediction_time_SAM = 0
         for j in range(len(val_images)):
+            start_time = time.time()  # Start timing
             masks_pred, logits = SAM_predict(predictor, val_images[j] , bounding_box=BBoxes_Otsu[j], point_prompt=None)
             mask_SAM = masks_pred[0].astype('uint8')
             mask_SAM = cv2.resize(mask_SAM, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
+            end_time = time.time()  # End timing
+            prediction_time_SAM += (end_time - start_time)
             SAM_pred.append(mask_SAM)
+        prediction_time_SAM /= len(val_images)
 
 
 
@@ -598,7 +603,7 @@ def train(args, predictor):
             'positive_recall': report_SAM['1']['recall'],
             'f1_score': report_SAM['weighted avg']['f1-score'],
             'BB IoU': np.mean(BBIoUOtsu),
-            'Time per Sample': prediction_time_otsu,
+            'Time per Sample': prediction_time_SAM,
             'dice_score': SAM_dice_val.numpy()
         }
         all_metrics_SAM.append(metrics_SAM)
