@@ -163,7 +163,7 @@ def calculate_iou(ground_truth, prediction):
     return iou
 
 
-def custom_predict(predictor, image=None, bounding_box=None, point_prompt=None):
+def SAM_predict(predictor, image=None, bounding_box=None, point_prompt=None):
     # Check if an image is provided and set it
     if image is not None:
         predictor.set_image(image)
@@ -248,8 +248,8 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         largest_contour = max(contours, key=cv2.contourArea)
 
         # Create a mask for the largest contour
-        mask = np.zeros_like(otsu_median_thresh)
-        cv2.drawContours(mask, [largest_contour], -1, color=255, thickness=cv2.FILLED)
+        mask_otsu = np.zeros_like(otsu_median_thresh)
+        cv2.drawContours(mask_otsu, [largest_contour], -1, color=255, thickness=cv2.FILLED)
 
 
         fig, axes = plt.subplots(8, 3, figsize=(15, 40))  # Adjusting figure size for better visibility
@@ -317,7 +317,7 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         axes[4, 1].set_title("Otsu Gaussian Threshold")
         axes[4, 1].axis('off')
 
-        axes[4, 2].imshow(mask, cmap='gray')
+        axes[4, 2].imshow(mask_otsu, cmap='gray')
         axes[4, 2].set_title("Otsu Median Threshold")
         axes[4, 2].axis('off')
 
@@ -487,6 +487,8 @@ def train(args, predictor):
 
         # prompt the sam with the bounding box
         BBIoUs = []
+        BBoxes = []
+        BBoxes_GT = []
         for j in range(len(predicted_masks_svm)):
             H, W = predicted_masks_svm[j].shape
             y_indices, x_indices = np.where(predicted_masks_svm[j] > 0)
@@ -510,7 +512,16 @@ def train(args, predictor):
                 # y_max = min(H, y_max + np.random.randint(0, 20))
                 bbox = np.array([x_min, y_min, x_max, y_max])
                 BBIoU = calculate_iou(bboxVal, bbox)
+                BBoxes.append(bbox)
+                BBoxes_GT.append(bboxVal)
                 BBIoUs.append(BBIoU)
+
+
+        # Get evaluations from SAM
+        print('Evaluating using SAM')
+        for j in range(len(predicted_masks_svm)):
+            masks_pred, logits
+
 
 
         # Evaluate the SVM model
