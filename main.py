@@ -463,7 +463,7 @@ def train(args, predictor):
 
 
         # Evaluate the SVM model
-        report = classification_report(val_labels_flat, pred_original.reshape(-1),target_names = ['0','1'], output_dict=True)
+        report = classification_report(val_labels_flat, np.array(pred_original).reshape(-1),target_names = ['0','1'], output_dict=True)
         #accuracy_svm = accuracy_score(val_labels_flat, pred_original.reshape(-1))
         # print(f'SVM Accuracy: {accuracy_svm}')
         # predicted_masks_train = predict_and_reshape(model, train_embeddings_flat, (len(train_embeddings_tensor), 64, 64))
