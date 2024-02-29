@@ -29,6 +29,7 @@ import xgboost as xgb
 import seaborn as sns
 import pandas as pd
 from skimage import filters
+from scipy.ndimage import label, find_objects
 
 
 
@@ -241,7 +242,7 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         _, combo_median_thresh = cv2.threshold(combo_median, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
         # Find contours
-        contours, _ = cv2.findContours(otsu_median_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours((otsu_median_thresh/255).astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         # Find the largest contour based on area
         largest_contour = max(contours, key=cv2.contourArea)
