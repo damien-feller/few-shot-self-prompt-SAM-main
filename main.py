@@ -447,7 +447,7 @@ def train(args, predictor):
 
 
         # Predict on the validation set (OTSU)
-        print(val_embeddings_flat.shape())
+        print(np.array(val_embeddings_flat).shape())
         start_time = time.time()  # Start timing
         predicted_masks_otsu = predict_and_reshape_otsu(model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
         end_time = time.time()  # End timing
