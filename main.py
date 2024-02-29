@@ -556,8 +556,8 @@ def train(args, predictor):
                 y_min, y_max = np.min(y_indices), np.max(y_indices)
                 bbox = np.array([x_min, y_min, x_max, y_max])
 
-                x_minOtsu, x_maxOtsu = np.min(x_indices), np.max(x_indices)
-                y_minOtsu, y_maxOtsu = np.min(y_indices), np.max(y_indices)
+                x_minOtsu, x_maxOtsu = np.min(x_otsu), np.max(x_otsu)
+                y_minOtsu, y_maxOtsu = np.min(y_otsu), np.max(y_otsu)
                 bboxOtsu = np.array([x_minOtsu, y_minOtsu, x_maxOtsu, y_maxOtsu])
 
                 BBIoU = calculate_iou(bboxVal, bbox)
