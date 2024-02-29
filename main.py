@@ -528,9 +528,9 @@ def train(args, predictor):
 
 
         # Get evaluations from SAM
-        print('Evaluating using SAM')
-        for j in range(len(predicted_masks_svm)):
-            masks_pred, logits = SAM_predict(predictor, , bounding_box=None, point_prompt=None)
+        # print('Evaluating using SAM')
+        # for j in range(len(predicted_masks_svm)):
+        #     masks_pred, logits = SAM_predict(predictor, , bounding_box=None, point_prompt=None)
 
 
 
