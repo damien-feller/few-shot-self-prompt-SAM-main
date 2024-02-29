@@ -100,6 +100,8 @@ def predict_and_reshape_otsu(model, X, original_shape):
     heatmap_normalized = cv2.normalize(pred_probs, None, 0, 255, cv2.NORM_MINMAX)
     heatmap_normalized = np.uint8(heatmap_normalized)
     median_filtered = cv2.medianBlur(heatmap_normalized, 5)
+    median_filtered =  cv2.normalize(median_filtered, None, 0, 255, cv2.NORM_MINMAX)
+    median_filtered = np.uint8(median_filtered)
     _, otsu_median_thresh = cv2.threshold(median_filtered, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     return otsu_median_thresh
 
