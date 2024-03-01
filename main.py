@@ -185,8 +185,8 @@ def SAM_predict(predictor, image=None, bounding_box=None, point_prompt=None):
     # Check if a point prompt is provided
     if point_prompt is not None:
         # Assuming point_prompt is a tuple or list in the form (x, y, label)
-        input_point = np.array([[point_prompt[0], point_prompt[1]]])
-        input_label = np.array([point_prompt[2]])
+        input_point = np.array([[point_prompt[0,0], point_prompt[0,1]]])
+        input_label = np.array([point_prompt[0,2]])
 
     # Call predictor's predict method with the provided or default parameters
     masks_pred, _, logits = predictor.predict(
@@ -648,9 +648,6 @@ def train(args, predictor):
         prediction_time_SAM_point = 0
         for j in range(len(val_images)):
             input_point = np.array([[points_otsu[j][0], points_otsu[j][1], 1]])
-            print(input_point[0][0])
-            print(input_point[0][1])
-            print(input_point[0][2])
             start_time = time.time()  # Start timing
             masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j], point_prompt=input_point)
             mask_SAM = masks_pred[0].astype('uint8')
