@@ -564,6 +564,7 @@ def train(args, predictor):
                                                      interpolation=cv2.INTER_NEAREST)
 
         for j in range(len(predicted_masks_svm)):
+            print(np.array(otsu_original_resized).shape)
             H, W = predicted_masks_svm_resized[j].shape
             y_indices, x_indices = np.where(predicted_masks_svm_resized[j] > 0)
             y_otsu, x_otsu = np.where(otsu_original_resized[j] > 0)
