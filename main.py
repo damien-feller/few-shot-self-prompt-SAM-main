@@ -714,7 +714,7 @@ def train(args, predictor):
         # Visualize SVM predictions on the validation dataset
         #print("Validation Predictions with SVM:")
         if i == 0:
-            visualize_predictions(train_images, train_embeddings, train_labels, model, num_samples=25, val=False, eval_num=i)
+            #visualize_predictions(train_images, train_embeddings, train_labels, model, num_samples=25, val=False, eval_num=i)
             visualize_predictions(val_images, val_embeddings, val_labels, model, num_samples=25, val=True, eval_num=i)
             visualise_SAM(val_images,  val_labels, pred_original, otsu_original, SAM_pred,SAM_pred_GT, BBoxes_Otsu, BBoxes, BBoxes_GT)
 
