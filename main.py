@@ -464,12 +464,12 @@ def train(args, predictor):
             contours, _ = cv2.findContours(resized_mask , cv2.RETR_EXTERNAL,
                                            cv2.CHAIN_APPROX_SIMPLE)
 
-            # Find the largest contour based on area
-            largest_contour = max(contours, key=cv2.contourArea)
-
             # Create a mask for the largest contour
             mask_large = np.zeros_like(resized_mask)
-            cv2.drawContours(mask_large, [largest_contour], -1, color=255, thickness=cv2.FILLED)
+            for contour in contours:
+                if cv2.contourArea(contour) > 25:
+                    cv2.drawContours(mask_large, [contour], -1, color=255, thickness=cv2.FILLED)
+
             resized_mask = (mask_large / 255).astype(np.uint8)
             resized_img = cv2.resize(img, dsize=(1024, 1024), interpolation=cv2.INTER_NEAREST)
 
