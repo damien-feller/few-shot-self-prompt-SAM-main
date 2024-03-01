@@ -628,7 +628,7 @@ def train(args, predictor):
 
 
         # Get evaluations from SAM
-        print('Evaluating using SAM')
+        print('Evaluating using SAM', i)
         SAM_pred = []
         SAM_pred_resized = []
         prediction_time_SAM = 0
@@ -644,7 +644,7 @@ def train(args, predictor):
         prediction_time_SAM /= len(val_images)
         print('Finished SAM')
 
-        print('Evaluating using SAM - Point')
+        print('Evaluating using SAM - Point', i)
         SAM_point_pred = []
         SAM_point_pred_resized = []
         prediction_time_SAM_point = 0
@@ -663,7 +663,7 @@ def train(args, predictor):
 
         if i == 0:
             # Get evaluations from SAM
-            print('Evaluating using SAM Ground Truth')
+            print('Evaluating using SAM Ground Truth', i)
             SAM_pred_GT = []
             SAM_pred_GT_resized = []
             prediction_time_SAM_GT = 0
@@ -684,7 +684,7 @@ def train(args, predictor):
 
         if i == 0:
             # Get evaluations from SAM
-            print('Evaluating using SAM Ground Truth - Point')
+            print('Evaluating using SAM Ground Truth - Point', i)
             SAM_pred_GTp = []
             SAM_pred_GTp_resized = []
             prediction_time_SAM_GTp = 0
