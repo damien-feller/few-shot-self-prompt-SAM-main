@@ -431,8 +431,9 @@ def train(args, predictor):
     all_metrics = []
     all_metrics_otsu = []
     all_metrics_SAM = []
+    all_metrics_SAM_point = []
     all_metrics_SAM_GT = []
-    feature_importance = []
+    all_metrics_SAM_GTp = []
     data_path = args.data_path
     assert os.path.exists(data_path), 'data path does not exist!'
 
@@ -564,11 +565,14 @@ def train(args, predictor):
         BBoxes = []
         BBoxes_Otsu = []
         BBoxes_GT = []
+        points_GT = []
+        points_otsu = []
 
         #resize the masks for bounding boxes
         predicted_masks_svm_resized = [None] * len(predicted_masks_svm)
         otsu_original_resized = [None] * len(otsu_original)
         val_labels_resized = [None] * len(val_labels)
+
         for j in range(len(predicted_masks_svm)):
             predicted_masks_svm_resized[j] = cv2.resize(predicted_masks_svm[j], dsize=(1024, 1024), interpolation=cv2.INTER_NEAREST)
             otsu_original_resized[j] = cv2.resize(otsu_original[j], dsize=(1024, 1024),
@@ -581,6 +585,11 @@ def train(args, predictor):
             y_indices, x_indices = np.where(predicted_masks_svm_resized[j] > 0)
             y_otsu, x_otsu = np.where(otsu_original_resized[j] > 0)
             y_val, x_val = np.where(val_labels_resized[j] > 0)
+
+            point_GT = get_max_dist_point(val_labels_resized[j])
+            point_otsu = get_max_dist_point(otsu_original_resized[j])
+            points_GT.append(point_GT)
+            points_otsu.append(point_otsu)
 
             # Initialize default bounding box values
             bbox_default = np.array([0, 0, W, H])
@@ -633,6 +642,22 @@ def train(args, predictor):
         prediction_time_SAM /= len(val_images)
         print('Finished SAM')
 
+        print('Evaluating using SAM - Point')
+        SAM_point_pred = []
+        SAM_point_pred_resized = []
+        prediction_time_SAM_point = 0
+        for j in range(len(val_images)):
+            start_time = time.time()  # Start timing
+            masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j], point_prompt=points_otsu[j])
+            mask_SAM = masks_pred[0].astype('uint8')
+            mask_SAM_resized = cv2.resize(mask_SAM, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
+            end_time = time.time()  # End timing
+            prediction_time_SAM_point += (end_time - start_time)
+            SAM_point_pred.append(mask_SAM)
+            SAM_point_pred_resized.append(mask_SAM_resized)
+        prediction_time_SAM_point /= len(val_images)
+        print('Finished SAM')
+
         if i == 0:
             # Get evaluations from SAM
             print('Evaluating using SAM Ground Truth')
@@ -654,6 +679,27 @@ def train(args, predictor):
                                                target_names=['0', '1'], output_dict=True)
             print('Finished SAM')
 
+        if i == 0:
+            # Get evaluations from SAM
+            print('Evaluating using SAM Ground Truth - Point')
+            SAM_pred_GTp = []
+            SAM_pred_GTp_resized = []
+            prediction_time_SAM_GTp = 0
+            for j in range(len(val_images)):
+                start_time = time.time()  # Start timing
+                masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_GT[j],
+                                                 point_prompt=points_GT[j])
+                mask_SAM = masks_pred[0].astype('uint8')
+                mask_SAM_GTp_resized = cv2.resize(mask_SAM, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
+                end_time = time.time()  # End timing
+                prediction_time_SAM_GTp += (end_time - start_time)
+                SAM_pred_GTp.append(mask_SAM)
+                SAM_pred_GTp_resized.append(mask_SAM_GTp_resized)
+            prediction_time_SAM_GTp /= len(val_images)
+            report_SAM_GTp = classification_report(val_labels_flat, np.array(SAM_pred_GTp_resized).reshape(-1),
+                                               target_names=['0', '1'], output_dict=True)
+            print('Finished SAM')
+
 
 
         # Evaluate the SVM model
@@ -661,6 +707,9 @@ def train(args, predictor):
         report_otsu = classification_report(val_labels_flat, np.array(otsu_original).reshape(-1), target_names=['0', '1'], output_dict=True)
         report_SAM = classification_report(val_labels_flat, np.array(SAM_pred_resized).reshape(-1),
                                             target_names=['0', '1'], output_dict=True)
+        report_SAM_point = classification_report(val_labels_flat, np.array(SAM_point_pred_resized).reshape(-1),
+                                            target_names=['0', '1'], output_dict=True)
+
 
         #accuracy_svm = accuracy_score(val_labels_flat, pred_original.reshape(-1))
         # print(f'SVM Accuracy: {accuracy_svm}')
@@ -674,7 +723,9 @@ def train(args, predictor):
         svm_dice_val = dice_coeff(torch.Tensor(np.array(pred_original)), torch.Tensor(np.array(val_labels)))
         otsu_dice_val = dice_coeff(torch.Tensor(np.array(otsu_original)), torch.Tensor(np.array(val_labels)))
         SAM_dice_val = dice_coeff(torch.Tensor(np.array(SAM_pred_resized)), torch.Tensor(np.array(val_labels)))
+        SAM_point_dice_val = dice_coeff(torch.Tensor(np.array(SAM_point_pred_resized)), torch.Tensor(np.array(val_labels)))
         SAMGT_dice_val = dice_coeff(torch.Tensor(np.array(SAM_pred_GT_resized)), torch.Tensor(np.array(val_labels)))
+        SAMGTp_dice_val = dice_coeff(torch.Tensor(np.array(SAM_pred_GTp_resized)), torch.Tensor(np.array(val_labels)))
         #print('SVM Dice: ', svm_dice_val)
 
         metrics = {
@@ -719,6 +770,20 @@ def train(args, predictor):
         }
         all_metrics_SAM.append(metrics_SAM)
 
+        metrics_SAM_point = {
+            'eval_num': i,  # Evaluation number or model identifier
+            'accuracy': report_SAM_point['accuracy'],
+            'negative_precision': report_SAM_point['0']['precision'],
+            'positive_precision': report_SAM_point['1']['precision'],
+            'negative_recall': report_SAM_point['0']['recall'],
+            'positive_recall': report_SAM_point['1']['recall'],
+            'f1_score': report_SAM_point['weighted avg']['f1-score'],
+            'BB IoU': np.mean(BBIoUOtsu),
+            'Time per Sample': prediction_time_SAM_point,
+            'dice_score': SAM_point_dice_val.numpy()
+        }
+        all_metrics_SAM_point.append(metrics_SAM_point)
+
         metrics_SAM_GT = {
             'eval_num': i,  # Evaluation number or model identifier
             'accuracy': report_SAM_GT['accuracy'],
@@ -732,6 +797,20 @@ def train(args, predictor):
             'dice_score': SAMGT_dice_val.numpy()
         }
         all_metrics_SAM_GT.append(metrics_SAM_GT)
+
+        metrics_SAM_GTp = {
+            'eval_num': i,  # Evaluation number or model identifier
+            'accuracy': report_SAM_GTp['accuracy'],
+            'negative_precision': report_SAM_GTp['0']['precision'],
+            'positive_precision': report_SAM_GTp['1']['precision'],
+            'negative_recall': report_SAM_GTp['0']['recall'],
+            'positive_recall': report_SAM_GTp['1']['recall'],
+            'f1_score': report_SAM_GTp['weighted avg']['f1-score'],
+            'BB IoU': np.mean(BBIoUOtsu),
+            'Time per Sample': prediction_time_SAM_GTp,
+            'dice_score': SAMGTp_dice_val.numpy()
+        }
+        all_metrics_SAM_GTp.append(metrics_SAM_GTp)
 
         # Visualize SVM predictions on the validation dataset
         #print("Validation Predictions with SVM:")
@@ -801,6 +880,36 @@ def train(args, predictor):
         writer.writeheader()  # Write the header
 
         for metrics in all_metrics_SAM_GT:
+            writer.writerow(metrics)  # Write each model's metrics
+
+    filename = f'/content/model_metrics_SAM_GT_point_{timestamp}.csv'
+
+    # Check if the file exists to write headers only once
+    file_exists = os.path.isfile(filename)
+
+    with open(filename, 'w', newline='') as csvfile:  # Note: using 'w' to overwrite or create new
+        fieldnames = ['eval_num', 'accuracy', 'negative_precision', 'positive_precision',
+                      'negative_recall', 'positive_recall', 'f1_score', 'BB IoU', 'Time per Sample', 'dice_score']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        writer.writeheader()  # Write the header
+
+        for metrics in all_metrics_SAM_GTp:
+            writer.writerow(metrics)  # Write each model's metrics
+
+    filename = f'/content/model_metrics_SAM_point_{timestamp}.csv'
+
+    # Check if the file exists to write headers only once
+    file_exists = os.path.isfile(filename)
+
+    with open(filename, 'w', newline='') as csvfile:  # Note: using 'w' to overwrite or create new
+        fieldnames = ['eval_num', 'accuracy', 'negative_precision', 'positive_precision',
+                      'negative_recall', 'positive_recall', 'f1_score', 'BB IoU', 'Time per Sample', 'dice_score']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        writer.writeheader()  # Write the header
+
+        for metrics in all_metrics_SAM_point:
             writer.writerow(metrics)  # Write each model's metrics
 
     return model
