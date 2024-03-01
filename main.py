@@ -461,7 +461,7 @@ def train(args, predictor):
             # Resize and process the mask and image
             resized_mask = cv2.resize(msk, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
             # Find contours
-            contours, _ = cv2.findContours((resized_mask / 255).astype(np.uint8), cv2.RETR_EXTERNAL,
+            contours, _ = cv2.findContours(resized_mask , cv2.RETR_EXTERNAL,
                                            cv2.CHAIN_APPROX_SIMPLE)
 
             # Find the largest contour based on area
