@@ -376,6 +376,9 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
             # np.save(f"/content/heatmap_{i}.npy", pred_probs)
 
 def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT, otsu_BB, thresh_BB, GT_BB):
+    otsu_BB = int(otsu_BB/16)
+    thresh_BB = int(thresh_BB / 16)
+    GT_BB = int(GT_BB / 16)
     for i in range(len(org_img)):
         fig, axes = plt.subplots(2, 4, figsize=(20, 10))
         # Original image and mask
@@ -593,7 +596,7 @@ def train(args, predictor):
         prediction_time_SAM = 0
         for j in range(len(val_images)):
             start_time = time.time()  # Start timing
-            masks_pred, logits = SAM_predict(predictor, val_images[j] , bounding_box=BBoxes_Otsu[j], point_prompt=None)
+            masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j], point_prompt=None)
             mask_SAM = masks_pred[0].astype('uint8')
             mask_SAM = cv2.resize(mask_SAM, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
             end_time = time.time()  # End timing
