@@ -597,8 +597,8 @@ def train(args, predictor):
         SAM_pred = []
         SAM_pred_resized = []
         prediction_time_SAM = 0
-        print(val_images.shape)
-        print(BBoxes_Otsu.shape)
+        print(np.array(val_images).shape)
+        print(np.array(BBoxes_Otsu).shape)
         for j in range(len(val_images)):
             start_time = time.time()  # Start timing
             print(j)
@@ -615,7 +615,7 @@ def train(args, predictor):
         if i == 0:
             # Get evaluations from SAM
             print('Evaluating using SAM Ground Truth')
-            print(BBoxes_GT.shape)
+            print(np.array(BBoxes_GT).shape)
             SAM_pred_GT = []
             SAM_pred_GT_resized = []
             prediction_time_SAM_GT = 0
