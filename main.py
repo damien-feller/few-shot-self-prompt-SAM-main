@@ -647,8 +647,9 @@ def train(args, predictor):
         SAM_point_pred_resized = []
         prediction_time_SAM_point = 0
         for j in range(len(val_images)):
+            input_point = np.array([[points_otsu[j,0], points_otsu[j,1]], 1])
             start_time = time.time()  # Start timing
-            masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j], point_prompt=points_otsu[j])
+            masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j], point_prompt=input_point)
             mask_SAM = masks_pred[0].astype('uint8')
             mask_SAM_resized = cv2.resize(mask_SAM, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
             end_time = time.time()  # End timing
@@ -686,9 +687,10 @@ def train(args, predictor):
             SAM_pred_GTp_resized = []
             prediction_time_SAM_GTp = 0
             for j in range(len(val_images)):
+                input_point = np.array([[points_GT[j, 0], points_GT[j, 1]], 1])
                 start_time = time.time()  # Start timing
                 masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_GT[j],
-                                                 point_prompt=points_GT[j])
+                                                 point_prompt=input_point)
                 mask_SAM = masks_pred[0].astype('uint8')
                 mask_SAM_GTp_resized = cv2.resize(mask_SAM, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
                 end_time = time.time()  # End timing
