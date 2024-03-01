@@ -376,9 +376,9 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
             # np.save(f"/content/heatmap_{i}.npy", pred_probs)
 
 def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT, otsu_BB, thresh_BB, GT_BB):
-    otsu_BB_resized = int((otsu_BB/16))
-    thresh_BB_resized = int((thresh_BB / 16))
-    GT_BB_resized = int((GT_BB / 16))
+    otsu_BB_resized = otsu_BB/16
+    thresh_BB_resized = thresh_BB / 16
+    GT_BB_resized = GT_BB / 16
     for i in range(len(org_img)):
         fig, axes = plt.subplots(2, 4, figsize=(20, 10))
         # Original image and mask
