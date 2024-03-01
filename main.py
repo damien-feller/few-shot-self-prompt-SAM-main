@@ -392,7 +392,7 @@ def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, otsu_BB, th
         show_box(thresh_BB[i], axes[0, 2])
         show_box(otsu_BB[i], axes[0, 2])
         show_box(GT_BB[i], axes[0, 2])
-        axes[0,2].legend('Threshold BB', 'Otsu BB', 'Ground Truth BB')
+        axes[0,2].legend(['Threshold BB', 'Otsu BB', 'Ground Truth BB'])
         axes[0,2].axis('off')
 
         axes[1,0].imshow(thresh_mask[i], cmap='gray')
@@ -595,6 +595,25 @@ def train(args, predictor):
         prediction_time_SAM /= len(val_images)
         print('Finished SAM')
 
+        if i == 0:
+            # Get evaluations from SAM
+            print('Evaluating using SAM Ground Truth')
+            SAM_pred_GT = []
+            prediction_time_SAM_GT = 0
+            for j in range(len(val_images)):
+                start_time = time.time()  # Start timing
+                masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_GT[j],
+                                                 point_prompt=None)
+                mask_SAM = masks_pred[0].astype('uint8')
+                mask_SAM = cv2.resize(mask_SAM, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
+                end_time = time.time()  # End timing
+                prediction_time_SAM_GT += (end_time - start_time)
+                SAM_pred_GT.append(mask_SAM)
+            prediction_time_SAM_GT /= len(val_images)
+            report_SAM_GT = classification_report(val_labels_flat, np.array(SAM_pred_GT).reshape(-1),
+                                               target_names=['0', '1'], output_dict=True)
+            print('Finished SAM')
+
 
 
         # Evaluate the SVM model
@@ -602,6 +621,7 @@ def train(args, predictor):
         report_otsu = classification_report(val_labels_flat, np.array(otsu_original).reshape(-1), target_names=['0', '1'], output_dict=True)
         report_SAM = classification_report(val_labels_flat, np.array(SAM_pred).reshape(-1),
                                             target_names=['0', '1'], output_dict=True)
+
         #accuracy_svm = accuracy_score(val_labels_flat, pred_original.reshape(-1))
         # print(f'SVM Accuracy: {accuracy_svm}')
         # predicted_masks_train = predict_and_reshape(model, train_embeddings_flat, (len(train_embeddings_tensor), 64, 64))
