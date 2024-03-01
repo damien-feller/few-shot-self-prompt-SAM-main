@@ -96,6 +96,7 @@ def create_dataset_for_SVM(embeddings, labels):
 
 def predict_and_reshape_otsu(model, X, original_shape):
     otsu_median_thresh = []
+    heatmaps = []
 
     # Loop over each example in the batch
     for i in range(original_shape[0]):
@@ -109,6 +110,7 @@ def predict_and_reshape_otsu(model, X, original_shape):
         # Normalize and apply Otsu's threshold
         heatmap_normalized = cv2.normalize(pred_probs, None, 0, 255, cv2.NORM_MINMAX)
         heatmap_normalized = np.uint8(heatmap_normalized)
+        heatmaps.append(heatmap_normalized)
         median_filtered = cv2.medianBlur(heatmap_normalized, 5)
         _, otsu_thresh = cv2.threshold(median_filtered, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
@@ -127,7 +129,7 @@ def predict_and_reshape_otsu(model, X, original_shape):
         otsu_median_thresh.append(mask_otsu)
 
     # Ensure otsu_median_thresh is correctly shaped as a list of (64, 64) arrays
-    return otsu_median_thresh, heatmap_normalized
+    return otsu_median_thresh, heatmaps
 
 
 def predict_and_reshape(model, X, original_shape):
@@ -819,7 +821,6 @@ def train(args, predictor):
         if i == 0:
             #visualize_predictions(train_images, train_embeddings, train_labels, model, num_samples=25, val=False, eval_num=i)
             visualize_predictions(val_images, val_embeddings, val_labels, model, num_samples=25, val=True, eval_num=i)
-            print(np.array(heatmaps).shape)
             visualise_SAM(val_images,  val_labels, pred_original, otsu_original, SAM_pred,SAM_pred_GT, BBoxes_Otsu, BBoxes, BBoxes_GT, heatmaps)
 
 
