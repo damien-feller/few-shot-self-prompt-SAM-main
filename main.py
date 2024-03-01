@@ -389,9 +389,9 @@ def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, otsu_BB, th
 
         axes[0,2].imshow(maskGT[i], cmap='gray')
         axes[0,2].set_title("Ground Truth - Bounding Boxes")
-        show_box(thresh_BB[i], axes[0, 2])
-        show_box(otsu_BB[i], axes[0, 2])
-        show_box(GT_BB[i], axes[0, 2])
+        show_box(thresh_BB[i], axes[0, 2], color='green')
+        show_box(otsu_BB[i], axes[0, 2], color='red')
+        show_box(GT_BB[i], axes[0, 2], color='blue')
         axes[0,2].legend(['Threshold BB', 'Otsu BB', 'Ground Truth BB'])
         axes[0,2].axis('off')
 

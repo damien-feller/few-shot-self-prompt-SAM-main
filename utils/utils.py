@@ -22,10 +22,10 @@ def show_anns(anns, ax):
             img[:,:,i] = color_mask[i]
         ax.imshow(np.dstack((img, m*0.35)))
 
-def show_box(box, ax):
+def show_box(box, ax, color='green'):
     x0, y0 = box[0], box[1]
     w, h = box[2] - box[0], box[3] - box[1]
-    ax.add_patch(plt.Rectangle((x0, y0), w, h, facecolor=(0,0,0,0), lw=2))
+    ax.add_patch(plt.Rectangle((x0, y0), w, h, edgecolor=color, facecolor=(0,0,0,0), lw=2))
 
 def show_points(coords, labels, ax, marker_size=375):
     pos_points = coords[labels==1]
