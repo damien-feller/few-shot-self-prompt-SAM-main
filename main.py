@@ -564,7 +564,6 @@ def train(args, predictor):
                                                      interpolation=cv2.INTER_NEAREST)
 
         for j in range(len(predicted_masks_svm)):
-            print(np.array(otsu_original_resized).shape)
             H, W = predicted_masks_svm_resized[j].shape
             y_indices, x_indices = np.where(predicted_masks_svm_resized[j] > 0)
             y_otsu, x_otsu = np.where(otsu_original_resized[j] > 0)
@@ -591,7 +590,6 @@ def train(args, predictor):
             BBoxes_GT.append(bboxVal)
             BBIoUs.append(BBIoU)
             BBoxes_Otsu.append(bboxOtsu)
-            print(np.array(BBoxes_Otsu).shape)
             BBIoU = calculate_iou(bboxVal, bboxOtsu)
             BBIoUOtsu.append(BBIoU)
 
@@ -601,11 +599,8 @@ def train(args, predictor):
         SAM_pred = []
         SAM_pred_resized = []
         prediction_time_SAM = 0
-        print(np.array(val_images).shape)
-        print(np.array(BBoxes_Otsu).shape)
         for j in range(len(val_images)):
             start_time = time.time()  # Start timing
-            print(j)
             masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j], point_prompt=None)
             mask_SAM = masks_pred[0].astype('uint8')
             mask_SAM_resized = cv2.resize(mask_SAM, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
@@ -619,7 +614,6 @@ def train(args, predictor):
         if i == 0:
             # Get evaluations from SAM
             print('Evaluating using SAM Ground Truth')
-            print(np.array(BBoxes_GT).shape)
             SAM_pred_GT = []
             SAM_pred_GT_resized = []
             prediction_time_SAM_GT = 0
