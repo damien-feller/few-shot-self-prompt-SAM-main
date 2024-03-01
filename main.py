@@ -127,7 +127,7 @@ def predict_and_reshape_otsu(model, X, original_shape):
         otsu_median_thresh.append(mask_otsu)
 
     # Ensure otsu_median_thresh is correctly shaped as a list of (64, 64) arrays
-    return otsu_median_thresh
+    return otsu_median_thresh, heatmap_normalized
 
 
 def predict_and_reshape(model, X, original_shape):
@@ -375,7 +375,7 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
             # np.save(f"/content/image_{i}.npy", org_img)
             # np.save(f"/content/heatmap_{i}.npy", pred_probs)
 
-def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT, otsu_BB, thresh_BB, GT_BB):
+def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT, otsu_BB, thresh_BB, GT_BB, heatmap):
     otsu_BB_resized = np.array(otsu_BB)/16
     thresh_BB_resized = np.array(thresh_BB) / 16
     GT_BB_resized = np.array(GT_BB) / 16
@@ -390,6 +390,8 @@ def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT
         axes[0,1].set_title("Ground Truth")
         axes[0,1].axis('off')
 
+        axes[0, 2].imshow(heatmap[i], cmap='jet')
+        axes[0, 1].set_title("Prediction Heatmap")
         axes[0,2].axis('off')
 
         axes[0,2].imshow(maskGT[i], cmap='gray')
@@ -540,7 +542,7 @@ def train(args, predictor):
 
         # Predict on the validation set (OTSU)
         start_time = time.time()  # Start timing
-        predicted_masks_otsu = predict_and_reshape_otsu(model, val_embeddings, (len(val_embeddings_tensor), 64, 64))
+        predicted_masks_otsu, heatmaps = predict_and_reshape_otsu(model, val_embeddings, (len(val_embeddings_tensor), 64, 64))
         end_time = time.time()  # End timing
         prediction_time_otsu = (end_time - start_time) / 25
         otsu_original = predicted_masks_otsu
