@@ -375,29 +375,40 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
             # np.save(f"/content/image_{i}.npy", org_img)
             # np.save(f"/content/heatmap_{i}.npy", pred_probs)
 
-def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask):
-    fig, axes = plt.subplots(1, 5, figsize=(20, 5))
+def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, otsu_BB, thresh_BB, GT_BB):
+    fig, axes = plt.subplots(2, 3, figsize=(15, 10))
     for i in range(len(org_img)):
         # Original image and mask
-        axes[0].imshow(org_img[i])
-        axes[0].set_title("Original Image")
-        axes[0].axis('off')
+        axes[0,0].imshow(org_img[i])
+        axes[0,0].set_title("Original Image")
+        axes[0,0].axis('off')
 
-        axes[1].imshow(maskGT[i], cmap='gray')
-        axes[1].set_title("Ground Truth")
-        axes[1].axis('off')
+        axes[0,1].imshow(maskGT[i], cmap='gray')
+        axes[0,1].set_title("Ground Truth")
+        axes[0,1].axis('off')
 
-        axes[2].imshow(thresh_mask[i], cmap='gray')
-        axes[2].set_title("Threshold Mask")
-        axes[2].axis('off')
+        axes[0,2].imshow(maskGT[i], cmap='gray')
+        axes[0,2].set_title("Ground Truth - Bounding Boxes")
+        show_box(thresh_BB[i], axes[0, 2])
+        show_box(otsu_BB[i], axes[0, 2])
+        show_box(GT_BB[i], axes[0, 2])
+        axes[0,2].legend('Threshold BB', 'Otsu BB', 'Ground Truth BB')
+        axes[0,2].axis('off')
 
-        axes[3].imshow(otsu_mask[i], cmap='gray')
-        axes[3].set_title("Otsu Threshold Mask")
-        axes[3].axis('off')
+        axes[1,0].imshow(thresh_mask[i], cmap='gray')
+        axes[1,0].set_title("Threshold Mask")
+        show_box(thresh_BB[i], axes[1,0])
+        axes[1,0].axis('off')
 
-        axes[4].imshow(SAM_mask[i], cmap='gray')
-        axes[4].set_title("SAM Mask")
-        axes[4].axis('off')
+        axes[1,1].imshow(otsu_mask[i], cmap='gray')
+        axes[1,1].set_title("Otsu Threshold Mask")
+        show_box(otsu_BB[i], axes[1,1])
+        axes[1,1].axis('off')
+
+        axes[1,2].imshow(SAM_mask[i], cmap='gray')
+        axes[1,2].set_title("SAM Mask")
+        show_box(otsu_BB[i], axes[1, 2])
+        axes[1,2].axis('off')
         plt.tight_layout()
 
         plt.savefig(f"/content/visualisation/SAM segmentation {i}.png")
@@ -652,7 +663,7 @@ def train(args, predictor):
         if i == 0:
             visualize_predictions(train_images, train_embeddings, train_labels, model, num_samples=25, val=False, eval_num=i)
             visualize_predictions(val_images, val_embeddings, val_labels, model, num_samples=25, val=True, eval_num=i)
-            visualise_SAM(val_images,  val_labels, pred_original, otsu_original, SAM_pred)
+            visualise_SAM(val_images,  val_labels, pred_original, otsu_original, SAM_pred, BBoxes_Otsu, BBoxes, BBoxes_GT)
 
 
     # Define the file path, e.g., by including a timestamp
