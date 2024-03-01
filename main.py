@@ -568,29 +568,27 @@ def train(args, predictor):
             y_indices, x_indices = np.where(predicted_masks_svm_resized[j] > 0)
             y_otsu, x_otsu = np.where(otsu_original_resized[j] > 0)
             y_val, x_val = np.where(val_labels_resized[j] > 0)
-            if np.all(predicted_masks_svm_resized[j] == 0):
-                bbox = np.array([0, 0, H, W])
-            else:
-                x_minVal, x_maxVal = np.min(x_val), np.max(x_val)
-                y_minVal, y_maxVal = np.min(y_val), np.max(y_val)
-                bboxVal = np.array([x_minVal, y_minVal, x_maxVal, y_maxVal])
 
-                x_min, x_max = np.min(x_indices), np.max(x_indices)
-                y_min, y_max = np.min(y_indices), np.max(y_indices)
-                bbox = np.array([x_min, y_min, x_max, y_max])
+            x_minVal, x_maxVal = np.min(x_val), np.max(x_val)
+            y_minVal, y_maxVal = np.min(y_val), np.max(y_val)
+            bboxVal = np.array([x_minVal, y_minVal, x_maxVal, y_maxVal])
 
-                x_minOtsu, x_maxOtsu = np.min(x_otsu), np.max(x_otsu)
-                y_minOtsu, y_maxOtsu = np.min(y_otsu), np.max(y_otsu)
-                bboxOtsu = np.array([x_minOtsu, y_minOtsu, x_maxOtsu, y_maxOtsu])
+            x_min, x_max = np.min(x_indices), np.max(x_indices)
+            y_min, y_max = np.min(y_indices), np.max(y_indices)
+            bbox = np.array([x_min, y_min, x_max, y_max])
 
-                BBIoU = calculate_iou(bboxVal, bbox)
-                BBoxes.append(bbox)
-                BBoxes_GT.append(bboxVal)
-                BBIoUs.append(BBIoU)
-                BBoxes_Otsu.append(bboxOtsu)
-                print(np.array(BBoxes_Otsu).shape)
-                BBIoU = calculate_iou(bboxVal, bboxOtsu)
-                BBIoUOtsu.append(BBIoU)
+            x_minOtsu, x_maxOtsu = np.min(x_otsu), np.max(x_otsu)
+            y_minOtsu, y_maxOtsu = np.min(y_otsu), np.max(y_otsu)
+            bboxOtsu = np.array([x_minOtsu, y_minOtsu, x_maxOtsu, y_maxOtsu])
+
+            BBIoU = calculate_iou(bboxVal, bbox)
+            BBoxes.append(bbox)
+            BBoxes_GT.append(bboxVal)
+            BBIoUs.append(BBIoU)
+            BBoxes_Otsu.append(bboxOtsu)
+            print(np.array(BBoxes_Otsu).shape)
+            BBIoU = calculate_iou(bboxVal, bboxOtsu)
+            BBIoUOtsu.append(BBIoU)
 
 
         # Get evaluations from SAM
