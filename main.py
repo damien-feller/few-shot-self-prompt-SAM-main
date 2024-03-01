@@ -634,6 +634,7 @@ def train(args, predictor):
         svm_dice_val = dice_coeff(torch.Tensor(np.array(pred_original)), torch.Tensor(np.array(val_labels)))
         otsu_dice_val = dice_coeff(torch.Tensor(np.array(otsu_original)), torch.Tensor(np.array(val_labels)))
         SAM_dice_val = dice_coeff(torch.Tensor(np.array(SAM_pred)), torch.Tensor(np.array(val_labels)))
+        SAMGT_dice_val = dice_coeff(torch.Tensor(np.array(SAM_pred_GT)), torch.Tensor(np.array(val_labels)))
         #print('SVM Dice: ', svm_dice_val)
 
         metrics = {
@@ -677,6 +678,20 @@ def train(args, predictor):
             'dice_score': SAM_dice_val.numpy()
         }
         all_metrics_SAM.append(metrics_SAM)
+
+        metrics_SAM_GT = {
+            'eval_num': i,  # Evaluation number or model identifier
+            'accuracy': report_SAM_GT['accuracy'],
+            'negative_precision': report_SAM_GT['0']['precision'],
+            'positive_precision': report_SAM_GT['1']['precision'],
+            'negative_recall': report_SAM_GT['0']['recall'],
+            'positive_recall': report_SAM_GT['1']['recall'],
+            'f1_score': report_SAM_GT['weighted avg']['f1-score'],
+            'BB IoU': np.mean(BBIoUOtsu),
+            'Time per Sample': prediction_time_SAM_GT,
+            'dice_score': SAMGT_dice_val.numpy()
+        }
+        all_metrics_SAM_GT.append(metrics_SAM_GT)
 
         # Visualize SVM predictions on the validation dataset
         #print("Validation Predictions with SVM:")
