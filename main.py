@@ -375,9 +375,9 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
             # np.save(f"/content/image_{i}.npy", org_img)
             # np.save(f"/content/heatmap_{i}.npy", pred_probs)
 
-def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, otsu_BB, thresh_BB, GT_BB):
+def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT, otsu_BB, thresh_BB, GT_BB):
     for i in range(len(org_img)):
-        fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+        fig, axes = plt.subplots(2, 4, figsize=(20, 10))
         # Original image and mask
         axes[0,0].imshow(org_img[i])
         axes[0,0].set_title("Original Image")
@@ -409,6 +409,12 @@ def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, otsu_BB, th
         axes[1,2].set_title("SAM Mask")
         show_box(otsu_BB[i], axes[1, 2])
         axes[1,2].axis('off')
+        plt.tight_layout()
+
+        axes[1,3].imshow(SAM_mask_GT[i], cmap='gray')
+        axes[1,3].set_title("SAM Mask - Ground Truth BB")
+        show_box(GT_BB[i], axes[1, 3])
+        axes[1,3].axis('off')
         plt.tight_layout()
 
         plt.savefig(f"/content/visualisation/SAM segmentation {i}.png")
@@ -699,7 +705,7 @@ def train(args, predictor):
         if i == 0:
             visualize_predictions(train_images, train_embeddings, train_labels, model, num_samples=25, val=False, eval_num=i)
             visualize_predictions(val_images, val_embeddings, val_labels, model, num_samples=25, val=True, eval_num=i)
-            visualise_SAM(val_images,  val_labels, pred_original, otsu_original, SAM_pred, BBoxes_Otsu, BBoxes, BBoxes_GT)
+            visualise_SAM(val_images,  val_labels, pred_original, otsu_original, SAM_pred,SAM_pred_GT, BBoxes_Otsu, BBoxes, BBoxes_GT)
 
 
     # Define the file path, e.g., by including a timestamp
