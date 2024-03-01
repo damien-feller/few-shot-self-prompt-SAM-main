@@ -418,6 +418,7 @@ def train(args, predictor):
     all_metrics = []
     all_metrics_otsu = []
     all_metrics_SAM = []
+    all_metrics_SAM_GT = []
     feature_importance = []
     data_path = args.data_path
     assert os.path.exists(data_path), 'data path does not exist!'
@@ -746,6 +747,21 @@ def train(args, predictor):
         writer.writeheader()  # Write the header
 
         for metrics in all_metrics_SAM:
+            writer.writerow(metrics)  # Write each model's metrics
+
+    filename = f'/content/model_metrics_SAM_GT_{timestamp}.csv'
+
+    # Check if the file exists to write headers only once
+    file_exists = os.path.isfile(filename)
+
+    with open(filename, 'w', newline='') as csvfile:  # Note: using 'w' to overwrite or create new
+        fieldnames = ['eval_num', 'accuracy', 'negative_precision', 'positive_precision',
+                      'negative_recall', 'positive_recall', 'f1_score', 'BB IoU', 'Time per Sample', 'dice_score']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        writer.writeheader()  # Write the header
+
+        for metrics in all_metrics_SAM_GT:
             writer.writerow(metrics)  # Write each model's metrics
 
     return model
