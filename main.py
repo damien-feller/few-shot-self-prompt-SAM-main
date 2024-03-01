@@ -392,10 +392,6 @@ def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT
         axes[0,1].set_title("Ground Truth")
         axes[0,1].axis('off')
 
-        axes[0, 2].imshow(heatmap[i], cmap='jet')
-        axes[0, 1].set_title("Prediction Heatmap")
-        axes[0,2].axis('off')
-
         axes[0,2].imshow(maskGT[i], cmap='gray')
         axes[0,2].set_title("Ground Truth - Bounding Boxes")
         show_box(thresh_BB_resized[i], axes[0, 2], color='green')
@@ -403,6 +399,10 @@ def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT
         show_box(GT_BB_resized[i], axes[0, 2], color='blue')
         axes[0,2].legend(['Threshold BB', 'Otsu BB', 'Ground Truth BB'])
         axes[0,2].axis('off')
+
+        axes[0, 3].imshow(heatmap[i], cmap='jet')
+        axes[0, 3].set_title("Prediction Heatmap")
+        axes[0,3].axis('off')
 
         axes[1,0].imshow(thresh_mask[i], cmap='gray')
         axes[1,0].set_title("Threshold Mask")
