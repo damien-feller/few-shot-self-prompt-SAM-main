@@ -467,7 +467,7 @@ def train(args, predictor):
             # Create a mask for the largest contour
             mask_large = np.zeros_like(resized_mask)
             for contour in contours:
-                if cv2.contourArea(contour) > 15:
+                if cv2.contourArea(contour) > 5:
                     cv2.drawContours(mask_large, [contour], -1, color=255, thickness=cv2.FILLED)
 
             resized_mask = (mask_large / 255).astype(np.uint8)
