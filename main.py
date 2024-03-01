@@ -564,7 +564,6 @@ def train(args, predictor):
                                                      interpolation=cv2.INTER_NEAREST)
 
         for j in range(len(predicted_masks_svm)):
-            print(len(predicted_masks_svm))
             H, W = predicted_masks_svm_resized[j].shape
             y_indices, x_indices = np.where(predicted_masks_svm_resized[j] > 0)
             y_otsu, x_otsu = np.where(otsu_original_resized[j] > 0)
@@ -589,6 +588,7 @@ def train(args, predictor):
                 BBoxes_GT.append(bboxVal)
                 BBIoUs.append(BBIoU)
                 BBoxes_Otsu.append(bboxOtsu)
+                print(np.array(BBoxes_Otsu).shape)
                 BBIoU = calculate_iou(bboxVal, bboxOtsu)
                 BBIoUOtsu.append(BBIoU)
 
