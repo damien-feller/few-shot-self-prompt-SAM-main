@@ -376,9 +376,9 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
             # np.save(f"/content/heatmap_{i}.npy", pred_probs)
 
 def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT, otsu_BB, thresh_BB, GT_BB):
-    otsu_BB = int(otsu_BB/16)
-    thresh_BB = int(thresh_BB / 16)
-    GT_BB = int(GT_BB / 16)
+    otsu_BB_resized = int((otsu_BB/16))
+    thresh_BB_resized = int((thresh_BB / 16))
+    GT_BB_resized = int((GT_BB / 16))
     for i in range(len(org_img)):
         fig, axes = plt.subplots(2, 4, figsize=(20, 10))
         # Original image and mask
@@ -392,20 +392,20 @@ def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT
 
         axes[0,2].imshow(maskGT[i], cmap='gray')
         axes[0,2].set_title("Ground Truth - Bounding Boxes")
-        show_box(thresh_BB[i], axes[0, 2], color='green')
-        show_box(otsu_BB[i], axes[0, 2], color='red')
-        show_box(GT_BB[i], axes[0, 2], color='blue')
+        show_box(thresh_BB_resized[i], axes[0, 2], color='green')
+        show_box(otsu_BB_resized[i], axes[0, 2], color='red')
+        show_box(GT_BB_resized[i], axes[0, 2], color='blue')
         axes[0,2].legend(['Threshold BB', 'Otsu BB', 'Ground Truth BB'])
         axes[0,2].axis('off')
 
         axes[1,0].imshow(thresh_mask[i], cmap='gray')
         axes[1,0].set_title("Threshold Mask")
-        show_box(thresh_BB[i], axes[1,0])
+        show_box(thresh_BB_resized[i], axes[1,0])
         axes[1,0].axis('off')
 
         axes[1,1].imshow(otsu_mask[i], cmap='gray')
         axes[1,1].set_title("Otsu Threshold Mask")
-        show_box(otsu_BB[i], axes[1,1])
+        show_box(otsu_BB_resized[i], axes[1,1])
         axes[1,1].axis('off')
 
         axes[1,2].imshow(SAM_mask[i], cmap='gray')
@@ -593,15 +593,17 @@ def train(args, predictor):
         # Get evaluations from SAM
         print('Evaluating using SAM')
         SAM_pred = []
+        SAM_pred_resized = []
         prediction_time_SAM = 0
         for j in range(len(val_images)):
             start_time = time.time()  # Start timing
             masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j], point_prompt=None)
             mask_SAM = masks_pred[0].astype('uint8')
-            mask_SAM = cv2.resize(mask_SAM, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
+            mask_SAM_resized = cv2.resize(mask_SAM, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
             end_time = time.time()  # End timing
             prediction_time_SAM += (end_time - start_time)
             SAM_pred.append(mask_SAM)
+            SAM_pred_resized.append(mask_SAM_resized)
         prediction_time_SAM /= len(val_images)
         print('Finished SAM')
 
@@ -609,18 +611,20 @@ def train(args, predictor):
             # Get evaluations from SAM
             print('Evaluating using SAM Ground Truth')
             SAM_pred_GT = []
+            SAM_pred_GT_resized = []
             prediction_time_SAM_GT = 0
             for j in range(len(val_images)):
                 start_time = time.time()  # Start timing
                 masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_GT[j],
                                                  point_prompt=None)
                 mask_SAM = masks_pred[0].astype('uint8')
-                mask_SAM = cv2.resize(mask_SAM, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
+                mask_SAM_GT_resized = cv2.resize(mask_SAM, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
                 end_time = time.time()  # End timing
                 prediction_time_SAM_GT += (end_time - start_time)
                 SAM_pred_GT.append(mask_SAM)
+                SAM_pred_GT_resized.append(mask_SAM_GT_resized)
             prediction_time_SAM_GT /= len(val_images)
-            report_SAM_GT = classification_report(val_labels_flat, np.array(SAM_pred_GT).reshape(-1),
+            report_SAM_GT = classification_report(val_labels_flat, np.array(SAM_pred_GT_resized).reshape(-1),
                                                target_names=['0', '1'], output_dict=True)
             print('Finished SAM')
 
@@ -629,7 +633,7 @@ def train(args, predictor):
         # Evaluate the SVM model
         report = classification_report(val_labels_flat, np.array(pred_original).reshape(-1),target_names = ['0','1'], output_dict=True)
         report_otsu = classification_report(val_labels_flat, np.array(otsu_original).reshape(-1), target_names=['0', '1'], output_dict=True)
-        report_SAM = classification_report(val_labels_flat, np.array(SAM_pred).reshape(-1),
+        report_SAM = classification_report(val_labels_flat, np.array(SAM_pred_resized).reshape(-1),
                                             target_names=['0', '1'], output_dict=True)
 
         #accuracy_svm = accuracy_score(val_labels_flat, pred_original.reshape(-1))
@@ -643,8 +647,8 @@ def train(args, predictor):
         # print('SVM Dice (Dilation + Erosion): ', svm_dice_val)
         svm_dice_val = dice_coeff(torch.Tensor(np.array(pred_original)), torch.Tensor(np.array(val_labels)))
         otsu_dice_val = dice_coeff(torch.Tensor(np.array(otsu_original)), torch.Tensor(np.array(val_labels)))
-        SAM_dice_val = dice_coeff(torch.Tensor(np.array(SAM_pred)), torch.Tensor(np.array(val_labels)))
-        SAMGT_dice_val = dice_coeff(torch.Tensor(np.array(SAM_pred_GT)), torch.Tensor(np.array(val_labels)))
+        SAM_dice_val = dice_coeff(torch.Tensor(np.array(SAM_pred_resized)), torch.Tensor(np.array(val_labels)))
+        SAMGT_dice_val = dice_coeff(torch.Tensor(np.array(SAM_pred_GT_resized)), torch.Tensor(np.array(val_labels)))
         #print('SVM Dice: ', svm_dice_val)
 
         metrics = {
