@@ -390,6 +390,8 @@ def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT
         axes[0,1].set_title("Ground Truth")
         axes[0,1].axis('off')
 
+        axes[0,2].axis('off')
+
         axes[0,2].imshow(maskGT[i], cmap='gray')
         axes[0,2].set_title("Ground Truth - Bounding Boxes")
         show_box(thresh_BB_resized[i], axes[0, 2], color='green')
@@ -595,8 +597,11 @@ def train(args, predictor):
         SAM_pred = []
         SAM_pred_resized = []
         prediction_time_SAM = 0
+        print(val_images.shape)
+        print(BBoxes_Otsu.shape)
         for j in range(len(val_images)):
             start_time = time.time()  # Start timing
+            print(j)
             masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j], point_prompt=None)
             mask_SAM = masks_pred[0].astype('uint8')
             mask_SAM_resized = cv2.resize(mask_SAM, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
@@ -610,6 +615,7 @@ def train(args, predictor):
         if i == 0:
             # Get evaluations from SAM
             print('Evaluating using SAM Ground Truth')
+            print(BBoxes_GT.shape)
             SAM_pred_GT = []
             SAM_pred_GT_resized = []
             prediction_time_SAM_GT = 0
