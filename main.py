@@ -562,7 +562,7 @@ def train(args, predictor):
             H, W = predicted_masks_svm_resized[j].shape
             y_indices, x_indices = np.where(predicted_masks_svm_resized[j] > 0)
             y_otsu, x_otsu = np.where(otsu_original_resized[j] > 0)
-            y_val, x_val = np.where(val_labels[j] > 0)
+            y_val, x_val = np.where(val_labels_resized[j] > 0)
             if np.all(predicted_masks_svm_resized[j] == 0):
                 bbox = np.array([0, 0, H, W])
             else:
