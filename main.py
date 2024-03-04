@@ -824,7 +824,7 @@ def train(args, predictor):
         if i == 0:
             #visualize_predictions(train_images, train_embeddings, train_labels, model, num_samples=25, val=False, eval_num=i)
             visualize_predictions(val_images, val_embeddings, val_labels, model, num_samples=25, val=True, eval_num=i)
-            visualise_SAM(val_images,  val_labels, pred_original, otsu_original, SAM_pred,SAM_pred_GT, BBoxes_Otsu, BBoxes, BBoxes_GT, heatmaps, np.array([[points_otsu[0], points_otsu[1]]]), np.array([[points_GT[0], points_GT[1]]]))
+            visualise_SAM(val_images,  val_labels, pred_original, otsu_original, SAM_pred,SAM_pred_GT, BBoxes_Otsu, BBoxes, BBoxes_GT, heatmaps, points_otsu, points_GT)
 
 
     # Define the file path, e.g., by including a timestamp
