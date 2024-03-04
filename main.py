@@ -377,7 +377,7 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
             # np.save(f"/content/image_{i}.npy", org_img)
             # np.save(f"/content/heatmap_{i}.npy", pred_probs)
 
-def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT, otsu_BB, thresh_BB, GT_BB, heatmap):
+def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT, otsu_BB, thresh_BB, GT_BB, heatmap, points, pointsGT):
     otsu_BB_resized = np.array(otsu_BB)/16
     thresh_BB_resized = np.array(thresh_BB) / 16
     GT_BB_resized = np.array(GT_BB) / 16
@@ -412,16 +412,19 @@ def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT
         axes[1,1].imshow(otsu_mask[i], cmap='gray')
         axes[1,1].set_title("Otsu Threshold Mask")
         show_box(otsu_BB_resized[i], axes[1,1])
+        axes[1,1].plot(points[i][0], points[i][1], 'r.')
         axes[1,1].axis('off')
 
         axes[1,2].imshow(SAM_mask[i], cmap='gray')
         axes[1,2].set_title("SAM Mask")
         show_box(otsu_BB[i], axes[1, 2])
+        axes[1, 1].plot(points[i][0], points[i][1], 'r.')
         axes[1,2].axis('off')
         plt.tight_layout()
 
         axes[1,3].imshow(SAM_mask_GT[i], cmap='gray')
         axes[1,3].set_title("SAM Mask - Ground Truth BB")
+        axes[1, 1].plot(pointsGT[i][0], pointsGT[i][1], 'g.')
         show_box(GT_BB[i], axes[1, 3])
         axes[1,3].axis('off')
         plt.tight_layout()
@@ -821,7 +824,7 @@ def train(args, predictor):
         if i == 0:
             #visualize_predictions(train_images, train_embeddings, train_labels, model, num_samples=25, val=False, eval_num=i)
             visualize_predictions(val_images, val_embeddings, val_labels, model, num_samples=25, val=True, eval_num=i)
-            visualise_SAM(val_images,  val_labels, pred_original, otsu_original, SAM_pred,SAM_pred_GT, BBoxes_Otsu, BBoxes, BBoxes_GT, heatmaps)
+            visualise_SAM(val_images,  val_labels, pred_original, otsu_original, SAM_pred,SAM_pred_GT, BBoxes_Otsu, BBoxes, BBoxes_GT, heatmaps, np.array([[points_otsu[0], points_otsu[1]]]), np.array([[points_GT[0], points_GT[1]]]))
 
 
     # Define the file path, e.g., by including a timestamp
