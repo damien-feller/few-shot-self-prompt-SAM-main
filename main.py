@@ -397,6 +397,8 @@ def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT
         show_box(thresh_BB_resized[i], axes[0, 2], color='green')
         show_box(otsu_BB_resized[i], axes[0, 2], color='red')
         show_box(GT_BB_resized[i], axes[0, 2], color='blue')
+        axes[0, 2].plot(points[i][0] / 16, points[i][1] / 16, 'r.')
+        axes[0, 2].plot(pointsgt[i][0] / 16, pointsgt[i][1] / 16, 'g.')
         axes[0,2].legend(['Threshold BB', 'Otsu BB', 'Ground Truth BB'])
         axes[0,2].axis('off')
 
