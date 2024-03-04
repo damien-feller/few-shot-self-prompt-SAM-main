@@ -460,7 +460,7 @@ def train(args, predictor):
 
     num_image = args.k
 
-    fnames = os.listdir(os.path.join(data_path, 'images'))
+    fnames = os.listdir(os.path.join(data_path, 'images/ISIC-2017_Training_Data'))
     # get k random indices from fnames
     random.shuffle(fnames)
     val_fnames = fnames[-args.val_size:]
@@ -506,9 +506,9 @@ def train(args, predictor):
 
         for fname in tqdm(file_names):
             # Read data
-            image = cv2.imread(os.path.join(data_path, 'images', fname))
+            image = cv2.imread(os.path.join(data_path, 'images/ISIC-2017_Training_Data', fname))
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            mask = cv2.imread(os.path.join(data_path, 'masks', fname), cv2.IMREAD_GRAYSCALE)
+            mask = cv2.imread(os.path.join(data_path, 'masks/ISIC-2017_Training_Part1_GroundTruth', fname), cv2.IMREAD_GRAYSCALE)
             _, mask = cv2.threshold(mask, 128, 1, cv2.THRESH_BINARY)
 
             if augment_data:
