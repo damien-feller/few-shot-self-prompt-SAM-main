@@ -506,7 +506,7 @@ def train(args, predictor):
 
         for fname in tqdm(file_names):
             # Read data
-            print(fname)
+            print(os.path.join(data_path, 'images', fname))
             image = cv2.imread(os.path.join(data_path, 'images', fname))
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             mask = cv2.imread(os.path.join(data_path, 'masks', fname), cv2.IMREAD_GRAYSCALE)
