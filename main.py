@@ -30,6 +30,7 @@ import seaborn as sns
 import pandas as pd
 from skimage import filters
 from scipy.ndimage import label, find_objects
+from sklearn.model_selection import GroupKFold, RandomizedSearchCV
 
 
 
@@ -553,6 +554,40 @@ def train(args, predictor):
         model = xgb.XGBClassifier(objective='binary:logistic', colsample_bytree=0.3, learning_rate=0.1,
                                   max_depth=5, alpha=10, n_estimators=100, verbosity=2, device = "cuda")
         model.fit(train_embeddings_flat, train_labels_flat)
+
+        if i == 0:
+            groups = np.repeat(np.arange(num_image), 4096)
+
+            # Initialize GroupKFold
+            gkf = GroupKFold(n_splits=5)
+
+            # Example parameter distribution (customize as needed)
+            param_dist = {
+                'learning_rate': uniform(0.01, 0.3),  # Learning rate
+                'n_estimators': randint(100, 1000),  # Number of trees
+                'max_depth': randint(3, 10),  # Maximum depth of trees
+                'min_child_weight': randint(1, 10),  # Minimum sum of instance weight(hessian) needed in a child
+                'colsample_bytree': uniform(0.3, 0.8),  # Subsample ratio of columns when constructing each tree
+                'subsample': uniform(0.6, 0.9),  # Subsample ratio of the training instances
+                'gamma': uniform(0, 5),  # Minimum loss reduction required to make a further partition on a leaf node
+                'reg_alpha': uniform(0.0, 1.0),  # L1 regularization term on weights
+                'reg_lambda': uniform(0.0, 1.0)  # L2 regularization term on weights
+            }
+
+            # Initialize your model (e.g., XGBoost classifier)
+            xgb_model = xgb.XGBClassifier(use_label_encoder=False, objective='binary:logistic', eval_metric='logloss')
+
+            # Set up RandomizedSearchCV with GroupKFold
+            random_search = RandomizedSearchCV(xgb_model, param_distributions=param_dist, n_iter=500, cv=gkf, verbose=2,
+                                               n_jobs=-1, scoring='accuracy', groups=groups)
+
+            # Assuming 'train_embeddings_flat' and 'train_labels_flat' are your dataset
+            # Fit the random search model
+            random_search.fit(train_embeddings_flat, train_labels_flat, groups=groups)
+
+            # Output the best parameters and score
+            print("Best parameters found: ", random_search.best_params_)
+            print("Best accuracy found: ", random_search.best_score_)
 
         # Predict on the validation set
         start_time = time.time()  # Start timing
