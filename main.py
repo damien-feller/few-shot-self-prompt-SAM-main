@@ -11,7 +11,8 @@ from sklearn.model_selection import KFold
 import os
 import random
 from tqdm import tqdm
-from segment_anything import SamAutomaticMaskGenerator, sam_model_registry, SamPredictor
+from segment_anything_SAMMed2D import sam_model_registry
+from segment_anything_SAMMed2D.predictor_sammed import SammedPredictor
 import argparse
 from utils.utils import *
 import time
@@ -506,7 +507,6 @@ def train(args, predictor):
 
         for fname in tqdm(file_names):
             # Read data
-            print(os.path.join(data_path, 'images', fname))
             image = cv2.imread(os.path.join(data_path, 'images', fname))
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             mask = cv2.imread(os.path.join(data_path, 'masks', fname), cv2.IMREAD_GRAYSCALE)
@@ -965,7 +965,7 @@ def main():
     # register the SAM model
     sam = sam_model_registry[args.model_type](checkpoint=args.checkpoint).to(args.device)
     global predictor
-    predictor = SamPredictor(sam)
+    predictor = SammedPredictor(sam)
     print('SAM model loaded!', '\n')
     
     if args.visualize:
