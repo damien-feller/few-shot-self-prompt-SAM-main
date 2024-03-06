@@ -968,7 +968,7 @@ def main():
     argsSAM = Namespace()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     argsSAM.image_size = 256
-    argsSAM.encoder_adapter = True
+    argsSAM.encoder_adapter = False
     argsSAM.sam_checkpoint = args.checkpoint
     sam = sam_model_registry["vit_b"](argsSAM).to(args.device)
     global predictor
