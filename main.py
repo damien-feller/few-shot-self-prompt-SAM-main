@@ -31,6 +31,7 @@ import seaborn as sns
 import pandas as pd
 from skimage import filters
 from scipy.ndimage import label, find_objects
+from argparse import Namespace
 
 
 
@@ -963,10 +964,12 @@ def main():
     random.seed(42)
     
     # register the SAM model
-    args.image_size = 256
-    args.encoder_adapter = True
-    args.sam_checkpoint = args.checkpoint
-    sam = sam_model_registry["vit_b"](args).to(args.device)
+    argsSAM = Namespace()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    argsSAM.image_size = 256
+    argsSAM.encoder_adapter = True
+    argsSAM.sam_checkpoint = args.checkpoint
+    sam = sam_model_registry["vit_b"](argsSAM).to(args.device)
     global predictor
     predictor = SammedPredictor(sam)
     print('SAM model loaded!', '\n')
