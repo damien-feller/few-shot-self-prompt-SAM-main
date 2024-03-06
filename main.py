@@ -576,13 +576,12 @@ def train(args, predictor):
             # Initialize your model (e.g., XGBoost classifier)
             xgb_model = xgb.XGBClassifier(use_label_encoder=False, objective='binary:logistic', eval_metric='logloss')
 
-            # Set up RandomizedSearchCV with GroupKFold
+            # Assuming xgb_model is your XGBoost model and param_dist is your parameter distribution
             random_search = RandomizedSearchCV(xgb_model, param_distributions=param_dist, n_iter=500, cv=gkf, verbose=2,
-                                               n_jobs=-1, scoring='accuracy', groups=groups)
+                                               n_jobs=-1, scoring='accuracy')
 
-            # Assuming 'train_embeddings_flat' and 'train_labels_flat' are your dataset
-            # Fit the random search model
-            random_search.fit(train_embeddings_flat, train_labels_flat, groups=groups)
+            # When calling fit, pass the groups array as an argument along with your features and labels
+            random_search.fit(train_embeddings_flat, train_labels_flat, groups=groups)  # Correct usage of groups here
 
             # Output the best parameters and score
             print("Best parameters found: ", random_search.best_params_)
