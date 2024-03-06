@@ -963,7 +963,7 @@ def main():
     random.seed(42)
     
     # register the SAM model
-    sam = sam_model_registry[args.model_type](checkpoint=args.checkpoint).to(args.device)
+    sam = sam_model_registry['vit_b'](checkpoint=args.checkpoint).to(args.device)
     global predictor
     predictor = SammedPredictor(sam)
     print('SAM model loaded!', '\n')
