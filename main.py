@@ -497,7 +497,7 @@ def train(args, predictor):
                     cv2.drawContours(mask_large, [contour], -1, color=255, thickness=cv2.FILLED)
 
             resized_mask = (mask_large / 255).astype(np.uint8)
-            resized_img = cv2.resize(img, dsize=(1024, 1024), interpolation=cv2.INTER_NEAREST)
+            resized_img = cv2.resize(img, dsize=(256, 256), interpolation=cv2.INTER_NEAREST)
 
             # Process the image to create an embedding
             img_emb = get_embedding(resized_img, predictor)
@@ -597,10 +597,10 @@ def train(args, predictor):
         val_labels_resized = [None] * len(val_labels)
 
         for j in range(len(predicted_masks_svm)):
-            predicted_masks_svm_resized[j] = cv2.resize(predicted_masks_svm[j], dsize=(1024, 1024), interpolation=cv2.INTER_NEAREST)
-            otsu_original_resized[j] = cv2.resize(otsu_original[j], dsize=(1024, 1024),
+            predicted_masks_svm_resized[j] = cv2.resize(predicted_masks_svm[j], dsize=(256, 256), interpolation=cv2.INTER_NEAREST)
+            otsu_original_resized[j] = cv2.resize(otsu_original[j], dsize=(256, 256),
                                                      interpolation=cv2.INTER_NEAREST)
-            val_labels_resized[j] = cv2.resize(val_labels[j], dsize=(1024, 1024),
+            val_labels_resized[j] = cv2.resize(val_labels[j], dsize=(256, 256),
                                                      interpolation=cv2.INTER_NEAREST)
 
         for j in range(len(predicted_masks_svm)):
