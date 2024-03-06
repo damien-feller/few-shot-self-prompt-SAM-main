@@ -549,8 +549,8 @@ def train(args, predictor):
         train_embeddings_oversampled, train_labels_oversampled = ros.fit_resample(train_embeddings_flat, train_labels_flat)
 
         # Initialize the XGBoost classifier model
-        model = xgb.XGBClassifier(objective='binary:logistic', colsample_bytree=0.3, learning_rate=0.1,
-                                  max_depth=5, alpha=10, n_estimators=100, verbosity=2, device = "cuda")
+        model = xgb.XGBClassifier(objective='binary:logistic', colsample_bytree=0.54, gamma = 0.46, learning_rate=0.0383, subsample = 0.8,
+                                  max_depth=8, min_child_weight = 4, alpha=10, n_estimators=550, reg_alpha = 0.474, reg_lambda = 0.098, verbosity=2, device = "cuda")
         model.fit(train_embeddings_flat, train_labels_flat)
 
         # Predict on the validation set
