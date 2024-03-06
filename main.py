@@ -562,7 +562,7 @@ def train(args, predictor):
 
             # Example parameter distribution (customize as needed)
             param_dist = {
-                'learning_rate': np.random.uniform(0.01, 0.3),  # Learning rate
+                'learning_rate': [0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3],  # Learning rate
                 'n_estimators': np.random.randint(100, 1000),  # Number of trees
                 'max_depth': np.random.randint(3, 10),  # Maximum depth of trees
                 'min_child_weight': np.random.randint(1, 10),  # Minimum sum of instance weight(hessian) needed in a child
