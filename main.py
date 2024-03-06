@@ -963,7 +963,7 @@ def main():
     random.seed(42)
     
     # register the SAM model
-    args.image_size = 256
+    args.image_size = 1024
     args.encoder_adapter = True
     sam = sam_model_registry["vit_b"](args).to(args.device)
     global predictor
