@@ -107,7 +107,7 @@ def predict_and_reshape_otsu(model, X, original_shape):
         pred_probs_flat = model.predict_proba(image_flat)[:, 1]
 
         # Reshape probabilities back to the original image shape (assumed to be (64, 64) here)
-        pred_probs = pred_probs_flat.reshape((64, 64))
+        pred_probs = pred_probs_flat.reshape((16, 16))
 
         # Normalize and apply Otsu's threshold
         heatmap_normalized = cv2.normalize(pred_probs, None, 0, 255, cv2.NORM_MINMAX)
@@ -485,7 +485,7 @@ def train(args, predictor):
 
         def process_and_store(img, msk):
             # Resize and process the mask and image
-            resized_mask = cv2.resize(msk, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
+            resized_mask = cv2.resize(msk, dsize=(16, 16), interpolation=cv2.INTER_NEAREST)
             # Find contours
             contours, _ = cv2.findContours(resized_mask , cv2.RETR_EXTERNAL,
                                            cv2.CHAIN_APPROX_SIMPLE)
@@ -502,7 +502,7 @@ def train(args, predictor):
             # Process the image to create an embedding
             img_emb = get_embedding(resized_img, predictor)
             print(img_emb.shape)
-            img_emb = img_emb.cpu().detach().numpy().transpose((2, 0, 3, 1)).reshape((256, 64, 64))
+            img_emb = img_emb.cpu().detach().numpy().transpose((2, 0, 3, 1)).reshape((256, 16, 16))
             image_embeddings.append(img_emb)
             labels.append(resized_mask)
             org_img.append(resized_img)
@@ -558,7 +558,7 @@ def train(args, predictor):
 
         # Predict on the validation set
         start_time = time.time()  # Start timing
-        predicted_masks_svm = predict_and_reshape(model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
+        predicted_masks_svm = predict_and_reshape(model, val_embeddings_flat, (len(val_embeddings_tensor), 16, 16))
         predicted_masks_svm = (predicted_masks_svm > args.threshold).astype(np.uint8)
         end_time = time.time()  # End timing
         prediction_time = (end_time - start_time) / 25
@@ -567,7 +567,7 @@ def train(args, predictor):
 
         # Predict on the validation set (OTSU)
         start_time = time.time()  # Start timing
-        predicted_masks_otsu, heatmaps = predict_and_reshape_otsu(model, val_embeddings, (len(val_embeddings_tensor), 64, 64))
+        predicted_masks_otsu, heatmaps = predict_and_reshape_otsu(model, val_embeddings, (len(val_embeddings_tensor), 16, 16))
         end_time = time.time()  # End timing
         prediction_time_otsu = (end_time - start_time) / 25
         otsu_original = predicted_masks_otsu
@@ -658,7 +658,7 @@ def train(args, predictor):
             start_time = time.time()  # Start timing
             masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j], point_prompt=None)
             mask_SAM = masks_pred[0].astype('uint8')
-            mask_SAM_resized = cv2.resize(mask_SAM, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
+            mask_SAM_resized = cv2.resize(mask_SAM, dsize=(16, 16), interpolation=cv2.INTER_NEAREST)
             end_time = time.time()  # End timing
             prediction_time_SAM += (end_time - start_time)
             SAM_pred.append(mask_SAM)
@@ -675,7 +675,7 @@ def train(args, predictor):
             start_time = time.time()  # Start timing
             masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j], point_prompt=input_point)
             mask_SAM = masks_pred[0].astype('uint8')
-            mask_SAM_resized = cv2.resize(mask_SAM, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
+            mask_SAM_resized = cv2.resize(mask_SAM, dsize=(16, 16), interpolation=cv2.INTER_NEAREST)
             end_time = time.time()  # End timing
             prediction_time_SAM_point += (end_time - start_time)
             SAM_point_pred.append(mask_SAM)
@@ -694,7 +694,7 @@ def train(args, predictor):
                 masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_GT[j],
                                                  point_prompt=None)
                 mask_SAM = masks_pred[0].astype('uint8')
-                mask_SAM_GT_resized = cv2.resize(mask_SAM, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
+                mask_SAM_GT_resized = cv2.resize(mask_SAM, dsize=(16, 16), interpolation=cv2.INTER_NEAREST)
                 end_time = time.time()  # End timing
                 prediction_time_SAM_GT += (end_time - start_time)
                 SAM_pred_GT.append(mask_SAM)
@@ -716,7 +716,7 @@ def train(args, predictor):
                 masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_GT[j],
                                                  point_prompt=input_point)
                 mask_SAM = masks_pred[0].astype('uint8')
-                mask_SAM_GTp_resized = cv2.resize(mask_SAM, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
+                mask_SAM_GTp_resized = cv2.resize(mask_SAM, dsize=(16, 16), interpolation=cv2.INTER_NEAREST)
                 end_time = time.time()  # End timing
                 prediction_time_SAM_GTp += (end_time - start_time)
                 SAM_pred_GTp.append(mask_SAM)
@@ -968,7 +968,7 @@ def main():
     argsSAM = Namespace()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     argsSAM.image_size = 256
-    argsSAM.encoder_adapter = False
+    argsSAM.encoder_adapter = True
     argsSAM.sam_checkpoint = args.checkpoint
     sam = sam_model_registry["vit_b"](argsSAM).to(args.device)
     global predictor
