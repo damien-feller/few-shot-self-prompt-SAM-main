@@ -501,7 +501,6 @@ def train(args, predictor):
 
             # Process the image to create an embedding
             img_emb = get_embedding(resized_img, predictor)
-            print(img_emb.shape)
             img_emb = img_emb.cpu().detach().numpy().transpose((2, 0, 3, 1)).reshape((256, 16, 16))
             image_embeddings.append(img_emb)
             labels.append(resized_mask)
