@@ -578,7 +578,7 @@ def train(args, predictor):
             xgb_model = xgb.XGBClassifier(use_label_encoder=False, objective='binary:logistic', eval_metric='logloss')
 
             # Assuming xgb_model is your XGBoost model and param_dist is your parameter distribution
-            random_search = RandomizedSearchCV(xgb_model, param_distributions=param_dist, n_iter=500, cv=gkf, verbose=2,
+            random_search = RandomizedSearchCV(xgb_model, param_distributions=param_dist, n_iter=100, cv=gkf, verbose=2,
                                                n_jobs=-1, scoring='accuracy')
 
             # When calling fit, pass the groups array as an argument along with your features and labels
