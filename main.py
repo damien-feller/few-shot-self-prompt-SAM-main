@@ -567,8 +567,8 @@ def train(args, predictor):
                 'n_estimators': randint(100, 1000),  # Number of trees
                 'max_depth': randint(3, 10),  # Maximum depth of trees
                 'min_child_weight': randint(1, 10),  # Minimum sum of instance weight(hessian) needed in a child
-                'colsample_bytree': uniform(0.3, 0.8),  # Subsample ratio of columns when constructing each tree
-                'subsample': uniform(0.6, 0.9),  # Subsample ratio of the training instances
+                'colsample_bytree': uniform(0.3, 0.7),  # Adjusted to ensure max value is <= 1
+                'subsample': uniform(0.6, 0.4),  # Adjusted to ensure max value is <= 1
                 'gamma': uniform(0, 5),  # Minimum loss reduction required to make a further partition on a leaf node
                 'reg_alpha': uniform(0.0, 1.0),  # L1 regularization term on weights
                 'reg_lambda': uniform(0.0, 1.0)  # L2 regularization term on weights
