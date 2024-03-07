@@ -565,17 +565,18 @@ def train(args, predictor):
             param_dist = {
                 'learning_rate': uniform(0.01, 0.3),  # Learning rate
                 'n_estimators': randint(100, 1000),  # Number of trees
-                #'max_depth': randint(3, 10),  # Maximum depth of trees
-                #'min_child_weight': randint(1, 10),  # Minimum sum of instance weight(hessian) needed in a child
-                #'colsample_bytree': uniform(0.3, 0.7),  # Adjusted to ensure max value is <= 1
-                #'subsample': uniform(0.6, 0.4),  # Adjusted to ensure max value is <= 1
-                #'gamma': uniform(0, 5),  # Minimum loss reduction required to make a further partition on a leaf node
+                'max_depth': randint(3, 10),  # Maximum depth of trees
+                'min_child_weight': randint(1, 10),  # Minimum sum of instance weight(hessian) needed in a child
+                'colsample_bytree': uniform(0.3, 0.7),  # Adjusted to ensure max value is <= 1
+                'subsample': uniform(0.6, 0.4),  # Adjusted to ensure max value is <= 1
+                'gamma': uniform(0, 5),  # Minimum loss reduction required to make a further partition on a leaf node
                 'reg_alpha': uniform(0.0, 1.0),  # L1 regularization term on weights
                 'reg_lambda': uniform(0.0, 1.0)  # L2 regularization term on weights
+                'rate_drop': uniform(0.0, 1.0)  # L2 regularization term on weights
             }
 
             # Initialize your model (e.g., XGBoost classifier)
-            xgb_model = xgb.XGBClassifier(use_label_encoder=False, objective='binary:logistic', eval_metric='logloss', booster = 'gblinear')
+            xgb_model = xgb.XGBClassifier(use_label_encoder=False, objective='binary:logistic', eval_metric='logloss', booster = 'dart')
 
             # Assuming xgb_model is your XGBoost model and param_dist is your parameter distribution
             random_search = RandomizedSearchCV(xgb_model, param_distributions=param_dist, n_iter=100, cv=gkf, verbose=2,
