@@ -465,9 +465,12 @@ def train(args, predictor):
     patient_slices = defaultdict(list)
     fnames = os.listdir(os.path.join(data_path, 'images'))
     for fname in fnames:
-        print(fname)
-        patient_num, _ = os.path.splitext(fname)[0:2].split('_')
-        print(patient_num)
+        # Split the string by underscore
+        parts = fname.split("_")
+        # Take all parts up to the one just before "slice" (assuming "slice" is always present)
+        parts_up_to_slice = parts[:parts.index("slice")]
+        # Join these parts back together with underscore
+        patient_num = "_".join(parts_up_to_slice)
         patient_slices[patient_num].append(fname)
 
     # Randomly split patients into training and validation
