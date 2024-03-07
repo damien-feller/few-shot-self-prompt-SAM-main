@@ -769,8 +769,8 @@ def train(args, predictor):
 
 
         # Evaluate the SVM model
-        print(np.array(val_masks).shape)
-        print(np.array(pred_original_resized).shape)
+        print(val_masks.shape)
+        print(pred_original_resized.shape)
         report = classification_report(np.array(val_masks).reshape(-1), np.array(pred_original_resized).reshape(-1),target_names = ['0','1'], output_dict=True)
         report_otsu = classification_report(val_labels_flat, np.array(otsu_original).reshape(-1), target_names=['0', '1'], output_dict=True)
         report_SAM = classification_report(val_labels_flat, np.array(SAM_pred_resized).reshape(-1),
