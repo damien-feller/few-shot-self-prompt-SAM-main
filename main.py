@@ -175,6 +175,39 @@ def calculate_iou(ground_truth, prediction):
     return iou
 
 
+def save_aggregated_metrics_with_std(all_metrics, all_metrics_otsu, all_metrics_SAM, all_metrics_SAM_point,
+                                     all_metrics_SAM_GT, all_metrics_SAM_GTp):
+    # Define the model names for easier reference
+    df_list = [pd.DataFrame(metrics) for metrics in
+               [all_metrics, all_metrics_otsu, all_metrics_SAM, all_metrics_SAM_point, all_metrics_SAM_GT,
+                all_metrics_SAM_GTp]]
+    model_names = ['SVM', 'OTSU', 'SAM', 'SAM_Point', 'SAM_GT', 'SAM_GT_Point']
+
+    aggregated_metrics = []
+    for i, df in enumerate(df_list):
+        # Calculate mean and std dev for each metric
+        metrics_mean = df.mean(axis=0)
+        metrics_std = df.std(axis=0)
+
+        # Prepare a dictionary to hold the aggregated metrics with mean and std dev
+        aggregated_metric = {f"{metric}_mean": metrics_mean[metric] for metric in df.columns}
+        aggregated_metric.update({f"{metric}_std": metrics_std[metric] for metric in df.columns})
+        aggregated_metric['model'] = model_names[i]
+
+        aggregated_metrics.append(aggregated_metric)
+
+    # Save to CSV
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename = f'model_metrics_aggregated_{timestamp}.csv'
+    fieldnames = ['model'] + [f"{metric}_{stat}" for metric in df.columns for stat in ['mean', 'std']]
+
+    with open(filename, 'w', newline='') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        for metrics in aggregated_metrics:
+            writer.writerow(metrics)
+
+
 def SAM_predict(predictor, image=None, bounding_box=None, point_prompt=None):
     # Check if an image is provided and set it
     if image is not None:
@@ -843,97 +876,9 @@ def train(args, predictor):
             visualise_SAM(val_images,  val_labels, pred_original, otsu_original, SAM_pred,SAM_pred_GT,SAM_point_pred, SAM_pred_GTp, BBoxes_Otsu, BBoxes, BBoxes_GT, heatmaps, points_otsu, points_GT)
 
 
-    # Define the file path, e.g., by including a timestamp
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    filename = f'/content/model_metrics_{timestamp}.csv'
 
-    # Check if the file exists to write headers only once
-    file_exists = os.path.isfile(filename)
-
-    with open(filename, 'w', newline='') as csvfile:  # Note: using 'w' to overwrite or create new
-        fieldnames = ['eval_num', 'accuracy', 'negative_precision', 'positive_precision',
-                      'negative_recall', 'positive_recall', 'f1_score','BB IoU','Time per Sample', 'dice_score']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-
-        writer.writeheader()  # Write the header
-
-        for metrics in all_metrics:
-            writer.writerow(metrics)  # Write each model's metrics
-
-    filename = f'/content/model_metrics_otsu_{timestamp}.csv'
-
-    # Check if the file exists to write headers only once
-    file_exists = os.path.isfile(filename)
-
-    with open(filename, 'w', newline='') as csvfile:  # Note: using 'w' to overwrite or create new
-        fieldnames = ['eval_num', 'accuracy', 'negative_precision', 'positive_precision',
-                      'negative_recall', 'positive_recall', 'f1_score', 'BB IoU', 'Time per Sample', 'dice_score']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-
-        writer.writeheader()  # Write the header
-
-        for metrics in all_metrics_otsu:
-            writer.writerow(metrics)  # Write each model's metrics
-
-    filename = f'/content/model_metrics_SAM_{timestamp}.csv'
-
-    # Check if the file exists to write headers only once
-    file_exists = os.path.isfile(filename)
-
-    with open(filename, 'w', newline='') as csvfile:  # Note: using 'w' to overwrite or create new
-        fieldnames = ['eval_num', 'accuracy', 'negative_precision', 'positive_precision',
-                      'negative_recall', 'positive_recall', 'f1_score', 'BB IoU', 'Time per Sample', 'dice_score']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-
-        writer.writeheader()  # Write the header
-
-        for metrics in all_metrics_SAM:
-            writer.writerow(metrics)  # Write each model's metrics
-
-    filename = f'/content/model_metrics_SAM_GT_{timestamp}.csv'
-
-    # Check if the file exists to write headers only once
-    file_exists = os.path.isfile(filename)
-
-    with open(filename, 'w', newline='') as csvfile:  # Note: using 'w' to overwrite or create new
-        fieldnames = ['eval_num', 'accuracy', 'negative_precision', 'positive_precision',
-                      'negative_recall', 'positive_recall', 'f1_score', 'BB IoU', 'Time per Sample', 'dice_score']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-
-        writer.writeheader()  # Write the header
-
-        for metrics in all_metrics_SAM_GT:
-            writer.writerow(metrics)  # Write each model's metrics
-
-    filename = f'/content/model_metrics_SAM_GT_point_{timestamp}.csv'
-
-    # Check if the file exists to write headers only once
-    file_exists = os.path.isfile(filename)
-
-    with open(filename, 'w', newline='') as csvfile:  # Note: using 'w' to overwrite or create new
-        fieldnames = ['eval_num', 'accuracy', 'negative_precision', 'positive_precision',
-                      'negative_recall', 'positive_recall', 'f1_score', 'BB IoU', 'Time per Sample', 'dice_score']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-
-        writer.writeheader()  # Write the header
-
-        for metrics in all_metrics_SAM_GTp:
-            writer.writerow(metrics)  # Write each model's metrics
-
-    filename = f'/content/model_metrics_SAM_point_{timestamp}.csv'
-
-    # Check if the file exists to write headers only once
-    file_exists = os.path.isfile(filename)
-
-    with open(filename, 'w', newline='') as csvfile:  # Note: using 'w' to overwrite or create new
-        fieldnames = ['eval_num', 'accuracy', 'negative_precision', 'positive_precision',
-                      'negative_recall', 'positive_recall', 'f1_score', 'BB IoU', 'Time per Sample', 'dice_score']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-
-        writer.writeheader()  # Write the header
-
-        for metrics in all_metrics_SAM_point:
-            writer.writerow(metrics)  # Write each model's metrics
+    save_aggregated_metrics_with_std(all_metrics, all_metrics_otsu, all_metrics_SAM, all_metrics_SAM_point,
+                                     all_metrics_SAM_GT, all_metrics_SAM_GTp)
 
     return model
 
