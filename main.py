@@ -481,8 +481,12 @@ def train(args, predictor):
     val_patient_ids = patient_ids[:num_val_patients]
     train_patient_ids = patient_ids[num_val_patients:]
 
+    print(val_patient_ids)
+    print(train_patient_ids)
+
     # Flatten lists of slices for training and validation
     train_slices = [slice for pid in train_patient_ids for slice in patient_slices[pid]]
+    random.shuffle(train_slices)
     val_slices = [slice for pid in val_patient_ids for slice in patient_slices[pid]]
 
     # Randomly sample up to the specified limits
