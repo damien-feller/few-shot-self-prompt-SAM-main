@@ -552,7 +552,7 @@ def train(args, predictor):
 
         # Initialize the XGBoost classifier model
         model = xgb.XGBClassifier(objective='binary:logistic', colsample_bytree=0.3, learning_rate=0.1,
-                                  max_depth=5, alpha=10, n_estimators=100, verbosity=2, device = "cuda")
+                                  max_depth=5, alpha=10, n_estimators=100, verbosity=2, device = "cuda", booster = 'gblinear')
         model.fit(train_embeddings_flat, train_labels_flat)
 
         # Predict on the validation set
