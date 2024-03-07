@@ -234,6 +234,25 @@ def SAM_predict(predictor, image=None, bounding_box=None, point_prompt=None):
     return masks_pred, logits
 
 
+def flatten_and_concatenate_arrays(array_list):
+    """
+    Flatten each array in the list and concatenate them into a single array.
+
+    Parameters:
+    array_list (list of np.array): List of arrays to be flattened and concatenated.
+
+    Returns:
+    np.array: A single flattened array containing all the elements from the input list.
+    """
+    # Flatten each array and store it in a new list
+    flattened_arrays = [arr.flatten() for arr in array_list]
+
+    # Concatenate all flattened arrays into one
+    concatenated_array = np.concatenate(flattened_arrays)
+
+    return concatenated_array
+
+
 def visualize_predictions(org_img, images, masks, model, num_samples=3, val=False, eval_num=0):
     if len(images) < num_samples:
         num_samples = len(images)
@@ -479,6 +498,8 @@ def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT
         plt.tight_layout()
 
         plt.savefig(f"/content/visualisation/SAM segmentation {i}.png")
+
+
 
 
 def train(args, predictor):
@@ -769,9 +790,7 @@ def train(args, predictor):
 
 
         # Evaluate the SVM model
-        print(val_masks.shape)
-        print(pred_original_resized.shape)
-        report = classification_report(np.array(val_masks).reshape(-1), np.array(pred_original_resized).reshape(-1),target_names = ['0','1'], output_dict=True)
+        report = classification_report(flatten_and_concatenate_arrays(val_masks), flatten_and_concatenate_arrays(pred_original_resized),target_names = ['0','1'], output_dict=True)
         report_otsu = classification_report(val_labels_flat, np.array(otsu_original).reshape(-1), target_names=['0', '1'], output_dict=True)
         report_SAM = classification_report(val_labels_flat, np.array(SAM_pred_resized).reshape(-1),
                                             target_names=['0', '1'], output_dict=True)
