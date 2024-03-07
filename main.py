@@ -632,6 +632,11 @@ def train(args, predictor):
         end_time = time.time()  # End timing
         prediction_time_otsu = (end_time - start_time) / 25
         otsu_original = predicted_masks_otsu
+        otsu_original_resized = []
+        for mask in range(len(otsu_original)):
+            resized_mask = cv2.resize(otsu_original[mask], dsize=val_sizes[mask],
+                                                     interpolation=cv2.INTER_NEAREST)
+            otsu_original_resized.append(resized_mask)
 
         # Define the kernel for dilation
         kernel = np.ones((2, 2), np.uint8)
@@ -719,7 +724,7 @@ def train(args, predictor):
             start_time = time.time()  # Start timing
             masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j], point_prompt=None)
             mask_SAM = masks_pred[0].astype('uint8')
-            mask_SAM_resized = cv2.resize(mask_SAM, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
+            mask_SAM_resized = cv2.resize(mask_SAM, dsize=val_sizes[j], interpolation=cv2.INTER_NEAREST)
             end_time = time.time()  # End timing
             prediction_time_SAM += (end_time - start_time)
             SAM_pred.append(mask_SAM)
@@ -736,7 +741,7 @@ def train(args, predictor):
             start_time = time.time()  # Start timing
             masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j], point_prompt=input_point)
             mask_SAM = masks_pred[0].astype('uint8')
-            mask_SAM_resized = cv2.resize(mask_SAM, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
+            mask_SAM_resized = cv2.resize(mask_SAM, dsize=val_sizes[j], interpolation=cv2.INTER_NEAREST)
             end_time = time.time()  # End timing
             prediction_time_SAM_point += (end_time - start_time)
             SAM_point_pred.append(mask_SAM)
@@ -755,13 +760,13 @@ def train(args, predictor):
                 masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_GT[j],
                                                  point_prompt=None)
                 mask_SAM = masks_pred[0].astype('uint8')
-                mask_SAM_GT_resized = cv2.resize(mask_SAM, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
+                mask_SAM_GT_resized = cv2.resize(mask_SAM, dsize=val_sizes[j], interpolation=cv2.INTER_NEAREST)
                 end_time = time.time()  # End timing
                 prediction_time_SAM_GT += (end_time - start_time)
                 SAM_pred_GT.append(mask_SAM)
                 SAM_pred_GT_resized.append(mask_SAM_GT_resized)
             prediction_time_SAM_GT /= len(val_images)
-            report_SAM_GT = classification_report(val_labels_flat, np.array(SAM_pred_GT_resized).reshape(-1),
+            report_SAM_GT = classification_report(flatten_and_concatenate_arrays(val_masks), flatten_and_concatenate_arrays(SAM_pred_GT_resized),
                                                target_names=['0', '1'], output_dict=True)
             print('Finished SAM')
 
@@ -777,13 +782,13 @@ def train(args, predictor):
                 masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_GT[j],
                                                  point_prompt=input_point)
                 mask_SAM = masks_pred[0].astype('uint8')
-                mask_SAM_GTp_resized = cv2.resize(mask_SAM, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
+                mask_SAM_GTp_resized = cv2.resize(mask_SAM, dsize=val_sizes[j], interpolation=cv2.INTER_NEAREST)
                 end_time = time.time()  # End timing
                 prediction_time_SAM_GTp += (end_time - start_time)
                 SAM_pred_GTp.append(mask_SAM)
                 SAM_pred_GTp_resized.append(mask_SAM_GTp_resized)
             prediction_time_SAM_GTp /= len(val_images)
-            report_SAM_GTp = classification_report(val_labels_flat, np.array(SAM_pred_GTp_resized).reshape(-1),
+            report_SAM_GTp = classification_report(flatten_and_concatenate_arrays(val_masks), flatten_and_concatenate_arrays(SAM_pred_GTp_resized),
                                                target_names=['0', '1'], output_dict=True)
             print('Finished SAM')
 
@@ -791,10 +796,10 @@ def train(args, predictor):
 
         # Evaluate the SVM model
         report = classification_report(flatten_and_concatenate_arrays(val_masks), flatten_and_concatenate_arrays(pred_original_resized),target_names = ['0','1'], output_dict=True)
-        report_otsu = classification_report(val_labels_flat, np.array(otsu_original).reshape(-1), target_names=['0', '1'], output_dict=True)
-        report_SAM = classification_report(val_labels_flat, np.array(SAM_pred_resized).reshape(-1),
+        report_otsu = classification_report(flatten_and_concatenate_arrays(val_masks), flatten_and_concatenate_arrays(otsu_original_resized), target_names=['0', '1'], output_dict=True)
+        report_SAM = classification_report(flatten_and_concatenate_arrays(val_masks), flatten_and_concatenate_arrays(SAM_pred_resized),
                                             target_names=['0', '1'], output_dict=True)
-        report_SAM_point = classification_report(val_labels_flat, np.array(SAM_point_pred_resized).reshape(-1),
+        report_SAM_point = classification_report(flatten_and_concatenate_arrays(val_masks), flatten_and_concatenate_arrays(SAM_point_pred_resized),
                                             target_names=['0', '1'], output_dict=True)
 
 
