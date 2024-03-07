@@ -513,9 +513,14 @@ def train(args, predictor):
         image_embeddings = []
         labels = []
         org_img = []
+        original_sizes = []
+        maskOrgs = []
 
         def process_and_store(img, msk):
+            original_size = msk.shape[:2]
+            original_sizes.append(original_size)
             # Resize and process the mask and image
+            maskOrgs.append(msk)
             resized_mask = cv2.resize(msk, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
             # Find contours
             contours, _ = cv2.findContours(resized_mask , cv2.RETR_EXTERNAL,
@@ -554,10 +559,10 @@ def train(args, predictor):
                 # For validation data, do not apply augmentation
                 process_and_store(image, mask)
 
-        return image_embeddings, labels, org_img
+        return image_embeddings, labels, org_img, original_sizes, maskOrgs
 
     # Process validation images without augmentation
-    val_embeddings, val_labels, val_images = process_images(val_fnames, augment_data=False)
+    val_embeddings, val_labels, val_images, val_sizes, val_masks = process_images(val_fnames, augment_data=False)
 
     # Convert to tensor
     val_embeddings_tensor = torch.stack([torch.Tensor(e) for e in val_embeddings])
@@ -567,7 +572,7 @@ def train(args, predictor):
                                                                  val_labels_tensor.numpy())
     for i in range(args.evaluation_num):
         # Process training images with augmentation
-        train_embeddings, train_labels, train_images = process_images(train_fnames[i], augment_data=True)
+        train_embeddings, train_labels, train_images, train_sizes, train_masks = process_images(train_fnames[i], augment_data=True)
 
         # Convert to tensors
         train_embeddings_tensor = torch.stack([torch.Tensor(e) for e in train_embeddings])
@@ -593,6 +598,11 @@ def train(args, predictor):
         end_time = time.time()  # End timing
         prediction_time = (end_time - start_time) / 25
         pred_original = predicted_masks_svm
+        pred_original_resized = []
+        for mask in range(len(pred_original)):
+            resized_mask = cv2.resize(pred_original[mask], dsize=val_sizes[mask],
+                                                     interpolation=cv2.INTER_NEAREST)
+            pred_original_resized.append(resized_mask)
 
 
         # Predict on the validation set (OTSU)
@@ -759,7 +769,7 @@ def train(args, predictor):
 
 
         # Evaluate the SVM model
-        report = classification_report(val_labels_flat, np.array(pred_original).reshape(-1),target_names = ['0','1'], output_dict=True)
+        report = classification_report(np.array(val_masks).reshape(-1), np.array(pred_original_resized).reshape(-1),target_names = ['0','1'], output_dict=True)
         report_otsu = classification_report(val_labels_flat, np.array(otsu_original).reshape(-1), target_names=['0', '1'], output_dict=True)
         report_SAM = classification_report(val_labels_flat, np.array(SAM_pred_resized).reshape(-1),
                                             target_names=['0', '1'], output_dict=True)
