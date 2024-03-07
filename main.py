@@ -460,17 +460,36 @@ def train(args, predictor):
 
     num_image = args.k
 
+    # Extract patient numbers and associate slices
+    patient_slices = defaultdict(list)
     fnames = os.listdir(os.path.join(data_path, 'images'))
-    # get k random indices from fnames
-    random.shuffle(fnames)
-    val_fnames = fnames[-args.val_size:]
-    fnames[-args.val_size:] = []
+    for fname in fnames:
+        patient_num, _ = os.path.splitext(fname)[0:2].split('_')
+        print(patient_num)
+        patient_slices[patient_num].append(fname)
+
+    # Randomly split patients into training and validation
+    patient_ids = list(patient_slices.keys())
+    random.shuffle(patient_ids)
+
+    num_val_patients = round(len(patient_ids) * args.val_size / (args.k + args.val_size))
+    val_patient_ids = patient_ids[:num_val_patients]
+    train_patient_ids = patient_ids[num_val_patients:]
+
+    # Flatten lists of slices for training and validation
+    train_slices = [slice for pid in train_patient_ids for slice in patient_slices[pid]]
+    val_slices = [slice for pid in val_patient_ids for slice in patient_slices[pid]]
+
+    # Randomly sample up to the specified limits
+    if len(val_slices) > args.val_size:
+        val_fnames = random.sample(val_slices, args.val_size)
+
 
 
     #create a number of different training sets
     train_fnames = []
     for i in range(args.evaluation_num):
-        segment = fnames[(i * num_image):(i + 1) * num_image]
+        segment = train_slices[(i * num_image):(i + 1) * num_image]
         train_fnames.append(segment)
 
     # image augmentation and embedding processing
