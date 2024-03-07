@@ -571,7 +571,7 @@ def train(args, predictor):
                 'subsample': uniform(0.6, 0.4),  # Adjusted to ensure max value is <= 1
                 'gamma': uniform(0, 5),  # Minimum loss reduction required to make a further partition on a leaf node
                 'reg_alpha': uniform(0.0, 1.0),  # L1 regularization term on weights
-                'reg_lambda': uniform(0.0, 1.0)  # L2 regularization term on weights
+                'reg_lambda': uniform(0.0, 1.0),  # L2 regularization term on weights
                 'rate_drop': uniform(0.0, 1.0)  # L2 regularization term on weights
             }
 
