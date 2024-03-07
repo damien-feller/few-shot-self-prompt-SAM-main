@@ -575,7 +575,7 @@ def train(args, predictor):
             }
 
             # Initialize your model (e.g., XGBoost classifier)
-            xgb_model = xgb.XGBClassifier(use_label_encoder=False, objective='binary:logistic', eval_metric='logloss')
+            xgb_model = xgb.XGBClassifier(use_label_encoder=False, objective='binary:logistic', eval_metric='logloss', booster = 'gblinear')
 
             # Assuming xgb_model is your XGBoost model and param_dist is your parameter distribution
             random_search = RandomizedSearchCV(xgb_model, param_distributions=param_dist, n_iter=100, cv=gkf, verbose=2,
