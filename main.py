@@ -465,6 +465,7 @@ def train(args, predictor):
     patient_slices = defaultdict(list)
     fnames = os.listdir(os.path.join(data_path, 'images'))
     for fname in fnames:
+        print(fname)
         patient_num, _ = os.path.splitext(fname)[0:2].split('_')
         print(patient_num)
         patient_slices[patient_num].append(fname)
