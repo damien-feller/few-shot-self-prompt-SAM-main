@@ -481,9 +481,6 @@ def train(args, predictor):
     val_patient_ids = patient_ids[:num_val_patients]
     train_patient_ids = patient_ids[num_val_patients:]
 
-    print(val_patient_ids)
-    print(train_patient_ids)
-
     # Flatten lists of slices for training and validation
     train_slices = [slice for pid in train_patient_ids for slice in patient_slices[pid]]
     random.shuffle(train_slices)
@@ -534,7 +531,6 @@ def train(args, predictor):
 
         for fname in tqdm(file_names):
             # Read data
-            print(fname)
             image = cv2.imread(os.path.join(data_path, 'images', fname))
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             mask = cv2.imread(os.path.join(data_path, 'masks', fname), cv2.IMREAD_GRAYSCALE)
