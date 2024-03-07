@@ -466,7 +466,7 @@ def train(args, predictor):
     fnames = os.listdir(os.path.join(data_path, 'images'))
     for fname in fnames:
         # Split the string by underscore
-        parts = fname.split("_")
+        parts = str(fname).split("_")
         # Take all parts up to the one just before "slice" (assuming "slice" is always present)
         parts_up_to_slice = parts[:parts.index("slice")]
         # Join these parts back together with underscore
