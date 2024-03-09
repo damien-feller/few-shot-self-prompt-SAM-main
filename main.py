@@ -79,8 +79,16 @@ def augment(image, mask):
 
 def dice_coeff(pred, target):
     smooth = 1.
-    pred_flat = pred.view(-1)
-    target_flat = target.view(-1)
+    # Ensure the inputs are numpy arrays. If they're PyTorch tensors, convert them to numpy arrays
+    if isinstance(pred, torch.Tensor):
+        pred = pred.cpu().numpy()
+    if isinstance(target, torch.Tensor):
+        target = target.cpu().numpy()
+
+    # Flatten the arrays
+    pred_flat = pred.reshape(-1)
+    target_flat = target.reshape(-1)
+
     intersection = (pred_flat * target_flat).sum()
     return (2. * intersection + smooth) / (pred_flat.sum() + target_flat.sum() + smooth)
 
