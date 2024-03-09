@@ -619,11 +619,11 @@ def train(args, predictor):
         end_time = time.time()  # End timing
         prediction_time = (end_time - start_time) / 25
         pred_original = predicted_masks_svm
-        pred_original_resized = []
+        pred_original_resized_eval = []
         for mask in range(len(pred_original)):
             resized_mask = cv2.resize(pred_original[mask], dsize=val_sizes[mask],
                                                      interpolation=cv2.INTER_NEAREST)
-            pred_original_resized.append(resized_mask)
+            pred_original_resized_eval.append(resized_mask)
 
 
         # Predict on the validation set (OTSU)
@@ -632,11 +632,11 @@ def train(args, predictor):
         end_time = time.time()  # End timing
         prediction_time_otsu = (end_time - start_time) / 25
         otsu_original = predicted_masks_otsu
-        otsu_original_resized = []
+        otsu_original_resized_eval = []
         for mask in range(len(otsu_original)):
             resized_mask = cv2.resize(otsu_original[mask], dsize=val_sizes[mask],
                                                      interpolation=cv2.INTER_NEAREST)
-            otsu_original_resized.append(resized_mask)
+            otsu_original_resized_eval.append(resized_mask)
 
         # Define the kernel for dilation
         kernel = np.ones((2, 2), np.uint8)
@@ -793,10 +793,9 @@ def train(args, predictor):
             print('Finished SAM')
 
 
-
         # Evaluate the SVM model
-        report = classification_report(flatten_and_concatenate_arrays(val_masks), flatten_and_concatenate_arrays(pred_original_resized),target_names = ['0','1'], output_dict=True)
-        report_otsu = classification_report(flatten_and_concatenate_arrays(val_masks), flatten_and_concatenate_arrays(otsu_original_resized), target_names=['0', '1'], output_dict=True)
+        report = classification_report(flatten_and_concatenate_arrays(val_masks), flatten_and_concatenate_arrays(pred_original_resized_eval),target_names = ['0','1'], output_dict=True)
+        report_otsu = classification_report(flatten_and_concatenate_arrays(val_masks), flatten_and_concatenate_arrays(otsu_original_resized_eval), target_names=['0', '1'], output_dict=True)
         report_SAM = classification_report(flatten_and_concatenate_arrays(val_masks), flatten_and_concatenate_arrays(SAM_pred_resized),
                                             target_names=['0', '1'], output_dict=True)
         report_SAM_point = classification_report(flatten_and_concatenate_arrays(val_masks), flatten_and_concatenate_arrays(SAM_point_pred_resized),
