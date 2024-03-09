@@ -837,7 +837,7 @@ def train(args, predictor):
             'f1_score': report['weighted avg']['f1-score'],
             'BB IoU': np.mean(BBIoUs),
             'Time per Sample': prediction_time,
-            'dice_score': svm_dice_val.numpy()
+            'dice_score': svm_dice_val
         }
         all_metrics.append(metrics)
 
@@ -851,7 +851,7 @@ def train(args, predictor):
             'f1_score': report_otsu['weighted avg']['f1-score'],
             'BB IoU': np.mean(BBIoUOtsu),
             'Time per Sample': prediction_time_otsu,
-            'dice_score': otsu_dice_val.numpy()
+            'dice_score': otsu_dice_val
         }
         all_metrics_otsu.append(metrics_otsu)
 
@@ -865,7 +865,7 @@ def train(args, predictor):
             'f1_score': report_SAM['weighted avg']['f1-score'],
             'BB IoU': np.mean(BBIoUOtsu),
             'Time per Sample': prediction_time_SAM,
-            'dice_score': SAM_dice_val.numpy()
+            'dice_score': SAM_dice_val
         }
         all_metrics_SAM.append(metrics_SAM)
 
@@ -879,7 +879,7 @@ def train(args, predictor):
             'f1_score': report_SAM_point['weighted avg']['f1-score'],
             'BB IoU': np.mean(BBIoUOtsu),
             'Time per Sample': prediction_time_SAM_point,
-            'dice_score': SAM_point_dice_val.numpy()
+            'dice_score': SAM_point_dice_val
         }
         all_metrics_SAM_point.append(metrics_SAM_point)
 
@@ -893,7 +893,7 @@ def train(args, predictor):
             'f1_score': report_SAM_GT['weighted avg']['f1-score'],
             'BB IoU': np.mean(BBIoUOtsu),
             'Time per Sample': prediction_time_SAM_GT,
-            'dice_score': SAMGT_dice_val.numpy()
+            'dice_score': SAMGT_dice_val
         }
         all_metrics_SAM_GT.append(metrics_SAM_GT)
 
@@ -907,7 +907,7 @@ def train(args, predictor):
             'f1_score': report_SAM_GTp['weighted avg']['f1-score'],
             'BB IoU': np.mean(BBIoUOtsu),
             'Time per Sample': prediction_time_SAM_GTp,
-            'dice_score': SAMGTp_dice_val.numpy()
+            'dice_score': SAMGTp_dice_val
         }
         all_metrics_SAM_GTp.append(metrics_SAM_GTp)
 
