@@ -811,8 +811,8 @@ def train(args, predictor):
         # Dice Scores
         # svm_dice_val = dice_coeff(torch.Tensor(predicted_masks_svm), torch.Tensor(val_labels))
         # print('SVM Dice (Dilation + Erosion): ', svm_dice_val)
-        svm_dice_val = dice_coeff(torch.Tensor(np.array(pred_original_resized)), torch.Tensor(np.array(val_masks)))
-        otsu_dice_val = dice_coeff(torch.Tensor(np.array(otsu_original_resized)), torch.Tensor(np.array(val_masks)))
+        svm_dice_val = dice_coeff(torch.Tensor(np.array(pred_original_resized_eval)), torch.Tensor(np.array(val_masks)))
+        otsu_dice_val = dice_coeff(torch.Tensor(np.array(otsu_original_resized_eval)), torch.Tensor(np.array(val_masks)))
         SAM_dice_val = dice_coeff(torch.Tensor(np.array(SAM_pred_resized)), torch.Tensor(np.array(val_masks)))
         SAM_point_dice_val = dice_coeff(torch.Tensor(np.array(SAM_point_pred_resized)), torch.Tensor(np.array(val_masks)))
         SAMGT_dice_val = dice_coeff(torch.Tensor(np.array(SAM_pred_GT_resized)), torch.Tensor(np.array(val_masks)))
