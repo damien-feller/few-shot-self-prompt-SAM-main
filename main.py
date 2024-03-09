@@ -144,6 +144,20 @@ def predict_and_reshape(model, X, original_shape):
     predictions = model.predict(X)
     return predictions.reshape(original_shape)
 
+def dice_coeff_individual(pred, target):
+    smooth = 1.
+    pred_flat = pred.reshape(-1)
+    target_flat = target.reshape(-1)
+    intersection = (pred_flat * target_flat).sum()
+    return (2. * intersection + smooth) / (pred_flat.sum() + target_flat.sum() + smooth)
+
+def calculate_average_dice(pred_masks, true_masks):
+    dice_scores = []
+    for pred_mask, true_mask in zip(pred_masks, true_masks):
+        dice_score = dice_coeff_individual(pred_mask, true_mask)
+        dice_scores.append(dice_score)
+    return np.mean(dice_scores)
+
 
 def calculate_iou(ground_truth, prediction):
     """
@@ -819,12 +833,12 @@ def train(args, predictor):
         # Dice Scores
         # svm_dice_val = dice_coeff(torch.Tensor(predicted_masks_svm), torch.Tensor(val_labels))
         # print('SVM Dice (Dilation + Erosion): ', svm_dice_val)
-        svm_dice_val = dice_coeff(flatten_and_concatenate_arrays(pred_original_resized_eval), flatten_and_concatenate_arrays(val_masks))
-        otsu_dice_val = dice_coeff(flatten_and_concatenate_arrays(otsu_original_resized_eval), flatten_and_concatenate_arrays(val_masks))
-        SAM_dice_val = dice_coeff(flatten_and_concatenate_arrays(SAM_pred_resized), flatten_and_concatenate_arrays(val_masks))
-        SAM_point_dice_val = dice_coeff(flatten_and_concatenate_arrays(SAM_point_pred_resized), flatten_and_concatenate_arrays(val_masks))
-        SAMGT_dice_val = dice_coeff(flatten_and_concatenate_arrays(SAM_pred_GT_resized), flatten_and_concatenate_arrays(val_masks))
-        SAMGTp_dice_val = dice_coeff(flatten_and_concatenate_arrays(SAM_pred_GTp_resized), flatten_and_concatenate_arrays(val_masks))
+        svm_dice_val = calculate_average_dice(pred_original_resized_eval, val_masks)
+        otsu_dice_val = calculate_average_dice(otsu_original_resized_eval, val_masks)
+        SAM_dice_val = calculate_average_dice(SAM_pred_resized, val_masks)
+        SAM_point_dice_val = calculate_average_dice(SAM_point_pred_resized, val_masks)
+        SAMGT_dice_val = calculate_average_dice(SAM_pred_GT_resized, val_masks)
+        SAMGTp_dice_val = calculate_average_dice(SAM_pred_GTp_resized, val_masks)
         #print('SVM Dice: ', svm_dice_val)
 
         metrics = {
