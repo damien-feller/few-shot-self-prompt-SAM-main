@@ -77,6 +77,16 @@ def augment(image, mask):
     augmented = transform(image=image, mask=mask)
     return augmented['image'], augmented['mask']
 
+def monte_carlo_sampling(heatmap, n_points=100):
+    flat_heatmap = heatmap.flatten()
+    # Normalize probabilities to sum to 1
+    probabilities = flat_heatmap / np.sum(flat_heatmap)
+    # Generate indices based on the distribution
+    chosen_indices = np.random.choice(a=np.arange(len(flat_heatmap)), size=n_points, replace=True, p=probabilities)
+    # Convert flat indices to 2D coordinates
+    y_coords, x_coords = np.unravel_index(chosen_indices, dims=heatmap.shape)
+    return list(zip(x_coords, y_coords))
+
 def dice_coeff(pred, target):
     smooth = 1.
     # Ensure the inputs are numpy arrays. If they're PyTorch tensors, convert them to numpy arrays
