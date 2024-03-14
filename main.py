@@ -119,7 +119,7 @@ def predict_and_reshape_otsu(model, X, original_shape):
         heatmap_normalized = cv2.normalize(pred_probs, None, 0, 255, cv2.NORM_MINMAX)
         heatmap_normalized = np.uint8(heatmap_normalized)
         heatmaps.append(heatmap_normalized)
-        median_filtered = cv2.medianBlur(heatmap_normalized, 5)
+        median_filtered = cv2.medianBlur(heatmap_normalized, 3)
         _, otsu_thresh = cv2.threshold(median_filtered, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
         # Find contours
