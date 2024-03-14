@@ -168,6 +168,7 @@ def calculate_average_dice(pred_masks, true_masks):
         plt.savefig(f"/content/visualisation/Dice_Comparison_{idx}.png")
         plt.close()
         dice_score = dice_coeff_individual(pred_mask, true_mask)
+        idx += 1
         print(dice_score)
         dice_scores.append(dice_score)
     return np.mean(dice_scores)
@@ -574,7 +575,7 @@ def train(args, predictor):
         maskOrgs = []
 
         def process_and_store(img, msk):
-            original_size = [msk.shape[0], msk.shape[1]]
+            original_size = [msk.shape[1], msk.shape[0]]
             original_sizes.append(original_size)
             # Resize and process the mask and image
             maskOrgs.append(msk)
