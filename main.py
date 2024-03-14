@@ -563,7 +563,7 @@ def train(args, predictor):
         maskOrgs = []
 
         def process_and_store(img, msk):
-            original_size = msk.shape[:2]
+            original_size = [msk.shape[0], msk.shape[1]]
             original_sizes.append(original_size)
             # Resize and process the mask and image
             maskOrgs.append(msk)
