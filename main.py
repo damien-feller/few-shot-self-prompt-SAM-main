@@ -77,15 +77,44 @@ def augment(image, mask):
     augmented = transform(image=image, mask=mask)
     return augmented['image'], augmented['mask']
 
-def monte_carlo_sampling(heatmap, n_points=100):
-    flat_heatmap = heatmap.flatten()
-    # Normalize probabilities to sum to 1
-    probabilities = flat_heatmap / np.sum(flat_heatmap)
-    # Generate indices based on the distribution
-    chosen_indices = np.random.choice(a=np.arange(len(flat_heatmap)), size=n_points, replace=True, p=probabilities)
-    # Convert flat indices to 2D coordinates
-    y_coords, x_coords = np.unravel_index(chosen_indices, dims=heatmap.shape)
-    return list(zip(x_coords, y_coords))
+
+def monte_carlo_sample_from_mask(heatmap, mask, n_points=50):
+    """
+    Perform Monte Carlo sampling for both foreground and background areas defined by a mask,
+    adjusting the number of points if necessary.
+
+    Args:
+    - heatmap: A 2D numpy array (64x64) of probabilities.
+    - mask: A binary mask (64x64) where 1 indicates foreground and 0 indicates background.
+    - n_points: The total number of points to initially try to sample for both foreground and background.
+
+    Returns:
+    - foreground_points: List of (x, y) tuples for the foreground.
+    - background_points: List of (x, y) tuples for the background.
+    """
+
+    # Helper function to perform sampling
+    def sample_points(indices, probs, initial_n_points):
+        n_available = len(probs)
+        n_sample_points = min(initial_n_points,
+                              int(0.75 * n_available))  # 75% of available pixels or the initial count, whichever is smaller
+        probs_normalized = probs / np.sum(probs)
+        samples = np.random.choice(n_available, size=n_sample_points, replace=True, p=probs_normalized)
+        points = list(zip(indices[1][samples], indices[0][samples]))
+        return points
+
+    # Foreground sampling
+    foreground_indices = np.where(mask == 1)
+    foreground_probs = heatmap[foreground_indices]
+    foreground_points = sample_points(foreground_indices, foreground_probs, n_points)
+
+    # Background sampling
+    background_indices = np.where(mask == 0)
+    background_probs = heatmap[background_indices]
+    background_points = sample_points(background_indices, background_probs, n_points)
+
+    return foreground_points, background_points
+
 
 def dice_coeff(pred, target):
     smooth = 1.
