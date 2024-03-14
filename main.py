@@ -155,6 +155,7 @@ def calculate_average_dice(pred_masks, true_masks):
     dice_scores = []
     for pred_mask, true_mask in zip(pred_masks, true_masks):
         dice_score = dice_coeff_individual(pred_mask, true_mask)
+        print(dice_score)
         dice_scores.append(dice_score)
     return np.mean(dice_scores)
 
