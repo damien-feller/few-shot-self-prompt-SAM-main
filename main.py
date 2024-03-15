@@ -250,12 +250,21 @@ def SAM_predict(predictor, image=None, bounding_box=None, point_prompt=None):
         input_label = np.array([point_prompt[0, 2]])
 
     # Call predictor's predict method with the provided or default parameters
-    masks_pred, _, logits = predictor.predict(
-        point_coords=input_point,
-        point_labels=input_label,
-        box=bounding_box[None, :],
-        multimask_output=False,
-    )
+    if bounding_box is not None:
+        masks_pred, _, logits = predictor.predict(
+            point_coords=input_point,
+            point_labels=input_label,
+            box=bounding_box[None, :],
+            multimask_output=False,
+        )
+    else:
+        masks_pred, _, logits = predictor.predict(
+            point_coords=input_point,
+            point_labels=input_label,
+            box=None,
+            multimask_output=False,
+        )
+
 
     return masks_pred, logits
 
@@ -560,7 +569,7 @@ def sample_points(indices, probabilities, n_points):
     if n_points == 0:
         return []
     probabilities_normalized = probabilities / probabilities.sum()
-    samples = np.random.choice(len(probabilities), size=n_points, replace=False, p=probabilities_normalized)
+    samples = np.random.choice(len(probabilities), size=n_points, replace=True, p=probabilities_normalized)
     return list(zip(indices[1][samples], indices[0][samples]))
 
 
