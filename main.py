@@ -933,9 +933,6 @@ def train(args, predictor):
 
             combined_points = [(x, y, True, val_labels_resized[j][y, x] == 1) for x, y in foreground_points] + \
                               [(x, y, False, val_labels_resized[j][y, x] == 0) for x, y in background_points]
-            if i == 0:
-                visualize_and_save_points(val_images[j], val_labels_resized[j], combined_points,
-                                      j, heatmap_resized, SAM_pred[j])
 
             start_time = time.time()
             if input_points is not None:
@@ -947,6 +944,9 @@ def train(args, predictor):
             prediction_time_SAM_multi += (end_time - start_time)
 
             mask_SAM = masks_pred[0].astype('uint8')
+            if i == 0:
+                visualize_and_save_points(val_images[j], val_labels_resized[j], combined_points,
+                                      j, heatmap_resized, SAM_pred[j], mask_SAM)
             mask_SAM_resized = cv2.resize(mask_SAM, dsize=val_sizes[j], interpolation=cv2.INTER_NEAREST)
             SAM_pred_multi.append(mask_SAM)
             SAM_pred_multi_resized.append(mask_SAM_resized)
