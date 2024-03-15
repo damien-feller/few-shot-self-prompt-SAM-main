@@ -926,8 +926,8 @@ def train(args, predictor):
 
             combined_points = [(x, y, True, val_labels_resized[j][y, x] == 1) for x, y in foreground_points] + \
                               [(x, y, False, val_labels_resized[j][y, x] == 0) for x, y in background_points]
-
-            visualize_and_save_points(val_images[j], val_labels_resized[j], combined_points,
+            if i == 0:
+                visualize_and_save_points(val_images[j], val_labels_resized[j], combined_points,
                                       j, heatmap_resized)
 
             start_time = time.time()
