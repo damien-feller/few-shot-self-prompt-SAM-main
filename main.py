@@ -31,8 +31,6 @@ import pandas as pd
 from skimage import filters
 from scipy.ndimage import label, find_objects
 
-
-
 # Set random seeds for reproducibility
 random.seed(42)
 np.random.seed(42)
@@ -41,6 +39,7 @@ torch.cuda.manual_seed(42)
 torch.cuda.manual_seed_all(42)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
+
 
 class CustomDataset(Dataset):
     def __init__(self, embeddings, labels):
@@ -61,6 +60,7 @@ def get_embedding(img, predictor):
     img_emb = predictor.get_image_embedding()
     return img_emb
 
+
 def augment(image, mask):
     # Define an augmentation pipeline
     transform = A.Compose([
@@ -77,6 +77,7 @@ def augment(image, mask):
     augmented = transform(image=image, mask=mask)
     return augmented['image'], augmented['mask']
 
+
 def dice_coeff(pred, target):
     smooth = 1.
     # Ensure the inputs are numpy arrays. If they're PyTorch tensors, convert them to numpy arrays
@@ -91,6 +92,7 @@ def dice_coeff(pred, target):
 
     intersection = (pred_flat * target_flat).sum()
     return (2. * intersection + smooth) / (pred_flat.sum() + target_flat.sum() + smooth)
+
 
 def create_dataset_for_SVM(embeddings, labels):
     # Flatten the embeddings and labels to create a dataset for RF
@@ -123,7 +125,7 @@ def predict_and_reshape_otsu(model, X, original_shape):
         _, otsu_thresh = cv2.threshold(median_filtered, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
         # Find contours
-        contours, _ = cv2.findContours((otsu_thresh/255).astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours((otsu_thresh / 255).astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         # Find the largest contour based on area
         largest_contour = max(contours, key=cv2.contourArea)
@@ -144,12 +146,14 @@ def predict_and_reshape(model, X, original_shape):
     predictions = model.predict(X)
     return predictions.reshape(original_shape)
 
+
 def dice_coeff_individual(pred, target):
     smooth = 1.
     pred_flat = pred.reshape(-1)
     target_flat = target.reshape(-1)
     intersection = (pred_flat * target_flat).sum()
     return (2. * intersection + smooth) / (pred_flat.sum() + target_flat.sum() + smooth)
+
 
 def calculate_average_dice(pred_masks, true_masks):
     dice_scores = []
@@ -242,8 +246,8 @@ def SAM_predict(predictor, image=None, bounding_box=None, point_prompt=None):
     # Check if a point prompt is provided
     if point_prompt is not None:
         # Assuming point_prompt is a tuple or list in the form (x, y, label)
-        input_point = np.array([[point_prompt[0,0], point_prompt[0,1]]])
-        input_label = np.array([point_prompt[0,2]])
+        input_point = np.array([[point_prompt[0, 0], point_prompt[0, 1]]])
+        input_label = np.array([point_prompt[0, 2]])
 
     # Call predictor's predict method with the provided or default parameters
     masks_pred, _, logits = predictor.predict(
@@ -305,11 +309,11 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         edges_median = filters.sobel(median_filtered)
         edges_median = cv2.normalize(edges_median, None, 0, 255, cv2.NORM_MINMAX)
         edges_img = filters.sobel(org_img[i])
-        edges_img = edges_img[:,:,0] + edges_img[0,0,1] + edges_img[0,0,2]
+        edges_img = edges_img[:, :, 0] + edges_img[0, 0, 1] + edges_img[0, 0, 2]
         edges_img = cv2.normalize(edges_img, None, 0, 255, cv2.NORM_MINMAX)
 
         # Combine heatmap with edge
-        combo_heat = heatmap_normalized + (2*edges_heat)
+        combo_heat = heatmap_normalized + (2 * edges_heat)
         combo_heat = cv2.normalize(combo_heat, None, 0, 255, cv2.NORM_MINMAX).astype('uint8')
         combo_gaussian = gaussian_filtered + (2 * edges_gaussian)
         combo_gaussian = cv2.normalize(combo_gaussian, None, 0, 255, cv2.NORM_MINMAX).astype('uint8')
@@ -328,7 +332,8 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         _, combo_median_thresh = cv2.threshold(combo_median, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
         # Find contours
-        contours, _ = cv2.findContours((otsu_median_thresh/255).astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours((otsu_median_thresh / 255).astype(np.uint8), cv2.RETR_EXTERNAL,
+                                       cv2.CHAIN_APPROX_SIMPLE)
 
         # Find the largest contour based on area
         largest_contour = max(contours, key=cv2.contourArea)
@@ -336,7 +341,6 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         # Create a mask for the largest contour
         mask_otsu = np.zeros_like(otsu_median_thresh)
         cv2.drawContours(mask_otsu, [largest_contour], -1, color=255, thickness=cv2.FILLED)
-
 
         fig, axes = plt.subplots(8, 3, figsize=(15, 40))  # Adjusting figure size for better visibility
 
@@ -451,77 +455,113 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
             # np.save(f"/content/image_{i}.npy", org_img)
             # np.save(f"/content/heatmap_{i}.npy", pred_probs)
 
-def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT, SAMp_mask, SAMp_mask_GT, otsu_BB, thresh_BB, GT_BB, heatmap, points, pointsGT):
-    otsu_BB_resized = np.array(otsu_BB)/16
+
+def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT, SAMp_mask, SAMp_mask_GT, otsu_BB,
+                  thresh_BB, GT_BB, heatmap, points, pointsGT):
+    otsu_BB_resized = np.array(otsu_BB) / 16
     thresh_BB_resized = np.array(thresh_BB) / 16
     GT_BB_resized = np.array(GT_BB) / 16
     for i in range(len(org_img)):
         fig, axes = plt.subplots(2, 5, figsize=(25, 10))
         # Original image and mask
-        axes[0,0].imshow(org_img[i])
-        axes[0,0].set_title("Original Image")
-        axes[0,0].axis('off')
+        axes[0, 0].imshow(org_img[i])
+        axes[0, 0].set_title("Original Image")
+        axes[0, 0].axis('off')
 
-        axes[0,1].imshow(maskGT[i], cmap='gray')
-        axes[0,1].set_title("Ground Truth")
-        axes[0,1].axis('off')
+        axes[0, 1].imshow(maskGT[i], cmap='gray')
+        axes[0, 1].set_title("Ground Truth")
+        axes[0, 1].axis('off')
 
-        axes[0,2].imshow(maskGT[i], cmap='gray')
-        axes[0,2].set_title("Ground Truth - Bounding Boxes")
+        axes[0, 2].imshow(maskGT[i], cmap='gray')
+        axes[0, 2].set_title("Ground Truth - Bounding Boxes")
         show_box(thresh_BB_resized[i], axes[0, 2], color='green')
         show_box(otsu_BB_resized[i], axes[0, 2], color='red')
         show_box(GT_BB_resized[i], axes[0, 2], color='blue')
         axes[0, 2].plot(points[i][0] / 16, points[i][1] / 16, 'r.')
         axes[0, 2].plot(pointsGT[i][0] / 16, pointsGT[i][1] / 16, 'g.')
-        axes[0,2].legend(['Threshold BB', 'Otsu BB', 'Ground Truth BB'])
-        axes[0,2].axis('off')
+        axes[0, 2].legend(['Threshold BB', 'Otsu BB', 'Ground Truth BB'])
+        axes[0, 2].axis('off')
 
         axes[0, 3].imshow(heatmap[i], cmap='jet')
         axes[0, 3].set_title("Prediction Heatmap")
-        axes[0,3].axis('off')
+        axes[0, 3].axis('off')
 
-        axes[0,4].imshow(thresh_mask[i], cmap='gray')
-        axes[0,4].set_title("Threshold Mask")
-        show_box(thresh_BB_resized[i], axes[0,4])
-        axes[0,4].axis('off')
+        axes[0, 4].imshow(thresh_mask[i], cmap='gray')
+        axes[0, 4].set_title("Threshold Mask")
+        show_box(thresh_BB_resized[i], axes[0, 4])
+        axes[0, 4].axis('off')
 
-        axes[1,0].imshow(otsu_mask[i], cmap='gray')
-        axes[1,0].set_title("Otsu Threshold Mask")
-        show_box(otsu_BB_resized[i], axes[1,0])
-        axes[1,0].plot(points[i][0]/16, points[i][1]/16, 'r.')
-        axes[1,0].axis('off')
+        axes[1, 0].imshow(otsu_mask[i], cmap='gray')
+        axes[1, 0].set_title("Otsu Threshold Mask")
+        show_box(otsu_BB_resized[i], axes[1, 0])
+        axes[1, 0].plot(points[i][0] / 16, points[i][1] / 16, 'r.')
+        axes[1, 0].axis('off')
 
-        axes[1,1].imshow(SAM_mask[i], cmap='gray')
-        axes[1,1].set_title("SAM Mask")
+        axes[1, 1].imshow(SAM_mask[i], cmap='gray')
+        axes[1, 1].set_title("SAM Mask")
         show_box(otsu_BB[i], axes[1, 1])
         axes[1, 1].plot(points[i][0], points[i][1], 'r.')
-        axes[1,1].axis('off')
+        axes[1, 1].axis('off')
         plt.tight_layout()
 
-        axes[1,2].imshow(SAMp_mask[i], cmap='gray')
-        axes[1,2].set_title("SAM Mask - BB + Point")
+        axes[1, 2].imshow(SAMp_mask[i], cmap='gray')
+        axes[1, 2].set_title("SAM Mask - BB + Point")
         axes[1, 2].plot(points[i][0], points[i][1], 'g.')
         show_box(otsu_BB[i], axes[1, 2])
-        axes[1,2].axis('off')
+        axes[1, 2].axis('off')
         plt.tight_layout()
 
-        axes[1,3].imshow(SAM_mask_GT[i], cmap='gray')
-        axes[1,3].set_title("SAM Mask - Ground Truth BB")
+        axes[1, 3].imshow(SAM_mask_GT[i], cmap='gray')
+        axes[1, 3].set_title("SAM Mask - Ground Truth BB")
         axes[1, 3].plot(pointsGT[i][0], pointsGT[i][1], 'g.')
         show_box(GT_BB[i], axes[1, 3])
-        axes[1,3].axis('off')
+        axes[1, 3].axis('off')
         plt.tight_layout()
 
-        axes[1,4].imshow(SAMp_mask_GT[i], cmap='gray')
-        axes[1,4].set_title("SAM Mask - BB + Point")
+        axes[1, 4].imshow(SAMp_mask_GT[i], cmap='gray')
+        axes[1, 4].set_title("SAM Mask - BB + Point")
         axes[1, 4].plot(pointsGT[i][0], pointsGT[i][1], 'g.')
         show_box(GT_BB[i], axes[1, 4])
-        axes[1,4].axis('off')
+        axes[1, 4].axis('off')
         plt.tight_layout()
 
         plt.savefig(f"/content/visualisation/SAM segmentation {i}.png")
 
 
+def monte_carlo_sample_from_mask(heatmap, mask, base_n_points=50):
+    """
+    Adjusted Monte Carlo sampling to consider the actual number of foreground and background pixels.
+    """
+    foreground_indices = np.where(mask == 1)
+    background_indices = np.where(mask == 0)
+
+    # Adjusting n_points based on the size of the foreground
+    foreground_pixel_count = len(foreground_indices[0])
+    background_pixel_count = len(background_indices[0])
+
+    n_points_foreground = min(base_n_points, int(0.75 * foreground_pixel_count)) if foreground_pixel_count > 0 else 0
+    n_points_background = min(base_n_points, int(0.75 * background_pixel_count)) if background_pixel_count > 0 else 0
+
+    # Sampling foreground points
+    foreground_probs = heatmap[foreground_indices]
+    foreground_points = sample_points(foreground_indices, foreground_probs, n_points_foreground)
+
+    # Sampling background points
+    background_probs = heatmap[background_indices]
+    background_points = sample_points(background_indices, background_probs, n_points_background)
+
+    return foreground_points, background_points
+
+
+def sample_points(indices, probabilities, n_points):
+    """
+    Helper function to perform sampling given indices and probabilities.
+    """
+    if n_points == 0:
+        return []
+    probabilities_normalized = probabilities / probabilities.sum()
+    samples = np.random.choice(len(probabilities), size=n_points, replace=True, p=probabilities_normalized)
+    return list(zip(indices[1][samples], indices[0][samples]))
 
 
 def train(args, predictor):
@@ -542,8 +582,7 @@ def train(args, predictor):
     val_fnames = fnames[-args.val_size:]
     fnames[-args.val_size:] = []
 
-
-    #create a number of different training sets
+    # create a number of different training sets
     train_fnames = []
     for i in range(args.evaluation_num):
         segment = fnames[(i * num_image):(i + 1) * num_image]
@@ -566,7 +605,7 @@ def train(args, predictor):
             maskOrgs.append(msk)
             resized_mask = cv2.resize(msk, dsize=(64, 64), interpolation=cv2.INTER_NEAREST)
             # Find contours
-            contours, _ = cv2.findContours(resized_mask , cv2.RETR_EXTERNAL,
+            contours, _ = cv2.findContours(resized_mask, cv2.RETR_EXTERNAL,
                                            cv2.CHAIN_APPROX_SIMPLE)
 
             # Create a mask for the largest contour
@@ -612,10 +651,11 @@ def train(args, predictor):
     val_labels_tensor = torch.stack([torch.Tensor(l) for l in val_labels])
 
     val_embeddings_flat, val_labels_flat = create_dataset_for_SVM(val_embeddings_tensor.numpy(),
-                                                                 val_labels_tensor.numpy())
+                                                                  val_labels_tensor.numpy())
     for i in range(args.evaluation_num):
         # Process training images with augmentation
-        train_embeddings, train_labels, train_images, train_sizes, train_masks = process_images(train_fnames[i], augment_data=True)
+        train_embeddings, train_labels, train_images, train_sizes, train_masks = process_images(train_fnames[i],
+                                                                                                augment_data=True)
 
         # Convert to tensors
         train_embeddings_tensor = torch.stack([torch.Tensor(e) for e in train_embeddings])
@@ -623,15 +663,18 @@ def train(args, predictor):
 
         # Use the same function as defined for Random Forest
         train_embeddings_flat, train_labels_flat = create_dataset_for_SVM(train_embeddings_tensor.numpy(),
-                                                                         train_labels_tensor.numpy())
+                                                                          train_labels_tensor.numpy())
 
         # Perform oversampling on the training data
         ros = RandomOverSampler(random_state=42)
-        train_embeddings_oversampled, train_labels_oversampled = ros.fit_resample(train_embeddings_flat, train_labels_flat)
+        train_embeddings_oversampled, train_labels_oversampled = ros.fit_resample(train_embeddings_flat,
+                                                                                  train_labels_flat)
 
         # Initialize the XGBoost classifier model
-        model = xgb.XGBClassifier(objective='binary:logistic', colsample_bytree=0.54, gamma = 0.46, learning_rate=0.0383, subsample = 0.8, booster = 'gbtree',
-                                  max_depth=8, min_child_weight = 4, alpha=10, n_estimators=550, reg_alpha = 0.474, reg_lambda = 0.098, verbosity=2, device = "cuda")
+        model = xgb.XGBClassifier(objective='binary:logistic', colsample_bytree=0.54, gamma=0.46, learning_rate=0.0383,
+                                  subsample=0.8, booster='gbtree',
+                                  max_depth=8, min_child_weight=4, alpha=10, n_estimators=550, reg_alpha=0.474,
+                                  reg_lambda=0.098, verbosity=2, device="cuda")
         model.fit(train_embeddings_flat, train_labels_flat)
 
         # Predict on the validation set
@@ -644,20 +687,20 @@ def train(args, predictor):
         pred_original_resized_eval = []
         for mask in range(len(pred_original)):
             resized_mask = cv2.resize(pred_original[mask], dsize=val_sizes[mask],
-                                                     interpolation=cv2.INTER_NEAREST)
+                                      interpolation=cv2.INTER_NEAREST)
             pred_original_resized_eval.append(resized_mask)
-
 
         # Predict on the validation set (OTSU)
         start_time = time.time()  # Start timing
-        predicted_masks_otsu, heatmaps = predict_and_reshape_otsu(model, val_embeddings, (len(val_embeddings_tensor), 64, 64))
+        predicted_masks_otsu, heatmaps = predict_and_reshape_otsu(model, val_embeddings,
+                                                                  (len(val_embeddings_tensor), 64, 64))
         end_time = time.time()  # End timing
         prediction_time_otsu = (end_time - start_time) / 25
         otsu_original = predicted_masks_otsu
         otsu_original_resized_eval = []
         for mask in range(len(otsu_original)):
             resized_mask = cv2.resize(otsu_original[mask], dsize=val_sizes[mask],
-                                                     interpolation=cv2.INTER_NEAREST)
+                                      interpolation=cv2.INTER_NEAREST)
             otsu_original_resized_eval.append(resized_mask)
 
         # Define the kernel for dilation
@@ -667,7 +710,7 @@ def train(args, predictor):
         # predicted_masks_svm = cv2.erode(predicted_masks_svm, kernel, iterations=3)
 
         # Evaluate the SVM model
-        #accuracy_svm = accuracy_score(val_labels_flat, predicted_masks_svm.reshape(-1))
+        # accuracy_svm = accuracy_score(val_labels_flat, predicted_masks_svm.reshape(-1))
         # print(f'SVM Accuracy (Dilation + Erosion): {accuracy_svm}')
         # print(classification_report(val_labels_flat, predicted_masks_svm.reshape(-1)))
 
@@ -680,17 +723,18 @@ def train(args, predictor):
         points_GT = []
         points_otsu = []
 
-        #resize the masks for bounding boxes
+        # resize the masks for bounding boxes
         predicted_masks_svm_resized = [None] * len(predicted_masks_svm)
         otsu_original_resized = [None] * len(otsu_original)
         val_labels_resized = [None] * len(val_labels)
 
         for j in range(len(predicted_masks_svm)):
-            predicted_masks_svm_resized[j] = cv2.resize(predicted_masks_svm[j], dsize=(1024, 1024), interpolation=cv2.INTER_NEAREST)
+            predicted_masks_svm_resized[j] = cv2.resize(predicted_masks_svm[j], dsize=(1024, 1024),
+                                                        interpolation=cv2.INTER_NEAREST)
             otsu_original_resized[j] = cv2.resize(otsu_original[j], dsize=(1024, 1024),
-                                                     interpolation=cv2.INTER_NEAREST)
+                                                  interpolation=cv2.INTER_NEAREST)
             val_labels_resized[j] = cv2.resize(val_labels[j], dsize=(1024, 1024),
-                                                     interpolation=cv2.INTER_NEAREST)
+                                               interpolation=cv2.INTER_NEAREST)
 
         for j in range(len(predicted_masks_svm)):
             H, W = predicted_masks_svm_resized[j].shape
@@ -736,7 +780,6 @@ def train(args, predictor):
             BBIoU = calculate_iou(bboxVal, bboxOtsu)
             BBIoUOtsu.append(BBIoU)
 
-
         # Get evaluations from SAM
         print('Evaluating using SAM', i)
         SAM_pred = []
@@ -761,7 +804,10 @@ def train(args, predictor):
         for j in range(len(val_images)):
             input_point = np.array([[points_otsu[j][0], points_otsu[j][1], 1]])
             start_time = time.time()  # Start timing
-            masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j], point_prompt=input_point)
+            masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j],
+                                             point_prompt=input_point)
+            print(np.array(masks_pred).shape)
+            print(np.array(logits).shape)
             mask_SAM = masks_pred[0].astype('uint8')
             mask_SAM_resized = cv2.resize(mask_SAM, dsize=val_sizes[j], interpolation=cv2.INTER_NEAREST)
             end_time = time.time()  # End timing
@@ -788,8 +834,9 @@ def train(args, predictor):
                 SAM_pred_GT.append(mask_SAM)
                 SAM_pred_GT_resized.append(mask_SAM_GT_resized)
             prediction_time_SAM_GT /= len(val_images)
-            report_SAM_GT = classification_report(flatten_and_concatenate_arrays(val_masks), flatten_and_concatenate_arrays(SAM_pred_GT_resized),
-                                               target_names=['0', '1'], output_dict=True)
+            report_SAM_GT = classification_report(flatten_and_concatenate_arrays(val_masks),
+                                                  flatten_and_concatenate_arrays(SAM_pred_GT_resized),
+                                                  target_names=['0', '1'], output_dict=True)
             print('Finished SAM')
 
         if i == 0:
@@ -810,21 +857,58 @@ def train(args, predictor):
                 SAM_pred_GTp.append(mask_SAM)
                 SAM_pred_GTp_resized.append(mask_SAM_GTp_resized)
             prediction_time_SAM_GTp /= len(val_images)
-            report_SAM_GTp = classification_report(flatten_and_concatenate_arrays(val_masks), flatten_and_concatenate_arrays(SAM_pred_GTp_resized),
-                                               target_names=['0', '1'], output_dict=True)
+            report_SAM_GTp = classification_report(flatten_and_concatenate_arrays(val_masks),
+                                                   flatten_and_concatenate_arrays(SAM_pred_GTp_resized),
+                                                   target_names=['0', '1'], output_dict=True)
             print('Finished SAM')
 
+        # print('Multi Point SAM')
+        # for j in range(len(val_images)):
+        #     # Assuming heatmap and mask are available for each image
+        #     heatmap = heatmaps[j]  # Your method to obtain the heatmap
+        #     coarse_mask = otsu_original_resized[j]  # Your method to obtain the coarse mask
+        #     foreground_points, background_points = monte_carlo_sample_from_mask(heatmap, coarse_mask)
+        #
+        #     # Combining foreground and background points
+        #     combined_points = np.array(foreground_points + background_points)
+        #     point_labels = np.array(
+        #         [1] * len(foreground_points) + [0] * len(background_points))  # 1 for foreground, 0 for background
+        #
+        #     if len(combined_points) > 0:
+        #         input_points = np.hstack([combined_points, point_labels[:, None]])  # Reshape for SAM_predict
+        #     else:
+        #         input_points = None  # Handle the case where no points are available
+        #
+        #     start_time = time.time()
+        #     if input_points is not None:
+        #         masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j],
+        #                                          point_prompt=input_points)
+        #     else:
+        #         masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j])
+        #     end_time = time.time()
+        #     prediction_time_SAM_point += (end_time - start_time)
+        #
+        #     mask_SAM = masks_pred[0].astype('uint8')
+        #     mask_SAM_resized = cv2.resize(mask_SAM, dsize=val_sizes[j], interpolation=cv2.INTER_NEAREST)
+        #     SAM_point_pred.append(mask_SAM)
+        #     SAM_point_pred_resized.append(mask_SAM_resized)
+        # print('Finished SAM')
 
         # Evaluate the SVM model
-        report = classification_report(flatten_and_concatenate_arrays(val_masks), flatten_and_concatenate_arrays(pred_original_resized_eval),target_names = ['0','1'], output_dict=True)
-        report_otsu = classification_report(flatten_and_concatenate_arrays(val_masks), flatten_and_concatenate_arrays(otsu_original_resized_eval), target_names=['0', '1'], output_dict=True)
-        report_SAM = classification_report(flatten_and_concatenate_arrays(val_masks), flatten_and_concatenate_arrays(SAM_pred_resized),
+        report = classification_report(flatten_and_concatenate_arrays(val_masks),
+                                       flatten_and_concatenate_arrays(pred_original_resized_eval),
+                                       target_names=['0', '1'], output_dict=True)
+        report_otsu = classification_report(flatten_and_concatenate_arrays(val_masks),
+                                            flatten_and_concatenate_arrays(otsu_original_resized_eval),
                                             target_names=['0', '1'], output_dict=True)
-        report_SAM_point = classification_report(flatten_and_concatenate_arrays(val_masks), flatten_and_concatenate_arrays(SAM_point_pred_resized),
-                                            target_names=['0', '1'], output_dict=True)
+        report_SAM = classification_report(flatten_and_concatenate_arrays(val_masks),
+                                           flatten_and_concatenate_arrays(SAM_pred_resized),
+                                           target_names=['0', '1'], output_dict=True)
+        report_SAM_point = classification_report(flatten_and_concatenate_arrays(val_masks),
+                                                 flatten_and_concatenate_arrays(SAM_point_pred_resized),
+                                                 target_names=['0', '1'], output_dict=True)
 
-
-        #accuracy_svm = accuracy_score(val_labels_flat, pred_original.reshape(-1))
+        # accuracy_svm = accuracy_score(val_labels_flat, pred_original.reshape(-1))
         # print(f'SVM Accuracy: {accuracy_svm}')
         # predicted_masks_train = predict_and_reshape(model, train_embeddings_flat, (len(train_embeddings_tensor), 64, 64))
         # predicted_masks_train = (predicted_masks_train > args.threshold).astype(np.uint8)
@@ -839,7 +923,7 @@ def train(args, predictor):
         SAM_point_dice_val = calculate_average_dice(SAM_point_pred_resized, val_masks)
         SAMGT_dice_val = calculate_average_dice(SAM_pred_GT_resized, val_masks)
         SAMGTp_dice_val = calculate_average_dice(SAM_pred_GTp_resized, val_masks)
-        #print('SVM Dice: ', svm_dice_val)
+        # print('SVM Dice: ', svm_dice_val)
 
         metrics = {
             'eval_num': i,  # Evaluation number or model identifier
@@ -926,13 +1010,12 @@ def train(args, predictor):
         all_metrics_SAM_GTp.append(metrics_SAM_GTp)
 
         # Visualize SVM predictions on the validation dataset
-        #print("Validation Predictions with SVM:")
+        # print("Validation Predictions with SVM:")
         if i == 0:
-            #visualize_predictions(train_images, train_embeddings, train_labels, model, num_samples=25, val=False, eval_num=i)
+            # visualize_predictions(train_images, train_embeddings, train_labels, model, num_samples=25, val=False, eval_num=i)
             visualize_predictions(val_images, val_embeddings, val_labels, model, num_samples=25, val=True, eval_num=i)
-            visualise_SAM(val_images,  val_labels, pred_original, otsu_original, SAM_pred,SAM_pred_GT,SAM_point_pred, SAM_pred_GTp, BBoxes_Otsu, BBoxes, BBoxes_GT, heatmaps, points_otsu, points_GT)
-
-
+            visualise_SAM(val_images, val_labels, pred_original, otsu_original, SAM_pred, SAM_pred_GT, SAM_point_pred,
+                          SAM_pred_GTp, BBoxes_Otsu, BBoxes, BBoxes_GT, heatmaps, points_otsu, points_GT)
 
     save_aggregated_metrics_with_std(all_metrics, all_metrics_otsu, all_metrics_SAM, all_metrics_SAM_point,
                                      all_metrics_SAM_GT, all_metrics_SAM_GTp)
@@ -962,13 +1045,13 @@ def main():
 
     # set random seed
     random.seed(42)
-    
+
     # register the SAM model
     sam = sam_model_registry[args.model_type](checkpoint=args.checkpoint).to(args.device)
     global predictor
     predictor = SamPredictor(sam)
     print('SAM model loaded!', '\n')
-    
+
     if args.visualize:
         model = train(args, predictor)
     else:
