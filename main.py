@@ -806,8 +806,8 @@ def train(args, predictor):
             start_time = time.time()  # Start timing
             masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j],
                                              point_prompt=input_point)
-            print(np.array(logits).min)
-            print(np.array(logits).max)
+            print(np.min(np.array(logits)))
+            print(np.max(np.array(logits)))
             mask_SAM = masks_pred[0].astype('uint8')
             mask_SAM_resized = cv2.resize(mask_SAM, dsize=val_sizes[j], interpolation=cv2.INTER_NEAREST)
             end_time = time.time()  # End timing
