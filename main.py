@@ -202,12 +202,12 @@ def calculate_iou(ground_truth, prediction):
 
 
 def save_aggregated_metrics_with_std(all_metrics, all_metrics_otsu, all_metrics_SAM, all_metrics_SAM_point,
-                                     all_metrics_SAM_GT, all_metrics_SAM_GTp):
+                                     all_metrics_SAM_GT, all_metrics_SAM_GTp, all_metrics_SAM_multi):
     # Define the model names for easier reference
     df_list = [pd.DataFrame(metrics) for metrics in
                [all_metrics, all_metrics_otsu, all_metrics_SAM, all_metrics_SAM_point, all_metrics_SAM_GT,
-                all_metrics_SAM_GTp]]
-    model_names = ['SVM', 'OTSU', 'SAM', 'SAM_Point', 'SAM_GT', 'SAM_GT_Point']
+                all_metrics_SAM_GTp, all_metrics_SAM_multi]]
+    model_names = ['Threshold', 'Otsu', 'SAM', 'SAM Point', 'SAM GT', 'SAM GT Point', 'Multi Point SAM']
 
     aggregated_metrics = []
     for i, df in enumerate(df_list):
@@ -571,6 +571,7 @@ def train(args, predictor):
     all_metrics_SAM_point = []
     all_metrics_SAM_GT = []
     all_metrics_SAM_GTp = []
+    all_metrics_SAM_multi = []
     data_path = args.data_path
     assert os.path.exists(data_path), 'data path does not exist!'
 
@@ -863,37 +864,40 @@ def train(args, predictor):
                                                    target_names=['0', '1'], output_dict=True)
             print('Finished SAM')
 
-        # print('Multi Point SAM')
-        # for j in range(len(val_images)):
-        #     # Assuming heatmap and mask are available for each image
-        #     heatmap = heatmaps[j]  # Your method to obtain the heatmap
-        #     coarse_mask = otsu_original_resized[j]  # Your method to obtain the coarse mask
-        #     foreground_points, background_points = monte_carlo_sample_from_mask(heatmap, coarse_mask)
-        #
-        #     # Combining foreground and background points
-        #     combined_points = np.array(foreground_points + background_points)
-        #     point_labels = np.array(
-        #         [1] * len(foreground_points) + [0] * len(background_points))  # 1 for foreground, 0 for background
-        #
-        #     if len(combined_points) > 0:
-        #         input_points = np.hstack([combined_points, point_labels[:, None]])  # Reshape for SAM_predict
-        #     else:
-        #         input_points = None  # Handle the case where no points are available
-        #
-        #     start_time = time.time()
-        #     if input_points is not None:
-        #         masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j],
-        #                                          point_prompt=input_points)
-        #     else:
-        #         masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j])
-        #     end_time = time.time()
-        #     prediction_time_SAM_point += (end_time - start_time)
-        #
-        #     mask_SAM = masks_pred[0].astype('uint8')
-        #     mask_SAM_resized = cv2.resize(mask_SAM, dsize=val_sizes[j], interpolation=cv2.INTER_NEAREST)
-        #     SAM_point_pred.append(mask_SAM)
-        #     SAM_point_pred_resized.append(mask_SAM_resized)
-        # print('Finished SAM')
+        print('Multi Point SAM')
+        SAM_pred_multi = []
+        SAM_pred_multi_resized = []
+        prediction_time_SAM_multi = 0
+        for j in range(len(val_images)):
+            # Assuming heatmap and mask are available for each image
+            heatmap = heatmaps[j]  # Your method to obtain the heatmap
+            coarse_mask = otsu_original_resized[j]  # Your method to obtain the coarse mask
+            foreground_points, background_points = monte_carlo_sample_from_mask(heatmap, coarse_mask)
+
+            # Combining foreground and background points
+            combined_points = np.array(foreground_points + background_points)
+            point_labels = np.array(
+                [1] * len(foreground_points) + [0] * len(background_points))  # 1 for foreground, 0 for background
+
+            if len(combined_points) > 0:
+                input_points = np.hstack([combined_points, point_labels[:, None]])  # Reshape for SAM_predict
+            else:
+                input_points = None  # Handle the case where no points are available
+
+            start_time = time.time()
+            if input_points is not None:
+                masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j],
+                                                 point_prompt=input_points)
+            else:
+                masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j])
+            end_time = time.time()
+            prediction_time_SAM_multi += (end_time - start_time)
+
+            mask_SAM = masks_pred[0].astype('uint8')
+            mask_SAM_resized = cv2.resize(mask_SAM, dsize=val_sizes[j], interpolation=cv2.INTER_NEAREST)
+            SAM_pred_multi.append(mask_SAM)
+            SAM_pred_multi_resized.append(mask_SAM_resized)
+        print('Finished SAM')
 
         # Evaluate the SVM model
         report = classification_report(flatten_and_concatenate_arrays(val_masks),
@@ -908,23 +912,20 @@ def train(args, predictor):
         report_SAM_point = classification_report(flatten_and_concatenate_arrays(val_masks),
                                                  flatten_and_concatenate_arrays(SAM_point_pred_resized),
                                                  target_names=['0', '1'], output_dict=True)
+        report_SAM_multi = classification_report(flatten_and_concatenate_arrays(val_masks),
+                                                 flatten_and_concatenate_arrays(SAM_pred_multi_resized),
+                                                 target_names=['0', '1'], output_dict=True)
 
-        # accuracy_svm = accuracy_score(val_labels_flat, pred_original.reshape(-1))
-        # print(f'SVM Accuracy: {accuracy_svm}')
-        # predicted_masks_train = predict_and_reshape(model, train_embeddings_flat, (len(train_embeddings_tensor), 64, 64))
-        # predicted_masks_train = (predicted_masks_train > args.threshold).astype(np.uint8)
-        # print(classification_report(train_labels_flat, predicted_masks_train.reshape(-1)))
 
         # Dice Scores
-        # svm_dice_val = dice_coeff(torch.Tensor(predicted_masks_svm), torch.Tensor(val_labels))
-        # print('SVM Dice (Dilation + Erosion): ', svm_dice_val)
+
         svm_dice_val = calculate_average_dice(pred_original_resized_eval, val_masks)
         otsu_dice_val = calculate_average_dice(otsu_original_resized_eval, val_masks)
         SAM_dice_val = calculate_average_dice(SAM_pred_resized, val_masks)
         SAM_point_dice_val = calculate_average_dice(SAM_point_pred_resized, val_masks)
         SAMGT_dice_val = calculate_average_dice(SAM_pred_GT_resized, val_masks)
         SAMGTp_dice_val = calculate_average_dice(SAM_pred_GTp_resized, val_masks)
-        # print('SVM Dice: ', svm_dice_val)
+        SAM_multi_dice_val = calculate_average_dice(SAM_pred_multi_resized, val_masks)
 
         metrics = {
             'eval_num': i,  # Evaluation number or model identifier
@@ -1010,6 +1011,20 @@ def train(args, predictor):
         }
         all_metrics_SAM_GTp.append(metrics_SAM_GTp)
 
+        metrics_SAM_multi = {
+            'eval_num': i,  # Evaluation number or model identifier
+            'accuracy': report_SAM_multi['accuracy'],
+            'negative_precision': report_SAM_multi['0']['precision'],
+            'positive_precision': report_SAM_multi['1']['precision'],
+            'negative_recall': report_SAM_multi['0']['recall'],
+            'positive_recall': report_SAM_multi['1']['recall'],
+            'f1_score': report_SAM_multi['weighted avg']['f1-score'],
+            'BB IoU': np.mean(BBIoUOtsu),
+            'Time per Sample': prediction_time_SAM_multi,
+            'dice_score': SAM_multi_dice_val
+        }
+        all_metrics_SAM_multi.append(metrics_SAM_multi)
+
         # Visualize SVM predictions on the validation dataset
         # print("Validation Predictions with SVM:")
         if i == 0:
@@ -1019,7 +1034,7 @@ def train(args, predictor):
                           SAM_pred_GTp, BBoxes_Otsu, BBoxes, BBoxes_GT, heatmaps, points_otsu, points_GT, logits_test)
 
     save_aggregated_metrics_with_std(all_metrics, all_metrics_otsu, all_metrics_SAM, all_metrics_SAM_point,
-                                     all_metrics_SAM_GT, all_metrics_SAM_GTp)
+                                     all_metrics_SAM_GT, all_metrics_SAM_GTp, all_metrics_SAM_multi)
 
     return model
 
