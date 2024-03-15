@@ -560,11 +560,11 @@ def monte_carlo_sample_from_mask(heatmap, mask, base_n_points=50):
 
     # Sampling foreground points
     foreground_probs = heatmap[foreground_indices]
-    foreground_points = dynamic_threshold_nms(foreground_indices, foreground_probs, n_points_foreground, 5)
+    foreground_points = dynamic_threshold_nms(foreground_indices, foreground_probs, n_points_foreground, 10)
 
     # Sampling background points
     background_probs = heatmap[background_indices]
-    background_points = dynamic_threshold_nms(background_indices, background_probs, n_points_background, 5)
+    background_points = dynamic_threshold_nms(background_indices, background_probs, n_points_background, 10)
 
     return foreground_points, background_points
 
