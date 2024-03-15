@@ -560,11 +560,11 @@ def monte_carlo_sample_from_mask(heatmap, mask, base_n_points=50):
 
     # Sampling foreground points
     foreground_probs = heatmap[foreground_indices]
-    foreground_points = sample_top_n_points(foreground_indices, foreground_probs, n_points_foreground)
+    foreground_points = dynamic_threshold_nms(foreground_indices, foreground_probs, n_points_foreground, 5)
 
     # Sampling background points
     background_probs = heatmap[background_indices]
-    background_points = sample_top_n_points(background_indices, background_probs, n_points_background)
+    background_points = dynamic_threshold_nms(background_indices, background_probs, n_points_background, 5)
 
     return foreground_points, background_points
 
@@ -608,44 +608,45 @@ def sample_top_n_points(indices, probabilities, n_points):
     return top_n_points_list
 
 
-def spread_out_selection(indices, probabilities, n_points, min_distance):
+def dynamic_threshold_nms(indices, probabilities, n_points, min_distance, decay_factor=0.9):
     """
-    Selects top n points based on probabilities, ensuring they are spread out by at least min_distance.
+    Selects points dynamically based on a combination of high probability and spatial spreading.
 
     Args:
-        indices (tuple of arrays): Tuple of numpy arrays containing the indices of the probabilities array.
-        probabilities (np.array): Array containing the probabilities for each point.
+        indices (tuple of arrays): Indices of the grid or image.
+        probabilities (np.array): Probabilities corresponding to each point.
         n_points (int): Number of points to select.
-        min_distance (int): Minimum distance between any two selected points.
+        min_distance (int): Minimum spatial distance between selected points.
+        decay_factor (float): Factor by which to decay the threshold on each iteration. Closer to 1 is slower decay.
 
     Returns:
-        list of tuples: List containing the coordinates of the selected points.
+        list of tuples: Coordinates of the selected points.
     """
-    # Flatten the indices to make them align with the flattened probabilities array
+    # Flatten the indices to align with the probabilities array
     flattened_indices = np.vstack(indices).T
+    sorted_idx = np.argsort(probabilities)[::-1]  # Indices sorted by decreasing probability
 
-    # Sort probabilities and their indices in descending order
-    sorted_indices = np.argsort(probabilities)[::-1]
     selected_points = []
+    current_threshold = probabilities[sorted_idx[0]]  # Start with the highest probability
 
-    for idx in sorted_indices:
-        current_point = flattened_indices[idx]
-        too_close = False
+    for idx in sorted_idx:
+        if len(selected_points) >= n_points:
+            break  # Stop if we have selected enough points
 
-        for point in selected_points:
-            if np.linalg.norm(current_point - point) < min_distance:
-                too_close = True
-                break
+        point = flattened_indices[idx]
+        prob = probabilities[idx]
 
-        if not too_close:
-            selected_points.append(current_point)
-            if len(selected_points) == n_points:
-                break
+        if prob < current_threshold:
+            # Dynamically reduce the threshold
+            current_threshold *= decay_factor
 
-    # Convert points back to list of tuples (x, y)
-    selected_points_list = [tuple(point) for point in selected_points]
+        # Check if the point is too close to any already selected point
+        too_close = any(np.linalg.norm(point - p) < min_distance for p in selected_points)
 
-    return selected_points_list
+        if not too_close and prob >= current_threshold:
+            selected_points.append(point)
+
+    return [tuple(point) for point in selected_points]
 
 
 import cv2
