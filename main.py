@@ -600,7 +600,6 @@ def sample_top_n_points(indices, probabilities, n_points):
 
     # Select the corresponding top n points
     top_n_points = flattened_indices[top_n_indices]
-    print(top_n_points)
 
     # Convert points back to list of tuples (x, y)
     top_n_points_list = [tuple(point) for point in top_n_points]
