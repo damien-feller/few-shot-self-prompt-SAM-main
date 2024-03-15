@@ -544,7 +544,7 @@ def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT
         plt.savefig(f"/content/visualisation/SAM segmentation {i}.png")
 
 
-def monte_carlo_sample_from_mask(heatmap, mask, base_n_points=50):
+def monte_carlo_sample_from_mask(heatmap, mask, base_n_points=100):
     """
     Adjusted Monte Carlo sampling to consider the actual number of foreground and background pixels.
     """
@@ -560,11 +560,11 @@ def monte_carlo_sample_from_mask(heatmap, mask, base_n_points=50):
 
     # Sampling foreground points
     foreground_probs = heatmap[foreground_indices]
-    foreground_points = spread_out_selection(foreground_indices, foreground_probs, n_points_foreground, 5)
+    foreground_points = sample_top_n_points(foreground_indices, foreground_probs, n_points_foreground)
 
     # Sampling background points
     background_probs = heatmap[background_indices]
-    background_points = spread_out_selection(background_indices, background_probs, n_points_background, 5)
+    background_points = sample_top_n_points(background_indices, background_probs, n_points_background)
 
     return foreground_points, background_points
 
