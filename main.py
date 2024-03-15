@@ -544,7 +544,7 @@ def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT
         plt.savefig(f"/content/visualisation/SAM segmentation {i}.png")
 
 
-def monte_carlo_sample_from_mask(heatmap, mask, base_n_points=100):
+def monte_carlo_sample_from_mask(heatmap, mask, base_n_points=50):
     """
     Adjusted Monte Carlo sampling to consider the actual number of foreground and background pixels.
     """
@@ -600,6 +600,7 @@ def sample_top_n_points(indices, probabilities, n_points):
 
     # Select the corresponding top n points
     top_n_points = flattened_indices[top_n_indices]
+    print(top_n_points)
 
     # Convert points back to list of tuples (x, y)
     top_n_points_list = [tuple(point) for point in top_n_points]
