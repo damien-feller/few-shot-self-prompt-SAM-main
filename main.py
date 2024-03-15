@@ -457,11 +457,12 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
 
 
 def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT, SAMp_mask, SAMp_mask_GT, otsu_BB,
-                  thresh_BB, GT_BB, heatmap, points, pointsGT):
+                  thresh_BB, GT_BB, heatmap, points, pointsGT, logits_test):
     otsu_BB_resized = np.array(otsu_BB) / 16
     thresh_BB_resized = np.array(thresh_BB) / 16
     GT_BB_resized = np.array(GT_BB) / 16
     for i in range(len(org_img)):
+        logit = cv2.normalize(logits_test[i], None, 0, 255, cv2.NORM_MINMAX)
         fig, axes = plt.subplots(2, 5, figsize=(25, 10))
         # Original image and mask
         axes[0, 0].imshow(org_img[i])
@@ -486,9 +487,8 @@ def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT
         axes[0, 3].set_title("Prediction Heatmap")
         axes[0, 3].axis('off')
 
-        axes[0, 4].imshow(thresh_mask[i], cmap='gray')
-        axes[0, 4].set_title("Threshold Mask")
-        show_box(thresh_BB_resized[i], axes[0, 4])
+        axes[0, 4].imshow(logit, cmap='jet')
+        axes[0, 4].set_title("SAM Logits")
         axes[0, 4].axis('off')
 
         axes[1, 0].imshow(otsu_mask[i], cmap='gray')
@@ -801,19 +801,20 @@ def train(args, predictor):
         SAM_point_pred = []
         SAM_point_pred_resized = []
         prediction_time_SAM_point = 0
+        logits_test = []
         for j in range(len(val_images)):
             input_point = np.array([[points_otsu[j][0], points_otsu[j][1], 1]])
             start_time = time.time()  # Start timing
             masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j],
                                              point_prompt=input_point)
-            print(np.min(np.array(logits)))
-            print(np.max(np.array(logits)))
             mask_SAM = masks_pred[0].astype('uint8')
+            logit_test = logits[0].astype('uint8')
             mask_SAM_resized = cv2.resize(mask_SAM, dsize=val_sizes[j], interpolation=cv2.INTER_NEAREST)
             end_time = time.time()  # End timing
             prediction_time_SAM_point += (end_time - start_time)
             SAM_point_pred.append(mask_SAM)
             SAM_point_pred_resized.append(mask_SAM_resized)
+            logits_test.append(logit_test)
         prediction_time_SAM_point /= len(val_images)
         print('Finished SAM')
 
@@ -1015,7 +1016,7 @@ def train(args, predictor):
             # visualize_predictions(train_images, train_embeddings, train_labels, model, num_samples=25, val=False, eval_num=i)
             visualize_predictions(val_images, val_embeddings, val_labels, model, num_samples=25, val=True, eval_num=i)
             visualise_SAM(val_images, val_labels, pred_original, otsu_original, SAM_pred, SAM_pred_GT, SAM_point_pred,
-                          SAM_pred_GTp, BBoxes_Otsu, BBoxes, BBoxes_GT, heatmaps, points_otsu, points_GT)
+                          SAM_pred_GTp, BBoxes_Otsu, BBoxes, BBoxes_GT, heatmaps, points_otsu, points_GT, logits_test)
 
     save_aggregated_metrics_with_std(all_metrics, all_metrics_otsu, all_metrics_SAM, all_metrics_SAM_point,
                                      all_metrics_SAM_GT, all_metrics_SAM_GTp)
