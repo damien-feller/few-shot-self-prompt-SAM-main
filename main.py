@@ -320,6 +320,9 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         edges_img = filters.sobel(org_img[i])
         edges_img = edges_img[:, :, 0] + edges_img[0, 0, 1] + edges_img[0, 0, 2]
         edges_img = cv2.normalize(edges_img, None, 0, 255, cv2.NORM_MINMAX)
+        edges_img = filters.sobel(edges_img)
+        edges_img = edges_img[:, :, 0] + edges_img[0, 0, 1] + edges_img[0, 0, 2]
+        edges_img = cv2.normalize(edges_img, None, 0, 255, cv2.NORM_MINMAX)
 
         # Combine heatmap with edge
         combo_heat = heatmap_normalized + (2 * edges_heat)
@@ -472,6 +475,12 @@ def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT
     GT_BB_resized = np.array(GT_BB) / 16
     for i in range(len(org_img)):
         logit = cv2.normalize(logits_test[i], None, 0, 255, cv2.NORM_MINMAX)
+        logit = 255 - logit
+        logit = cv2.normalize(logit, None, 0, 255, cv2.NORM_MINMAX)
+        heatmap_resized = cv2.resize(heatmap[i], dsize=(1024, 1024), interpolation=cv2.INTER_NEAREST)
+        combo = logit + heatmap_resized
+        combo = cv2.normalize(combo, None, 0, 255, cv2.NORM_MINMAX)
+
         fig, axes = plt.subplots(2, 5, figsize=(25, 10))
         # Original image and mask
         axes[0, 0].imshow(org_img[i])
@@ -527,10 +536,10 @@ def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT
         axes[1, 3].axis('off')
         plt.tight_layout()
 
-        axes[1, 4].imshow(SAMp_mask_GT[i], cmap='gray')
+        axes[1, 4].imshow(combo, cmap='jet')
         axes[1, 4].set_title("SAM Mask - BB + Point")
-        axes[1, 4].plot(pointsGT[i][0], pointsGT[i][1], 'g.')
-        show_box(GT_BB[i], axes[1, 4])
+        # axes[1, 4].plot(pointsGT[i][0], pointsGT[i][1], 'g.')
+        # show_box(GT_BB[i], axes[1, 4])
         axes[1, 4].axis('off')
         plt.tight_layout()
 
@@ -553,11 +562,11 @@ def monte_carlo_sample_from_mask(heatmap, mask, base_n_points=50):
 
     # Sampling foreground points
     foreground_probs = heatmap[foreground_indices]
-    foreground_points = sample_points(foreground_indices, foreground_probs, n_points_foreground)
+    foreground_points = sample_top_n_points(foreground_indices, foreground_probs, n_points_foreground)
 
     # Sampling background points
     background_probs = heatmap[background_indices]
-    background_points = sample_points(background_indices, background_probs, n_points_background)
+    background_points = sample_top_n_points(background_indices, background_probs, n_points_background)
 
     return foreground_points, background_points
 
