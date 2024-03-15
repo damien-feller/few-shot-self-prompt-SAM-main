@@ -596,7 +596,7 @@ def visualize_and_save_points(image, mask, points, i):
         a.axis('off')
 
     plt.tight_layout()
-    plt.imsave(f'content/visualisation/multi points {i}')
+    plt.savefig(f'content/visualisation/multi points {i}')
     plt.close()
 
 
