@@ -940,10 +940,10 @@ def train(args, predictor):
 
             start_time = time.time()
             if input_points is not None:
-                masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j],
+                masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=None,
                                                  point_prompt=input_points)
             else:
-                masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j])
+                masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=None)
             end_time = time.time()
             prediction_time_SAM_multi += (end_time - start_time)
 
