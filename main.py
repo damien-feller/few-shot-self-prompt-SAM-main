@@ -568,7 +568,7 @@ import cv2
 import numpy as np
 
 
-def visualize_and_save_points(image, mask, points, i):
+def visualize_and_save_points(image, mask, points, i, heatmap):
     """
     Visualizes points on the image and ground truth mask. Positive points are green,
     negative points are red. Points on the ground truth are circles; others are crosses.
@@ -580,18 +580,21 @@ def visualize_and_save_points(image, mask, points, i):
       where 'positive' and 'on_ground_truth' are booleans.
     - output_path (str): Path to save the output image.
     """
-    fig, ax = plt.subplots(1, 2, figsize=(12, 6))
+    fig, ax = plt.subplots(1, 3, figsize=(18, 6))
     ax[0].imshow(image)
     ax[1].imshow(mask, cmap='gray')
+    ax[2].imshow(heatmap, cmap'jet')
 
     for x, y, positive, on_ground_truth in points:
         color = 'green' if positive else 'red'
         marker = 'o' if on_ground_truth else 'x'
         ax[0].scatter(x, y, c=color, marker=marker)
         ax[1].scatter(x, y, c=color, marker=marker)
+        ax[2].scatter(x, y, c=color, marker=marker)
 
     ax[0].set_title('Original Image with Points')
     ax[1].set_title('Ground Truth Mask with Points')
+    ax[2].set_title('Heatmap with Points')
     for a in ax:
         a.axis('off')
 
@@ -925,7 +928,7 @@ def train(args, predictor):
                               [(x, y, False, val_labels_resized[j][y, x] == 0) for x, y in background_points]
 
             visualize_and_save_points(val_images[j], val_labels_resized[j], combined_points,
-                                      j)
+                                      j, heatmap_resized)
 
             start_time = time.time()
             if input_points is not None:
