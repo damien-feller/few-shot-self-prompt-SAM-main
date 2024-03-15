@@ -560,7 +560,7 @@ def sample_points(indices, probabilities, n_points):
     if n_points == 0:
         return []
     probabilities_normalized = probabilities / probabilities.sum()
-    samples = np.random.choice(len(probabilities), size=n_points, replace=True, p=probabilities_normalized)
+    samples = np.random.choice(len(probabilities), size=n_points, replace=False, p=probabilities_normalized)
     return list(zip(indices[1][samples], indices[0][samples]))
 
 
