@@ -560,11 +560,11 @@ def monte_carlo_sample_from_mask(heatmap, mask, base_n_points=50):
 
     # Sampling foreground points
     foreground_probs = heatmap[foreground_indices]
-    foreground_points = sample_top_n_points(foreground_indices, foreground_probs, n_points_foreground)
+    foreground_points = spread_out_selection(foreground_indices, foreground_probs, n_points_foreground, 5)
 
     # Sampling background points
     background_probs = heatmap[background_indices]
-    background_points = sample_top_n_points(background_indices, background_probs, n_points_background)
+    background_points = spread_out_selection(background_indices, background_probs, n_points_background, 5)
 
     return foreground_points, background_points
 
@@ -605,6 +605,46 @@ def sample_top_n_points(indices, probabilities, n_points):
     top_n_points_list = [tuple(point) for point in top_n_points]
 
     return top_n_points_list
+
+
+def spread_out_selection(indices, probabilities, n_points, min_distance):
+    """
+    Selects top n points based on probabilities, ensuring they are spread out by at least min_distance.
+
+    Args:
+        indices (tuple of arrays): Tuple of numpy arrays containing the indices of the probabilities array.
+        probabilities (np.array): Array containing the probabilities for each point.
+        n_points (int): Number of points to select.
+        min_distance (int): Minimum distance between any two selected points.
+
+    Returns:
+        list of tuples: List containing the coordinates of the selected points.
+    """
+    # Flatten the indices to make them align with the flattened probabilities array
+    flattened_indices = np.vstack(indices).T
+
+    # Sort probabilities and their indices in descending order
+    sorted_indices = np.argsort(probabilities)[::-1]
+    selected_points = []
+
+    for idx in sorted_indices:
+        current_point = flattened_indices[idx]
+        too_close = False
+
+        for point in selected_points:
+            if np.linalg.norm(current_point - point) < min_distance:
+                too_close = True
+                break
+
+        if not too_close:
+            selected_points.append(current_point)
+            if len(selected_points) == n_points:
+                break
+
+    # Convert points back to list of tuples (x, y)
+    selected_points_list = [tuple(point) for point in selected_points]
+
+    return selected_points_list
 
 
 import cv2
