@@ -906,9 +906,10 @@ def train(args, predictor):
         prediction_time_SAM_multi = 0
         for j in range(len(val_images)):
             # Assuming heatmap and mask are available for each image
-            heatmap = heatmaps[j]  # Your method to obtain the heatmap
             coarse_mask = otsu_original_resized[j]  # Your method to obtain the coarse mask
-            foreground_points, background_points = monte_carlo_sample_from_mask(heatmap, coarse_mask)
+            heatmap_resized = cv2.resize(heatmaps[j], dsize=(1024, 1024),
+                                                        interpolation=cv2.INTER_NEAREST)
+            foreground_points, background_points = monte_carlo_sample_from_mask(heatmap_resized, coarse_mask)
 
             # Combining foreground and background points
             combined_points = np.array(foreground_points + background_points)
