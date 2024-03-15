@@ -1,8 +1,6 @@
 import cv2
 import numpy
 import torch
-import torch.nn.functional as F
-import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 import torchvision.models as models
 import numpy as np
