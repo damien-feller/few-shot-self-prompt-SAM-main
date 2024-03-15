@@ -583,7 +583,7 @@ def visualize_and_save_points(image, mask, points, i, heatmap):
     fig, ax = plt.subplots(1, 3, figsize=(18, 6))
     ax[0].imshow(image)
     ax[1].imshow(mask, cmap='gray')
-    ax[2].imshow(heatmap, cmap'jet')
+    ax[2].imshow(heatmap, cmap='jet')
 
     for x, y, positive, on_ground_truth in points:
         color = 'green' if positive else 'red'
