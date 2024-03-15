@@ -602,6 +602,12 @@ def visualize_and_save_points(image, mask, points, i, heatmap, SAM_pred, SAM_pre
     ax[1,0].set_title('SAM BB Prediction')
     ax[1,1].set_title('SAM Multi Prediction')
     ax[1,2].set_title('SAM Multi Prediction')
+    ax[0,0].axis('off')
+    ax[0,1].axis('off')
+    ax[0,2].axis('off')
+    ax[1,0].axis('off')
+    ax[1,1].axis('off')
+    ax[1,2].axis('off')
     for a in ax:
         a.axis('off')
 
