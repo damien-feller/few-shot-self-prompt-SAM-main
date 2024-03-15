@@ -608,8 +608,6 @@ def visualize_and_save_points(image, mask, points, i, heatmap, SAM_pred, SAM_pre
     ax[1,0].axis('off')
     ax[1,1].axis('off')
     ax[1,2].axis('off')
-    for a in ax:
-        a.axis('off')
 
     plt.tight_layout()
     plt.savefig(f"/content/visualisation/multi point {i}.png")
