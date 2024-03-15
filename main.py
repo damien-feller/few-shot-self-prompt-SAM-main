@@ -318,9 +318,9 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         edges_img = filters.sobel(org_img[i])
         edges_img = edges_img[:, :, 0] + edges_img[:, :, 1] + edges_img[:, :, 2]
         edges_img = cv2.normalize(edges_img, None, 0, 255, cv2.NORM_MINMAX)
-        # edges_img = filters.sobel(edges_img)
-        # edges_img = edges_img[:, :, 0] + edges_img[0, 0, 1] + edges_img[0, 0, 2]
-        # edges_img = cv2.normalize(edges_img, None, 0, 255, cv2.NORM_MINMAX)
+        edges_img = filters.sobel(edges_img)
+        edges_img = edges_img[ :, 0] + edges_img[ :, 1] + edges_img[:, 2]
+        edges_img = cv2.normalize(edges_img, None, 0, 255, cv2.NORM_MINMAX)
 
         # Combine heatmap with edge
         combo_heat = heatmap_normalized + (2 * edges_heat)
