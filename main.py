@@ -569,8 +569,35 @@ def sample_points(indices, probabilities, n_points):
     if n_points == 0:
         return []
     probabilities_normalized = probabilities / probabilities.sum()
-    samples = np.random.choice(len(probabilities), size=n_points, replace=True, p=probabilities_normalized)
+    samples = np.random.choice(len(probabilities), size=n_points, replace=False, p=probabilities_normalized)
     return list(zip(indices[1][samples], indices[0][samples]))
+
+
+def sample_top_n_points(indices, probabilities, n_points):
+    """
+    Sample the n points with the highest probabilities.
+
+    Args:
+        indices (tuple of arrays): Tuple of numpy arrays containing the indices of the probabilities array.
+        probabilities (np.array): Array containing the probabilities for each point.
+        n_points (int): Number of top probabilities to select.
+
+    Returns:
+        list of tuples: List containing the coordinates of the top n points.
+    """
+    # Flatten the indices to make them align with the flattened probabilities array
+    flattened_indices = np.vstack(indices).T  # This should result in a (num_points, 2) array
+
+    # Sort probabilities and select top n
+    top_n_indices = np.argsort(probabilities)[-n_points:]  # Get indices of top n probabilities
+
+    # Select the corresponding top n points
+    top_n_points = flattened_indices[top_n_indices]
+
+    # Convert points back to list of tuples (x, y)
+    top_n_points_list = [tuple(point) for point in top_n_points]
+
+    return top_n_points_list
 
 
 import cv2
