@@ -544,29 +544,40 @@ def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT
         plt.savefig(f"/content/visualisation/SAM segmentation {i}.png")
 
 
-def monte_carlo_sample_from_mask(heatmap, mask, base_n_points=50):
+def monte_carlo_sample_from_mask(heatmap, mask, ground_truth_mask, base_n_points=10):
     """
-    Adjusted Monte Carlo sampling to consider the actual number of foreground and background pixels.
+    Samples points from the mask using Monte Carlo method and verifies them against the ground truth.
+
+    Args:
+    - heatmap (np.array): The heatmap from which to sample points.
+    - mask (np.array): The binary mask to sample foreground and background points from.
+    - ground_truth_mask (np.array): The ground truth binary mask to verify the sampled points.
+    - base_n_points (int): Base number of points to sample.
+
+    Returns:
+    - tuple of (foreground_points, background_points, correct_positives, correct_negatives): Where each element is a list of tuples (x, y) for the points, and correct_positives and correct_negatives are counts of correctly sampled points.
     """
     foreground_indices = np.where(mask == 1)
     background_indices = np.where(mask == 0)
 
-    # Adjusting n_points based on the size of the foreground
+    # Adjusting n_points based on the size of the foreground and background
     foreground_pixel_count = len(foreground_indices[0])
     background_pixel_count = len(background_indices[0])
 
     n_points_foreground = min(base_n_points, int(0.75 * foreground_pixel_count)) if foreground_pixel_count > 0 else 0
     n_points_background = min(base_n_points, int(0.75 * background_pixel_count)) if background_pixel_count > 0 else 0
 
-    # Sampling foreground points
+    # Sampling points
     foreground_probs = heatmap[foreground_indices]
-    foreground_points = dynamic_threshold_nms(foreground_indices, foreground_probs, n_points_foreground, 10)
-
-    # Sampling background points
+    foreground_points = sample_points(foreground_indices, foreground_probs, n_points_foreground)
     background_probs = heatmap[background_indices]
-    background_points = dynamic_threshold_nms(background_indices, background_probs, n_points_background, 10)
+    background_points = sample_points(background_indices, background_probs, n_points_background)
 
-    return foreground_points, background_points
+    # Check each point against the ground truth mask
+    correct_positives = sum(ground_truth_mask[y, x] for x, y in foreground_points)
+    correct_negatives = sum(1 - ground_truth_mask[y, x] for x, y in background_points)
+
+    return foreground_points, background_points, correct_positives, correct_negatives
 
 
 def sample_points(indices, probabilities, n_points):
@@ -1002,12 +1013,21 @@ def train(args, predictor):
         SAM_pred_multi = []
         SAM_pred_multi_resized = []
         prediction_time_SAM_multi = 0
+        fg_accuracies = []
+        bg_accuracies = []
+
         for j in range(len(val_images)):
             # Assuming heatmap and mask are available for each image
             coarse_mask = otsu_original_resized[j]  # Your method to obtain the coarse mask
+            gt_mask = val_labels_resized[j]
             heatmap_resized = cv2.resize(heatmaps[j], dsize=(1024, 1024),
                                                         interpolation=cv2.INTER_NEAREST)
-            foreground_points, background_points = monte_carlo_sample_from_mask(heatmap_resized, coarse_mask)
+            foreground_points, background_points, correct_fg, correct_bg = monte_carlo_sample_from_mask(heatmap_resized, coarse_mask, gt_mask, args.points_num)
+
+            fg_accuracy = correct_fg / args.points_num
+            fg_accuracies.append(fg_accuracy)
+            bg_accuracy = correct_bg / args.points_num
+            bg_accuracies.append(bg_accuracy)
 
             # Combining foreground and background points
             combined_points = np.array(foreground_points + background_points)
@@ -1177,6 +1197,9 @@ def train(args, predictor):
     save_aggregated_metrics_with_std(all_metrics, all_metrics_otsu, all_metrics_SAM, all_metrics_SAM_point,
                                      all_metrics_SAM_GT, all_metrics_SAM_GTp, all_metrics_SAM_multi)
 
+    print('Foreground Point Accuracy:', np.mean(fg_accuracy))
+    print('Background Point Accuracy:', np.mean(bg_accuracy))
+
     return model
 
 
@@ -1198,6 +1221,7 @@ def main():
     parser.add_argument('--augmentation_num', type=float, default=20, help='number of image augmentations to perform')
     parser.add_argument('--evaluation_num', type=int, default=5, help='number of models to trian for evaluation')
     parser.add_argument('--val_size', type=int, default=25, help='number of validation images')
+    parser.add_argument('--points_num', type=int, default=25, help='number of selected points')
     args = parser.parse_args()
 
     # set random seed
