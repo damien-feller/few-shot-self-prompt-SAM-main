@@ -544,7 +544,7 @@ def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT
         plt.savefig(f"/content/visualisation/SAM segmentation {i}.png")
 
 
-def monte_carlo_sample_from_mask(heatmap, mask, ground_truth_mask, base_n_points=10):
+def monte_carlo_sample_from_mask(heatmap, mask, ground_truth_mask, num_fg = 10, num_bg = 10):
     """
     Samples points from the mask using Monte Carlo method and verifies them against the ground truth.
 
@@ -564,8 +564,8 @@ def monte_carlo_sample_from_mask(heatmap, mask, ground_truth_mask, base_n_points
     foreground_pixel_count = len(foreground_indices[0])
     background_pixel_count = len(background_indices[0])
 
-    n_points_foreground = min(base_n_points, int(0.75 * foreground_pixel_count)) if foreground_pixel_count > 0 else 0
-    n_points_background = min(base_n_points, int(0.75 * background_pixel_count)) if background_pixel_count > 0 else 0
+    n_points_foreground = min(num_fg, int(0.75 * foreground_pixel_count)) if foreground_pixel_count > 0 else 0
+    n_points_background = min(num_bg, int(0.75 * background_pixel_count)) if background_pixel_count > 0 else 0
 
     # Sampling points
     foreground_probs = heatmap[foreground_indices]
@@ -1023,7 +1023,7 @@ def train(args, predictor):
             gt_mask = val_labels_resized[j]
             heatmap_resized = cv2.resize(heatmaps[j], dsize=(1024, 1024),
                                                         interpolation=cv2.INTER_NEAREST)
-            foreground_points, background_points, correct_fg, correct_bg, num_points_fg, num_points_bg = monte_carlo_sample_from_mask(heatmap_resized, coarse_mask, gt_mask, args.points_num)
+            foreground_points, background_points, correct_fg, correct_bg, num_points_fg, num_points_bg = monte_carlo_sample_from_mask(heatmap_resized, coarse_mask, gt_mask, args.num_fg, args.num_bg)
 
             fg_accuracy = correct_fg / num_points_fg
             fg_accuracies.append(fg_accuracy)
@@ -1222,7 +1222,8 @@ def main():
     parser.add_argument('--augmentation_num', type=float, default=20, help='number of image augmentations to perform')
     parser.add_argument('--evaluation_num', type=int, default=5, help='number of models to trian for evaluation')
     parser.add_argument('--val_size', type=int, default=25, help='number of validation images')
-    parser.add_argument('--points_num', type=int, default=25, help='number of selected points')
+    parser.add_argument('--num_fg', type=int, default=25, help='number of selected foreground points')
+    parser.add_argument('--num_bg', type=int, default=25, help='number of selected background points')
     args = parser.parse_args()
 
     # set random seed
