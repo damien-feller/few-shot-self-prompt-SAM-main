@@ -576,8 +576,9 @@ def monte_carlo_sample_from_mask(heatmap, mask, ground_truth_mask, base_n_points
     # Check each point against the ground truth mask
     correct_positives = sum(ground_truth_mask[x, y] for x, y in foreground_points)
     correct_negatives = sum(1 - ground_truth_mask[x, y] for x, y in background_points)
+    num_points = n_points_foreground + n_points_background
 
-    return foreground_points, background_points, correct_positives, correct_negatives
+    return foreground_points, background_points, correct_positives, correct_negatives, num_points
 
 
 def sample_points(indices, probabilities, n_points):
@@ -1022,11 +1023,13 @@ def train(args, predictor):
             gt_mask = val_labels_resized[j]
             heatmap_resized = cv2.resize(heatmaps[j], dsize=(1024, 1024),
                                                         interpolation=cv2.INTER_NEAREST)
-            foreground_points, background_points, correct_fg, correct_bg = monte_carlo_sample_from_mask(heatmap_resized, coarse_mask, gt_mask, args.points_num)
+            foreground_points, background_points, correct_fg, correct_bg, num_points = monte_carlo_sample_from_mask(heatmap_resized, coarse_mask, gt_mask, args.points_num)
 
-            fg_accuracy = correct_fg / args.points_num
+            fg_accuracy = correct_fg / num_points
+            print(fg_accuracy)
             fg_accuracies.append(fg_accuracy)
-            bg_accuracy = correct_bg / args.points_num
+            bg_accuracy = correct_bg / num_points
+            print(bg_accuracy)
             bg_accuracies.append(bg_accuracy)
 
             # Combining foreground and background points
