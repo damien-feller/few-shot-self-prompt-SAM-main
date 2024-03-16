@@ -717,6 +717,9 @@ def train(args, predictor):
     all_metrics_SAM_GT = []
     all_metrics_SAM_GTp = []
     all_metrics_SAM_multi = []
+    fg_accuracies = []
+    bg_accuracies = []
+
     data_path = args.data_path
     assert os.path.exists(data_path), 'data path does not exist!'
 
@@ -1013,8 +1016,6 @@ def train(args, predictor):
         SAM_pred_multi = []
         SAM_pred_multi_resized = []
         prediction_time_SAM_multi = 0
-        fg_accuracies = []
-        bg_accuracies = []
 
         for j in range(len(val_images)):
             # Assuming heatmap and mask are available for each image
@@ -1025,10 +1026,8 @@ def train(args, predictor):
             foreground_points, background_points, correct_fg, correct_bg, num_points_fg, num_points_bg = monte_carlo_sample_from_mask(heatmap_resized, coarse_mask, gt_mask, args.points_num)
 
             fg_accuracy = correct_fg / num_points_fg
-            print(fg_accuracy)
             fg_accuracies.append(fg_accuracy)
             bg_accuracy = correct_bg / num_points_bg
-            print(bg_accuracy)
             bg_accuracies.append(bg_accuracy)
 
             # Combining foreground and background points
