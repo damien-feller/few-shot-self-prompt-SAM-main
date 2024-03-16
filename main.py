@@ -1199,8 +1199,8 @@ def train(args, predictor):
     save_aggregated_metrics_with_std(all_metrics, all_metrics_otsu, all_metrics_SAM, all_metrics_SAM_point,
                                      all_metrics_SAM_GT, all_metrics_SAM_GTp, all_metrics_SAM_multi)
 
-    print('Foreground Point Accuracy:', np.mean(fg_accuracy))
-    print('Background Point Accuracy:', np.mean(bg_accuracy))
+    print('Foreground Point Accuracy:', np.mean(fg_accuracies))
+    print('Background Point Accuracy:', np.mean(bg_accuracies))
 
     return model
 
