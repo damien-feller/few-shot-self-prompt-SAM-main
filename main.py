@@ -319,7 +319,6 @@ def visualize_predictions(org_img, images, masks, model, num_samples=3, val=Fals
         edges_img = edges_img[:, :, 0] + edges_img[:, :, 1] + edges_img[:, :, 2]
         edges_img = cv2.normalize(edges_img, None, 0, 255, cv2.NORM_MINMAX)
         edges_img = filters.sobel(edges_img)
-        edges_img = edges_img[ :, 0] + edges_img[ :, 1] + edges_img[:, 2]
         edges_img = cv2.normalize(edges_img, None, 0, 255, cv2.NORM_MINMAX)
 
         # Combine heatmap with edge
@@ -475,6 +474,8 @@ def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT
         logit = cv2.normalize(logits_test[i], None, 0, 255, cv2.NORM_MINMAX)
         logit = 255 - logit
         logit = cv2.normalize(logit, None, 0, 255, cv2.NORM_MINMAX)
+        edges_logit = filters.sobel(logit)
+        edges_logit = cv2.normalize(edges_logit, None, 0, 255, cv2.NORM_MINMAX)
         heatmap_resized = cv2.resize(heatmap[i], dsize=(256, 256), interpolation=cv2.INTER_NEAREST)
         combo = logit + 2*heatmap_resized
         combo = cv2.normalize(combo, None, 0, 255, cv2.NORM_MINMAX)
@@ -534,7 +535,7 @@ def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT
         axes[1, 3].axis('off')
         plt.tight_layout()
 
-        axes[1, 4].imshow(combo, cmap='jet')
+        axes[1, 4].imshow(edges_logit, cmap='jet')
         axes[1, 4].set_title("SAM Mask - BB + Point")
         # axes[1, 4].plot(pointsGT[i][0], pointsGT[i][1], 'g.')
         # show_box(GT_BB[i], axes[1, 4])
