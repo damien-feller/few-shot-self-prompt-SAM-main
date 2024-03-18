@@ -474,10 +474,16 @@ def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT
         logit = cv2.normalize(logits_test[i], None, 0, 255, cv2.NORM_MINMAX)
         logit = 255 - logit
         logit = cv2.normalize(logit, None, 0, 255, cv2.NORM_MINMAX)
-        edges_logit = filters.sobel(logit)
+
+        # Create a mask where SAM_mask is 1
+        masked_logit = np.where(SAM_mask[i] == 1, logit, 0)
+
+        # Apply Sobel edge filter to the masked logit image
+        edges_logit = filters.sobel(masked_logit)
         edges_logit = cv2.normalize(edges_logit, None, 0, 255, cv2.NORM_MINMAX)
+
         heatmap_resized = cv2.resize(heatmap[i], dsize=(256, 256), interpolation=cv2.INTER_NEAREST)
-        combo = logit + 2*heatmap_resized
+        combo = logit + 2 * heatmap_resized
         combo = cv2.normalize(combo, None, 0, 255, cv2.NORM_MINMAX)
 
         fig, axes = plt.subplots(2, 5, figsize=(25, 10))
