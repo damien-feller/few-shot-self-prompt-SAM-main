@@ -542,11 +542,20 @@ def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT
         axes[1, 3].axis('off')
         plt.tight_layout()
 
-        axes[1, 4].imshow(masked_logit, cmap='jet')
-        axes[1, 4].set_title("SAM Mask - BB + Point")
-        # axes[1, 4].plot(pointsGT[i][0], pointsGT[i][1], 'g.')
-        # show_box(GT_BB[i], axes[1, 4])
-        axes[1, 4].axis('off')
+        # axes[1, 4].imshow(masked_logit, cmap='jet')
+        # axes[1, 4].set_title("SAM Mask - BB + Point")
+        # # axes[1, 4].plot(pointsGT[i][0], pointsGT[i][1], 'g.')
+        # # show_box(GT_BB[i], axes[1, 4])
+        # axes[1, 4].axis('off')
+        # plt.tight_layout()
+
+        masked_logit_values = masked_logit.flatten()
+        masked_logit_values = masked_logit_values[masked_logit_values > 0]
+        axes[1, 4].hist(masked_logit_values, bins=50, color='blue', edgecolor='black')
+        axes[1, 4].set_title("Histogram of Masked Logit Values")
+        axes[1, 4].set_xlim([0, 255])  # Assuming logit values are normalized to 0-255
+        axes[1, 4].set_xlabel("Pixel Value")
+        axes[1, 4].set_ylabel("Frequency")
         plt.tight_layout()
 
         plt.savefig(f"/content/visualisation/SAM segmentation {i}.png")
