@@ -476,7 +476,8 @@ def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT
         logit = cv2.normalize(logit, None, 0, 255, cv2.NORM_MINMAX)
 
         # Create a mask where SAM_mask is 1
-        masked_logit = np.where(SAM_mask[i] == 1, logit, 0)
+        SAM_mask_resized = cv2.resize(SAM_mask[i], dsize=(256, 256), interpolation=cv2.INTER_NEAREST)
+        masked_logit = np.where(SAM_mask_resized == 1, logit, 0)
 
         # Apply Sobel edge filter to the masked logit image
         edges_logit = filters.sobel(masked_logit)
