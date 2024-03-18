@@ -542,7 +542,7 @@ def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT
         axes[1, 3].axis('off')
         plt.tight_layout()
 
-        axes[1, 4].imshow(edges_logit, cmap='jet')
+        axes[1, 4].imshow(masked_logit, cmap='jet')
         axes[1, 4].set_title("SAM Mask - BB + Point")
         # axes[1, 4].plot(pointsGT[i][0], pointsGT[i][1], 'g.')
         # show_box(GT_BB[i], axes[1, 4])
