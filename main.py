@@ -551,9 +551,9 @@ def visualise_SAM(org_img, maskGT, thresh_mask, otsu_mask, SAM_mask, SAM_mask_GT
 
         masked_logit_values = masked_logit.flatten()
         masked_logit_values = masked_logit_values[masked_logit_values > 0]
-        axes[1, 4].hist(masked_logit_values, bins=50, color='blue', edgecolor='black')
+        axes[1, 4].hist(masked_logit_values, bins=500, color='blue', edgecolor='black')
         axes[1, 4].set_title("Histogram of Masked Logit Values")
-        axes[1, 4].set_xlim([0, 255])  # Assuming logit values are normalized to 0-255
+        axes[1, 4].set_xlim([150, 255])  # Assuming logit values are normalized to 0-255
         axes[1, 4].set_xlabel("Pixel Value")
         axes[1, 4].set_ylabel("Frequency")
         plt.tight_layout()
