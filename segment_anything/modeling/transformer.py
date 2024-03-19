@@ -495,7 +495,7 @@ class ModifiedAttention(nn.Module):
 
         if self.apply_modification and confidence_map is not None:
             # Apply the modification with the confidence map
-            confidence_map = self._preprocess_confidence_map(confidence_map)
+            confidence_map = preprocess_confidence_map(confidence_map)
             attn = attn * confidence_map  # Element-wise multiplication
 
         attn = torch.softmax(attn, dim=-1)
