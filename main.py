@@ -605,7 +605,7 @@ def monte_carlo_sample_from_mask(heatmap, mask, ground_truth_mask, num_fg = 10, 
     return foreground_points, background_points, correct_positives, correct_negatives, n_points_foreground, n_points_background
 
 
-def sample_points(indices, probabilities, n_points, fg=True):
+def sample_points(indices, probabilities, n_points, fg=True, alpha=2.0):
     """
     Helper function to perform sampling given indices and probabilities.
     :param indices: Tuple of numpy arrays, where each array corresponds to one of the dimensions.
@@ -613,12 +613,15 @@ def sample_points(indices, probabilities, n_points, fg=True):
     :param probabilities: Array of probabilities corresponding to each index.
     :param n_points: Number of points to sample.
     :param fg: Flag to indicate if sampling is for foreground (True) or background (False).
+    :param alpha: Exponent to skew the probabilities. Higher than 1 makes high probs even higher and low probs lower.
     :return: List of sampled points.
     """
     if fg:
         if n_points == 0:
             return []
-        probabilities_normalized = probabilities / probabilities.sum()
+        # Apply transformation to skew the probabilities
+        probabilities_transformed = np.power(probabilities, alpha)
+        probabilities_normalized = probabilities_transformed / probabilities_transformed.sum()
         samples = np.random.choice(len(probabilities), size=n_points, replace=False, p=probabilities_normalized)
         return list(zip(indices[1][samples], indices[0][samples]))
     else:
@@ -630,11 +633,9 @@ def sample_points(indices, probabilities, n_points, fg=True):
 
         # Convert foreground indices for easy lookup
         fg_points_set = set(zip(indices[0], indices[1]))
-        print(np.array(sampled_points).shape)
 
         # Filter out points that lie on the foreground
         filtered_points = [point for point in sampled_points if tuple(point) not in fg_points_set]
-        print(np.array(filtered_points).shape)
 
         return filtered_points
 
