@@ -498,17 +498,16 @@ class ModifiedAttention(nn.Module):
             confidence_map = self.preprocess_confidence_map(confidence_map)
             # Flatten the confidence_map to [4096]
             confidence_map_flat = confidence_map.flatten()
-            # Expand dimensions to match attn's batch and heads dimensions [1, 8, 4096]
-            confidence_map_expanded = confidence_map_flat.unsqueeze(0).unsqueeze(0).expand(attn.size(0), attn.size(1), -1)
+            # # Expand dimensions to match attn's batch and heads dimensions [1, 8, 4096]
+            # confidence_map_expanded = confidence_map_flat.unsqueeze(0).unsqueeze(0).expand(attn.size(0), attn.size(1), -1)
             # print(attn.shape)
             # print(confidence_map_expanded.shape)
-            attn = attn * confidence_map_expanded.unsqueeze(-1)  # Add an unsqueeze to match the final dimension for broadcasting
+            attn = attn * confidence_map_flat
 
         attn = torch.softmax(attn, dim=-1)
 
         # Get output
         out = attn @ v
-        print(attn.shape)
         out = self._recombine_heads(out)
         out = self.out_proj(out)
 
