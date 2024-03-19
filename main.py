@@ -239,7 +239,7 @@ def save_aggregated_metrics_with_std(all_metrics, all_metrics_otsu, all_metrics_
             writer.writerow(metrics)
 
 
-def SAM_predict(predictor, image=None, bounding_box=None, point_prompt=None):
+def SAM_predict(predictor, image=None, bounding_box=None, point_prompt=None, heatmap=None):
     # Check if an image is provided and set it
     if image is not None:
         predictor.set_image(image)
@@ -261,6 +261,7 @@ def SAM_predict(predictor, image=None, bounding_box=None, point_prompt=None):
             point_labels=input_label,
             box=bounding_box[None, :],
             multimask_output=False,
+            confidence_map=heatmap
         )
     else:
         masks_pred, _, logits = predictor.predict(
@@ -268,6 +269,7 @@ def SAM_predict(predictor, image=None, bounding_box=None, point_prompt=None):
             point_labels=input_label,
             box=None,
             multimask_output=False,
+            confidence_map=heatmap
         )
 
 

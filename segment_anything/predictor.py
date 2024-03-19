@@ -97,6 +97,7 @@ class SamPredictor:
         mask_input: Optional[np.ndarray] = None,
         multimask_output: bool = True,
         return_logits: bool = False,
+        confidence_map: Optional[np.ndarray] = None,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Predict masks for the given input prompts, using the currently set image.
@@ -133,6 +134,11 @@ class SamPredictor:
         if not self.is_image_set:
             raise RuntimeError("An image must be set with .set_image(...) before mask prediction.")
 
+        # Convert confidence_map to a tensor if not None
+        confidence_map_torch = None
+        if confidence_map is not None:
+            confidence_map_torch = torch.as_tensor(confidence_map, dtype=torch.float32, device=self.device)[None, :, :, :]
+
         # Transform input prompts
         coords_torch, labels_torch, box_torch, mask_input_torch = None, None, None, None
         if point_coords is not None:
@@ -158,6 +164,7 @@ class SamPredictor:
             mask_input_torch,
             multimask_output,
             return_logits=return_logits,
+            confidence_map=confidence_map_torch,
         )
 
         masks_np = masks[0].detach().cpu().numpy()
