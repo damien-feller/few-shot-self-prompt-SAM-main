@@ -496,9 +496,14 @@ class ModifiedAttention(nn.Module):
         if self.apply_modification and confidence_map is not None:
             # Apply the modification with the confidence map
             confidence_map = self.preprocess_confidence_map(confidence_map)
+            # Ensure confidence_map is a flat tensor with the right dimensions
+            confidence_map_flat = confidence_map.flatten().unsqueeze(0).unsqueeze(1)
+            # Expand confidence_map to match the attn tensor's batch and heads dimension
+            confidence_map_expanded = confidence_map_flat.expand(attn.size(0), attn.size(1), -1)
+            # Multiply attention scores by the confidence map
             print(attn.shape)
-            print(confidence_map.shape)
-            attn = attn * confidence_map  # Element-wise multiplication
+            print(confidence_map_expanded.shape)
+            attn = attn * confidence_map_expanded
 
         attn = torch.softmax(attn, dim=-1)
 
