@@ -137,7 +137,7 @@ class SamPredictor:
         # Convert confidence_map to a tensor if not None
         confidence_map_torch = None
         if confidence_map is not None:
-            confidence_map_torch = torch.as_tensor(confidence_map, dtype=torch.float32, device=self.device)[None, :, :, :]
+            confidence_map_torch = torch.as_tensor(confidence_map, dtype=torch.float32, device=self.device)
 
         # Transform input prompts
         coords_torch, labels_torch, box_torch, mask_input_torch = None, None, None, None
