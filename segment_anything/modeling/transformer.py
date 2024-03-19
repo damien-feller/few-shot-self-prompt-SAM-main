@@ -497,11 +497,11 @@ class ModifiedAttention(nn.Module):
             # Apply the modification with the confidence map
             confidence_map = self.preprocess_confidence_map(confidence_map)
             # Flatten the confidence_map to [4096]
-            confidence_map_flat = confidence_map.view(-1)
+            confidence_map = confidence_map.view(1, 8 4096, 7)
             # # Expand dimensions to match attn's batch and heads dimensions [1, 8, 4096]
             print(attn.shape)
-            print(confidence_map_flat.shape)
-            attn = attn * confidence_map_flat
+            print(confidence_map.shape)
+            attn = attn * confidence_map
 
         attn = torch.softmax(attn, dim=-1)
 
