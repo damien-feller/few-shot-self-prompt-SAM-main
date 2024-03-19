@@ -605,15 +605,36 @@ def monte_carlo_sample_from_mask(heatmap, mask, ground_truth_mask, num_fg = 10, 
     return foreground_points, background_points, correct_positives, correct_negatives, n_points_foreground, n_points_background
 
 
-def sample_points(indices, probabilities, n_points):
+def sample_points(indices, probabilities, n_points, fg=True):
     """
     Helper function to perform sampling given indices and probabilities.
+    :param indices: Tuple of numpy arrays, where each array corresponds to one of the dimensions.
+                    For a 2D image, it should be (row_indices, col_indices).
+    :param probabilities: Array of probabilities corresponding to each index.
+    :param n_points: Number of points to sample.
+    :param fg: Flag to indicate if sampling is for foreground (True) or background (False).
+    :return: List of sampled points.
     """
-    if n_points == 0:
-        return []
-    probabilities_normalized = probabilities / probabilities.sum()
-    samples = np.random.choice(len(probabilities), size=n_points, replace=False, p=probabilities_normalized)
-    return list(zip(indices[1][samples], indices[0][samples]))
+    if fg:
+        if n_points == 0:
+            return []
+        probabilities_normalized = probabilities / probabilities.sum()
+        samples = np.random.choice(len(probabilities), size=n_points, replace=False, p=probabilities_normalized)
+        return list(zip(indices[1][samples], indices[0][samples]))
+    else:
+        if n_points == 0:
+            return []
+        # Sample uniformly across the entire 1024x1024 space
+        all_points = np.indices((1024, 1024)).reshape(2, -1).T
+        sampled_points = all_points[np.random.choice(all_points.shape[0], size=n_points, replace=False)]
+
+        # Convert foreground indices for easy lookup
+        fg_points_set = set(zip(indices[0], indices[1]))
+
+        # Filter out points that lie on the foreground
+        filtered_points = [point for point in sampled_points if tuple(point) not in fg_points_set]
+
+        return filtered_points
 
 
 def sample_top_n_points(indices, probabilities, n_points):
