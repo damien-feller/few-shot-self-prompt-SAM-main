@@ -500,10 +500,6 @@ class ModifiedAttention(nn.Module):
             confidence_map_flat = confidence_map.flatten()
             # Expand dimensions to match attn's batch and heads dimensions [1, 8, 4096]
             confidence_map_expanded = confidence_map_flat.unsqueeze(0).unsqueeze(0).expand(attn.size(0), attn.size(1), -1)
-            # Ensure dimensions match for element-wise multiplication
-            # attn shape is [1, 8, 4096, 7], we only apply the confidence map across the 4096 dimension
-            # We do not need to expand the confidence map to the last dimension of attn as it is not related
-            # Perform element-wise multiplication
             print(attn.shape)
             print(confidence_map_expanded.shape)
             attn = attn * confidence_map_expanded.unsqueeze(-1)  # Add an unsqueeze to match the final dimension for broadcasting
@@ -512,6 +508,7 @@ class ModifiedAttention(nn.Module):
 
         # Get output
         out = attn @ v
+        print(out.shape)
         out = self._recombine_heads(out)
         out = self.out_proj(out)
 
