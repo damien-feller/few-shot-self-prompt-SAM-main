@@ -467,7 +467,7 @@ class ModifiedAttention(nn.Module):
         x = x.transpose(1, 2)
         return x.reshape(b, n_tokens, n_heads * c_per_head)  # B x N_tokens x C
 
-    def preprocess_confidence_map(C, beta=2):
+    def preprocess_confidence_map(self, C: Tensor, beta=2)-> Tensor:
         # Assume C is your confidence map tensor of shape [batch_size, num_heads, seq_len, seq_len]
         # Z-score normalization
         mean = C.mean()
@@ -495,7 +495,7 @@ class ModifiedAttention(nn.Module):
 
         if self.apply_modification and confidence_map is not None:
             # Apply the modification with the confidence map
-            confidence_map = preprocess_confidence_map(confidence_map)
+            confidence_map = self._preprocess_confidence_map(confidence_map)
             attn = attn * confidence_map  # Element-wise multiplication
 
         attn = torch.softmax(attn, dim=-1)
