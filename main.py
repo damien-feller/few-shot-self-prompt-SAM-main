@@ -711,7 +711,7 @@ import cv2
 import numpy as np
 
 
-def visualize_and_save_points(image, mask, points, i, heatmap, SAM_pred, SAM_pred_multi):
+def visualize_and_save_points(image, mask, points, i, heatmap, SAM_pred, SAM_pred_multi, otsu_mask):
     """
     Visualizes points on the image and ground truth mask. Positive points are green,
     negative points are red. Points on the ground truth are circles; others are crosses.
@@ -729,7 +729,7 @@ def visualize_and_save_points(image, mask, points, i, heatmap, SAM_pred, SAM_pre
     ax[0,2].imshow(heatmap, cmap='jet')
     ax[1,0].imshow(SAM_pred, cmap='gray')
     ax[1,1].imshow(SAM_pred_multi, cmap='gray')
-    ax[1,2].imshow(SAM_pred_multi, cmap='gray')
+    ax[1,2].imshow(otsu_mask, cmap='gray')
 
     for x, y, positive, on_ground_truth in points:
         color = 'green' if positive else 'red'
@@ -1103,7 +1103,7 @@ def train(args, predictor):
             mask_SAM = masks_pred[0].astype('uint8')
             if i == 0:
                 visualize_and_save_points(val_images[j], val_labels_resized[j], combined_points,
-                                      j, heatmap_resized, SAM_pred[j], mask_SAM)
+                                      j, heatmap_resized, SAM_pred[j], mask_SAM, otsu_original_resized[j])
             mask_SAM_resized = cv2.resize(mask_SAM, dsize=val_sizes[j], interpolation=cv2.INTER_NEAREST)
             SAM_pred_multi.append(mask_SAM)
             SAM_pred_multi_resized.append(mask_SAM_resized)
