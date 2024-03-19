@@ -987,7 +987,7 @@ def train(args, predictor):
         prediction_time_SAM = 0
         for j in range(len(val_images)):
             start_time = time.time()  # Start timing
-            masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j], point_prompt=None, heatmap=None)
+            masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j], point_prompt=None, heatmap=heatmap[j])
             mask_SAM = masks_pred[0].astype('uint8')
             mask_SAM_resized = cv2.resize(mask_SAM, dsize=val_sizes[j], interpolation=cv2.INTER_NEAREST)
             end_time = time.time()  # End timing
