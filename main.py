@@ -596,7 +596,7 @@ def monte_carlo_sample_from_mask(heatmap, mask, ground_truth_mask, num_fg = 10, 
     foreground_probs = heatmap[foreground_indices]
     foreground_points = sample_points(foreground_indices, foreground_probs, n_points_foreground)
     background_probs = heatmap[background_indices]
-    background_points = sample_points(background_indices, background_probs, n_points_background, fg=False)
+    background_points = sample_points(foreground_indices, background_probs, n_points_background, fg=False)
 
     # Check each point against the ground truth mask
     correct_positives = sum(ground_truth_mask[y, x] for x, y in foreground_points)
