@@ -630,6 +630,7 @@ def sample_points(indices, probabilities, n_points, fg=True):
 
         # Convert foreground indices for easy lookup
         fg_points_set = set(zip(indices[0], indices[1]))
+        print(fg_points_set)
 
         # Filter out points that lie on the foreground
         filtered_points = [point for point in sampled_points if tuple(point) not in fg_points_set]
