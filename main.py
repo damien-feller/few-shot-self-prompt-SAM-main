@@ -1249,6 +1249,7 @@ def train(args, predictor):
 
     print('Foreground Point Accuracy:', np.mean(fg_accuracies))
     print('Background Point Accuracy:', np.mean(bg_accuracies))
+    print('Test')
 
     return model
 
