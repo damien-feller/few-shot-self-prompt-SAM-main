@@ -605,7 +605,7 @@ def monte_carlo_sample_from_mask(heatmap, mask, ground_truth_mask, num_fg = 10, 
     return foreground_points, background_points, correct_positives, correct_negatives, n_points_foreground, n_points_background
 
 
-def sample_points(indices, probabilities, n_points, fg=True, alpha=5.0):
+def sample_points(indices, probabilities, n_points, fg=True, alpha=1.0):
     """
     Helper function to perform sampling given indices and probabilities.
     :param indices: Tuple of numpy arrays, where each array corresponds to one of the dimensions.
