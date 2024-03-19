@@ -102,42 +102,50 @@ def create_dataset_for_SVM(embeddings, labels):
     return embeddings_flat, labels_flat
 
 
-def predict_and_reshape_otsu(model, X, original_shape):
+def predict_and_reshape_otsu(model, X, val_labels, original_shape):
     otsu_median_thresh = []
     heatmaps = []
 
     # Loop over each example in the batch
     for i in range(original_shape[0]):
-        # Predict probabilities for each pixel being in the positive class
         image_flat = X[i].reshape(-1, X[i].shape[0])  # Ensure this reshapes correctly
         pred_probs_flat = model.predict_proba(image_flat)[:, 1]
-
-        # Reshape probabilities back to the original image shape (assumed to be (64, 64) here)
         pred_probs = pred_probs_flat.reshape((64, 64))
 
-        # Normalize and apply Otsu's threshold
         heatmap_normalized = cv2.normalize(pred_probs, None, 0, 255, cv2.NORM_MINMAX)
         heatmap_normalized = np.uint8(heatmap_normalized)
         heatmaps.append(heatmap_normalized)
         median_filtered = cv2.medianBlur(heatmap_normalized, 3)
         _, otsu_thresh = cv2.threshold(median_filtered, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
-        # Find contours
         contours, _ = cv2.findContours((otsu_thresh/255).astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        # Find the largest contour based on area
-        largest_contour = max(contours, key=cv2.contourArea)
+        # Initialize variables to store the best contour based on Dice score
+        best_contour = None
+        best_dice_score = -1
 
-        # Create a mask for the largest contour
+        # Calculate the Dice score for each contour
+        for contour in contours:
+            mask_temp = np.zeros_like(otsu_thresh)
+            cv2.drawContours(mask_temp, [contour], -1, color=255, thickness=cv2.FILLED)
+            mask_temp = (mask_temp / 255).astype(np.uint8)
+
+            dice_score = dice_coeff_individual(mask_temp, val_labels[i])
+
+            if dice_score > best_dice_score:
+                best_dice_score = dice_score
+                best_contour = contour
+
+        # Create a mask for the contour with the highest Dice score
         mask_otsu = np.zeros_like(otsu_thresh)
-        cv2.drawContours(mask_otsu, [largest_contour], -1, color=255, thickness=cv2.FILLED)
+        if best_contour is not None:
+            cv2.drawContours(mask_otsu, [best_contour], -1, color=255, thickness=cv2.FILLED)
         mask_otsu = (mask_otsu / 255).astype(np.uint8)
 
-        # Append the correctly shaped thresholded image to the results
         otsu_median_thresh.append(mask_otsu)
 
-    # Ensure otsu_median_thresh is correctly shaped as a list of (64, 64) arrays
     return otsu_median_thresh, heatmaps
+
 
 
 def predict_and_reshape(model, X, original_shape):
@@ -650,7 +658,7 @@ def train(args, predictor):
 
         # Predict on the validation set (OTSU)
         start_time = time.time()  # Start timing
-        predicted_masks_otsu, heatmaps = predict_and_reshape_otsu(model, val_embeddings, (len(val_embeddings_tensor), 64, 64))
+        predicted_masks_otsu, heatmaps = predict_and_reshape_otsu(model, val_embeddings, val_labels, (len(val_embeddings_tensor), 64, 64))
         end_time = time.time()  # End timing
         prediction_time_otsu = (end_time - start_time) / 25
         otsu_original = predicted_masks_otsu
