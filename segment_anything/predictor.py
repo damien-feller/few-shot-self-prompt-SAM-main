@@ -181,6 +181,7 @@ class SamPredictor:
         mask_input: Optional[torch.Tensor] = None,
         multimask_output: bool = True,
         return_logits: bool = False,
+        confidence_map: torch.Tensor = None,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Predict masks for the given input prompts, using the currently set image.
@@ -239,6 +240,7 @@ class SamPredictor:
             sparse_prompt_embeddings=sparse_embeddings,
             dense_prompt_embeddings=dense_embeddings,
             multimask_output=multimask_output,
+            confidence_map = confidence_map
         )
 
         # Upscale the masks to the original image resolution
