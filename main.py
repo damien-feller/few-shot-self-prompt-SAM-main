@@ -1007,11 +1007,10 @@ def train(args, predictor):
             input_point = np.array([[points_otsu[j][0], points_otsu[j][1], 1]])
             start_time = time.time()  # Start timing
             masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j], point_prompt=None, heatmap=heatmaps[j])
-            mask_SAM = masks_pred[0].astype('uint8')
+            mask_SAM = masks_pred.astype('uint8')
             mask_SAM_resized = cv2.resize(mask_SAM, dsize=val_sizes[j], interpolation=cv2.INTER_NEAREST)
             end_time = time.time()  # End timing
             prediction_time_SAM += (end_time - start_time)
-            print(np.array(mask_SAM).shape)
             SAM_pred.append(mask_SAM)
             SAM_pred_resized.append(mask_SAM_resized)
         prediction_time_SAM /= len(val_images)
@@ -1030,7 +1029,7 @@ def train(args, predictor):
             #                                  point_prompt=input_point,  heatmap=heatmaps[j])
             masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j],
                                              point_prompt=None,  heatmap=None)
-            mask_SAM = masks_pred[0].astype('uint8')
+            mask_SAM = masks_pred.astype('uint8')
             logit_test = logits[0].astype('uint8')
             mask_SAM_resized = cv2.resize(mask_SAM, dsize=val_sizes[j], interpolation=cv2.INTER_NEAREST)
             end_time = time.time()  # End timing
@@ -1051,7 +1050,7 @@ def train(args, predictor):
                 start_time = time.time()  # Start timing
                 masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_GT[j],
                                                  point_prompt=None, heatmap=heatmaps[j])
-                mask_SAM = masks_pred[0].astype('uint8')
+                mask_SAM = masks_pred.astype('uint8')
                 mask_SAM_GT_resized = cv2.resize(mask_SAM, dsize=val_sizes[j], interpolation=cv2.INTER_NEAREST)
                 end_time = time.time()  # End timing
                 prediction_time_SAM_GT += (end_time - start_time)
@@ -1074,7 +1073,7 @@ def train(args, predictor):
                 start_time = time.time()  # Start timing
                 masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_GT[j],
                                                  point_prompt=input_point, heatmap=heatmaps[j])
-                mask_SAM = masks_pred[0].astype('uint8')
+                mask_SAM = masks_pred.astype('uint8')
                 mask_SAM_GTp_resized = cv2.resize(mask_SAM, dsize=val_sizes[j], interpolation=cv2.INTER_NEAREST)
                 end_time = time.time()  # End timing
                 prediction_time_SAM_GTp += (end_time - start_time)
@@ -1126,7 +1125,7 @@ def train(args, predictor):
             end_time = time.time()
             prediction_time_SAM_multi += (end_time - start_time)
 
-            mask_SAM = masks_pred[0].astype('uint8')
+            mask_SAM = masks_pred.astype('uint8')
             if i == 0:
                 visualize_and_save_points(val_images[j], val_labels_resized[j], combined_points,
                                       j, heatmap_resized, SAM_pred[j], mask_SAM, otsu_original_resized[j])
