@@ -1102,7 +1102,7 @@ def train(args, predictor):
 
             start_time = time.time()
             if input_points is not None:
-                masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=None,
+                masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j],
                                                  point_prompt=input_points, heatmap=heatmaps[j])
             else:
                 masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j], heatmap=heatmaps[j])
