@@ -498,12 +498,9 @@ class ModifiedAttention(nn.Module):
             confidence_map = self.preprocess_confidence_map(confidence_map)
             # Flatten the confidence_map to [4096]
             confidence_map_flat = confidence_map.view(-1)
-            confidence_map_flat = confidence_map_flat.unsqueeze(0)  # Add batch dimension
-            confidence_map_flat = confidence_map_flat.unsqueeze(1)  # Add head dimension
-            confidence_map_flat = confidence_map_flat.unsqueeze(-1)  # Prepare for broadcasting over the last dimension
-            # # Expand dimensions to match attn's batch and heads dimensions [1, 8, 4096]
+            confidence_map_flat = confidence_map_flat..unsqueeze(0).unsqueeze(1).unsqueeze(-1)  # Add batch dimension
             # print(attn.shape)
-            # print(confidence_map_flat.shape)
+            print(confidence_map_flat.shape)
             attn = attn * confidence_map_flat
 
         print(attn.shape)
