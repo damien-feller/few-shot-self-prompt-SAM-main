@@ -502,8 +502,8 @@ class ModifiedAttention(nn.Module):
             confidence_map_flat = confidence_map_flat.unsqueeze(1)  # Add head dimension
             confidence_map_flat = confidence_map_flat.unsqueeze(-1)  # Prepare for broadcasting over the last dimension
             # # Expand dimensions to match attn's batch and heads dimensions [1, 8, 4096]
-            print(attn.shape)
-            print(confidence_map_flat.shape)
+            # print(attn.shape)
+            # print(confidence_map_flat.shape)
             attn = attn * confidence_map_flat
 
         attn = torch.softmax(attn, dim=-1)
