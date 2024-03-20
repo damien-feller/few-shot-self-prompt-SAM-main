@@ -274,8 +274,6 @@ def SAM_predict(predictor, image=None, bounding_box=None, point_prompt=None, hea
 
     # Step 1: Invert the mask
     mask_SAM = cv2.normalize(masks_pred.astype('uint8'), None, 0, 255, cv2.NORM_MINMAX)
-    print(np.min(mask_SAM))
-    print(np.max(mask_SAM))
     inverted_mask = cv2.bitwise_not(mask_SAM)
 
     # Step 2: Flood fill from the corner (e.g., top-left corner) with white
@@ -288,8 +286,7 @@ def SAM_predict(predictor, image=None, bounding_box=None, point_prompt=None, hea
 
     # Optionally, you can combine the filled holes with the original mask to ensure only the holes are filled
     final_result = cv2.bitwise_or(mask_SAM, holes_filled)
-    print(np.min(final_result))
-    print(final_result)
+    _, final_result = cv2.threshold(final_result, 127, 255, cv2.THRESH_BINARY)
 
 
     return final_result, logits
