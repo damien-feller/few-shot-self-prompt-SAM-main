@@ -1002,6 +1002,10 @@ def train(args, predictor):
         SAM_point_pred_resized = []
         prediction_time_SAM_point = 0
         logits_test = []
+
+        for k in range(len(heatmaps)):
+            heatmaps[k] = cv2.medianBlur(heatmaps[k], 3)
+
         for j in range(len(val_images)):
             input_point = np.array([[points_otsu[j][0], points_otsu[j][1], 1]])
             start_time = time.time()  # Start timing
@@ -1098,7 +1102,7 @@ def train(args, predictor):
 
             start_time = time.time()
             if input_points is not None:
-                masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j],
+                masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=None,
                                                  point_prompt=input_points, heatmap=heatmaps[j])
             else:
                 masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j], heatmap=heatmaps[j])
