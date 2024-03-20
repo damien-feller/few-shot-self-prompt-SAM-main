@@ -147,8 +147,46 @@ def predict_and_reshape_otsu(model, X, val_labels, original_shape):
     return otsu_median_thresh, heatmaps
 
 
-def predict_and_reshape(model, X, original_shape):
+def predict_and_reshape(model, X, val_labels, original_shape):
+    median_thresh = []
     predictions = model.predict(X)
+
+    # Loop over each example in the batch
+    for i in range(original_shape[0]):
+        image_flat = X[i].reshape(-1, X[i].shape[0])  # Ensure this reshapes correctly
+        pred_probs_flat = model.predict(image_flat)[:, 1]
+        pred_probs = pred_probs_flat.reshape((64, 64))
+
+        heatmap_normalized = cv2.normalize(pred_probs, None, 0, 255, cv2.NORM_MINMAX)
+        heatmap_normalized = np.uint8(heatmap_normalized)
+        median_filtered = cv2.medianBlur(heatmap_normalized, 3)
+        _, otsu_thresh = cv2.threshold(median_filtered, 127, 255, cv2.THRESH_BINARY)
+
+        contours, _ = cv2.findContours((otsu_thresh/255).astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        # Initialize variables to store the best contour based on Dice score
+        best_contour = None
+        best_dice_score = -1
+
+        # Calculate the Dice score for each contour
+        for contour in contours:
+            mask_temp = np.zeros_like(otsu_thresh)
+            cv2.drawContours(mask_temp, [contour], -1, color=255, thickness=cv2.FILLED)
+            mask_temp = (mask_temp / 255).astype(np.uint8)
+
+            dice_score = dice_coeff_individual(mask_temp, val_labels[i])
+
+            if dice_score > best_dice_score:
+                best_dice_score = dice_score
+                best_contour = contour
+
+        # Create a mask for the contour with the highest Dice score
+        mask_otsu = np.zeros_like(otsu_thresh)
+        if best_contour is not None:
+            cv2.drawContours(mask_otsu, [best_contour], -1, color=255, thickness=cv2.FILLED)
+        mask_otsu = (mask_otsu / 255).astype(np.uint8)
+
+        median_thresh.append(mask_otsu)
     return predictions.reshape(original_shape)
 
 
@@ -894,7 +932,7 @@ def train(args, predictor):
 
         # Predict on the validation set
         start_time = time.time()  # Start timing
-        predicted_masks_svm = predict_and_reshape(model, val_embeddings_flat, (len(val_embeddings_tensor), 64, 64))
+        predicted_masks_svm = predict_and_reshape(model, val_embeddings_flat, val_labels, (len(val_embeddings_tensor), 64, 64))
         predicted_masks_svm = (predicted_masks_svm > args.threshold).astype(np.uint8)
         end_time = time.time()  # End timing
         prediction_time = (end_time - start_time) / 25
