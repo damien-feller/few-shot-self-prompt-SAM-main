@@ -512,5 +512,6 @@ class ModifiedAttention(nn.Module):
         out = attn @ v
         out = self._recombine_heads(out)
         out = self.out_proj(out)
+        print(out.shape)
 
         return out
