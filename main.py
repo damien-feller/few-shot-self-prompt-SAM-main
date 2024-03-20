@@ -290,7 +290,7 @@ def SAM_predict(predictor, image=None, bounding_box=None, point_prompt=None, hea
     # Step 2: Flood fill from the corner (e.g., top-left corner) with white
     h, w = inverted_mask.shape[:2]
     mask_filled = np.zeros((h + 2, w + 2), np.uint8)  # Notice the size needs to be 2 pixels more than the original mask
-    cv2.floodFill(inverted_mask, mask_filled, (0, 0), 255)
+    cv2.floodFill(inverted_mask, mask_filled, (0, 0), 1)
 
     # Step 3: Invert back
     holes_filled = cv2.bitwise_not(inverted_mask)
