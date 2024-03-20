@@ -284,22 +284,11 @@ def SAM_predict(predictor, image=None, bounding_box=None, point_prompt=None, hea
     mask_SAM = np.zeros_like(mask)
     cv2.drawContours(mask_SAM, [largest_contour], -1, color=1, thickness=cv2.FILLED)
 
-    # Step 1: Invert the mask
-    inverted_mask = cv2.bitwise_not(mask_SAM)
-
-    # Step 2: Flood fill from the corner (e.g., top-left corner) with white
-    h, w = inverted_mask.shape[:2]
-    mask_filled = np.zeros((h + 2, w + 2), np.uint8)  # Notice the size needs to be 2 pixels more than the original mask
-    cv2.floodFill(inverted_mask, mask_filled, (0, 0), 1)
-
-    # Step 3: Invert back
-    holes_filled = cv2.bitwise_not(inverted_mask)
-
-    # Optionally, you can combine the filled holes with the original mask to ensure only the holes are filled
-    final_result = cv2.bitwise_or(mask_SAM, holes_filled)
+    kernel = np.ones((10, 10), np.uint8)
+    closing = cv2.morphologyEx(mask_SAM, cv2.MORPH_CLOSE, kernel)
 
 
-    return final_result, logits
+    return closing, logits
 
 
 def flatten_and_concatenate_arrays(array_list):
