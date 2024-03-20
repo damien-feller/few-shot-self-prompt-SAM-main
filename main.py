@@ -274,8 +274,8 @@ def SAM_predict(predictor, image=None, bounding_box=None, point_prompt=None, hea
 
     # Find contours
     masks_pred = cv2.normalize(masks_pred.astype('uint8'), None, 0, 255, cv2.NORM_MINMAX).astype('uint8')
-    _, masks_pred = cv2.threshold(masks_pred, 127, 255, cv2.THRESH_BINARY).astype('uint8')
-    contours, _ = cv2.findContours(masks_pred, cv2.RETR_EXTERNAL,
+    _, masks_pred = cv2.threshold(masks_pred, 127, 255, cv2.THRESH_BINARY)
+    contours, _ = cv2.findContours(masks_pred.astype('uint8'), cv2.RETR_EXTERNAL,
                                    cv2.CHAIN_APPROX_SIMPLE)
 
     # Find the largest contour based on area
