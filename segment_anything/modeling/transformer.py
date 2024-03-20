@@ -506,12 +506,12 @@ class ModifiedAttention(nn.Module):
             # print(confidence_map_flat.shape)
             attn = attn * confidence_map_flat
 
+        print(attn.shape)
         attn = torch.softmax(attn, dim=-1)
 
         # Get output
         out = attn @ v
         out = self._recombine_heads(out)
         out = self.out_proj(out)
-        print(out.shape)
 
         return out
