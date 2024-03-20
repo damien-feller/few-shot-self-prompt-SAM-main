@@ -272,31 +272,34 @@ def SAM_predict(predictor, image=None, bounding_box=None, point_prompt=None, hea
             confidence_map=heatmap
         )
 
-    # # Step 1: Invert the mask
-    # mask_SAM = cv2.normalize(masks_pred.astype('uint8'), None, 0, 255, cv2.NORM_MINMAX)
-    # inverted_mask = cv2.bitwise_not(mask_SAM)
-    #
-    # # Step 2: Flood fill from the corner (e.g., top-left corner) with white
-    # h, w = inverted_mask.shape[:2]
-    # mask_filled = np.zeros((h + 2, w + 2), np.uint8)  # Notice the size needs to be 2 pixels more than the original mask
-    # cv2.floodFill(inverted_mask, mask_filled, (0, 0), 255)
-    #
-    # # Step 3: Invert back
-    # holes_filled = cv2.bitwise_not(inverted_mask)
-    #
-    # # Optionally, you can combine the filled holes with the original mask to ensure only the holes are filled
-    # final_result = cv2.bitwise_or(mask_SAM, holes_filled)
-    # final_result = cv2.normalize(final_result.astype('uint8'), None, 0, 255, cv2.NORM_MINMAX)
-    # mask = final_result > 127
-    # thresholded_image = np.zeros_like(final_result)
-    # thresholded_image[mask] = 1
+    # Find contours
+    mask = masks_pred[0].astype('uint8')
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL,
+                                   cv2.CHAIN_APPROX_SIMPLE)
 
-    kernel = np.ones((10, 10), np.uint8)
-    closing = cv2.morphologyEx(masks_pred.astype('uint8'), cv2.MORPH_CLOSE, kernel)
-    closing = cv2.normalize(closing.astype('uint8'), None, 0, 1, cv2.NORM_MINMAX)
+    # Find the largest contour based on area
+    largest_contour = max(contours, key=cv2.contourArea)
+
+    # Create a mask for the largest contour
+    mask_SAM = np.zeros_like(mask)
+    cv2.drawContours(mask_SAM, [largest_contour], -1, color=1, thickness=cv2.FILLED)
+
+    # Step 1: Invert the mask
+    inverted_mask = cv2.bitwise_not(mask_SAM)
+
+    # Step 2: Flood fill from the corner (e.g., top-left corner) with white
+    h, w = inverted_mask.shape[:2]
+    mask_filled = np.zeros((h + 2, w + 2), np.uint8)  # Notice the size needs to be 2 pixels more than the original mask
+    cv2.floodFill(inverted_mask, mask_filled, (0, 0), 255)
+
+    # Step 3: Invert back
+    holes_filled = cv2.bitwise_not(inverted_mask)
+
+    # Optionally, you can combine the filled holes with the original mask to ensure only the holes are filled
+    final_result = cv2.bitwise_or(mask_SAM, holes_filled)
 
 
-    return closing, logits
+    return final_result, logits
 
 
 def flatten_and_concatenate_arrays(array_list):
