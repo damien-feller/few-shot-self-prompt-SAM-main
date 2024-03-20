@@ -980,12 +980,16 @@ def train(args, predictor):
             BBIoU = calculate_iou(bboxVal, bboxOtsu)
             BBIoUOtsu.append(BBIoU)
 
+        for k in range(len(heatmaps)):
+            heatmaps[k] = cv2.medianBlur(heatmaps[k], 3)
+
         # Get evaluations from SAM
         print('Evaluating using SAM', i)
         SAM_pred = []
         SAM_pred_resized = []
         prediction_time_SAM = 0
         for j in range(len(val_images)):
+            input_point = np.array([[points_otsu[j][0], points_otsu[j][1], 1]])
             start_time = time.time()  # Start timing
             masks_pred, logits = SAM_predict(predictor, val_images[j], bounding_box=BBoxes_Otsu[j], point_prompt=None, heatmap=heatmaps[j])
             mask_SAM = masks_pred[0].astype('uint8')
@@ -1002,9 +1006,6 @@ def train(args, predictor):
         SAM_point_pred_resized = []
         prediction_time_SAM_point = 0
         logits_test = []
-
-        for k in range(len(heatmaps)):
-            heatmaps[k] = cv2.medianBlur(heatmaps[k], 3)
 
         for j in range(len(val_images)):
             input_point = np.array([[points_otsu[j][0], points_otsu[j][1], 1]])
