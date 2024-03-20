@@ -1011,11 +1011,11 @@ def train(args, predictor):
             mask_SAM_resized = cv2.resize(mask_SAM, dsize=val_sizes[j], interpolation=cv2.INTER_NEAREST)
             end_time = time.time()  # End timing
             prediction_time_SAM += (end_time - start_time)
+            print(np.array(mask_SAM).shape)
             SAM_pred.append(mask_SAM)
             SAM_pred_resized.append(mask_SAM_resized)
         prediction_time_SAM /= len(val_images)
         print('Finished SAM')
-        print(np.array(SAM_pred).shape)
 
         print('Evaluating using SAM - Point', i)
         SAM_point_pred = []
