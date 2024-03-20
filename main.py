@@ -289,7 +289,7 @@ def SAM_predict(predictor, image=None, bounding_box=None, point_prompt=None, hea
     # Optionally, you can combine the filled holes with the original mask to ensure only the holes are filled
     final_result = cv2.bitwise_or(mask_SAM, holes_filled)
     print(np.min(final_result))
-    print((final_result.shape))
+    print(final_result.shape)
 
 
     return final_result, logits
