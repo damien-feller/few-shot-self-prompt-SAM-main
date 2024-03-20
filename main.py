@@ -274,7 +274,6 @@ def SAM_predict(predictor, image=None, bounding_box=None, point_prompt=None, hea
 
     # Find contours
     mask = masks_pred[0].astype('uint8')
-    print(mask.shape)
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL,
                                    cv2.CHAIN_APPROX_SIMPLE)
 
@@ -284,11 +283,9 @@ def SAM_predict(predictor, image=None, bounding_box=None, point_prompt=None, hea
     # Create a mask for the largest contour
     mask_SAM = np.zeros_like(mask)
     cv2.drawContours(mask_SAM, [largest_contour], -1, color=1, thickness=cv2.FILLED)
-    print(mask_SAM.shape)
 
     kernel = np.ones((10, 10), np.uint8)
     closing = cv2.morphologyEx(mask_SAM, cv2.MORPH_CLOSE, kernel)
-    print(closing.shape)
 
 
     return closing, logits
@@ -1129,6 +1126,7 @@ def train(args, predictor):
             prediction_time_SAM_multi += (end_time - start_time)
 
             mask_SAM = masks_pred[0].astype('uint8')
+            print(SAM_pred.shape)
             if i == 0:
                 visualize_and_save_points(val_images[j], val_labels_resized[j], combined_points,
                                       j, heatmap_resized, SAM_pred[j], mask_SAM, otsu_original_resized[j])
