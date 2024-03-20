@@ -273,7 +273,7 @@ def SAM_predict(predictor, image=None, bounding_box=None, point_prompt=None, hea
         )
 
     # Find contours
-    _, masks_pred = cv2.threshold(masks_pred, 127, 255, cv2.THRESH_BINARY)
+    _, masks_pred = cv2.threshold(masks_pred.astype('uint8'), 127, 255, cv2.THRESH_BINARY)
     contours, _ = cv2.findContours(masks_pred.astype('uint8'), cv2.RETR_EXTERNAL,
                                    cv2.CHAIN_APPROX_SIMPLE)
 
