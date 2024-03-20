@@ -1126,7 +1126,6 @@ def train(args, predictor):
             prediction_time_SAM_multi += (end_time - start_time)
 
             mask_SAM = masks_pred[0].astype('uint8')
-            print(SAM_pred.shape)
             if i == 0:
                 visualize_and_save_points(val_images[j], val_labels_resized[j], combined_points,
                                       j, heatmap_resized, SAM_pred[j], mask_SAM, otsu_original_resized[j])
