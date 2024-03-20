@@ -273,7 +273,7 @@ def SAM_predict(predictor, image=None, bounding_box=None, point_prompt=None, hea
         )
 
     # Step 1: Invert the mask
-    mask_SAM = cv2.normalize(masks_pred, None, 0, 255, cv2.NORM_MINMAX).astype('uint8')
+    mask_SAM = cv2.normalize(masks_pred.astype('uint8'), None, 0, 255, cv2.NORM_MINMAX)
     inverted_mask = cv2.bitwise_not(mask_SAM)
 
     # Step 2: Flood fill from the corner (e.g., top-left corner) with white
