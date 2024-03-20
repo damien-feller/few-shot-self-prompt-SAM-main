@@ -1015,6 +1015,7 @@ def train(args, predictor):
             SAM_pred_resized.append(mask_SAM_resized)
         prediction_time_SAM /= len(val_images)
         print('Finished SAM')
+        print(np.array(SAM_pred).shape)
 
         print('Evaluating using SAM - Point', i)
         SAM_point_pred = []
