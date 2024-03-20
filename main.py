@@ -272,20 +272,8 @@ def SAM_predict(predictor, image=None, bounding_box=None, point_prompt=None, hea
             confidence_map=heatmap
         )
 
-    # Find contours
-    _, masks_pred = cv2.threshold(masks_pred.astype('uint8'), 127, 255, cv2.THRESH_BINARY)
-    contours, _ = cv2.findContours(masks_pred.astype('uint8'), cv2.RETR_EXTERNAL,
-                                   cv2.CHAIN_APPROX_SIMPLE)
-
-    # Find the largest contour based on area
-    largest_contour = max(contours, key=cv2.contourArea)
-
-    # Create a mask for the largest contour
-    mask_SAM = np.zeros_like(masks_pred)
-    cv2.drawContours(mask_SAM, [largest_contour], -1, color=255, thickness=cv2.FILLED)
-
     # Step 1: Invert the mask
-    mask_SAM = cv2.normalize(mask_SAM, None, 0, 255, cv2.NORM_MINMAX).astype('uint8')
+    mask_SAM = cv2.normalize(masks_pred, None, 0, 255, cv2.NORM_MINMAX).astype('uint8')
     inverted_mask = cv2.bitwise_not(mask_SAM)
 
     # Step 2: Flood fill from the corner (e.g., top-left corner) with white
