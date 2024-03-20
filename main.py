@@ -272,8 +272,35 @@ def SAM_predict(predictor, image=None, bounding_box=None, point_prompt=None, hea
             confidence_map=heatmap
         )
 
+    # Find contours
+    masks_pred = cv2.normalize(masks_pred, None, 0, 255, cv2.NORM_MINMAX).astype('uint8')
+    contours, _ = cv2.findContours((masks_pred / 255).astype(np.uint8), cv2.RETR_EXTERNAL,
+                                   cv2.CHAIN_APPROX_SIMPLE)
 
-    return masks_pred, logits
+    # Find the largest contour based on area
+    largest_contour = max(contours, key=cv2.contourArea)
+
+    # Create a mask for the largest contour
+    mask_SAM = np.zeros_like(masks_pred)
+    cv2.drawContours(mask_SAM, [largest_contour], -1, color=255, thickness=cv2.FILLED)
+
+    # Step 1: Invert the mask
+    mask_SAM = cv2.normalize(mask_SAM, None, 0, 255, cv2.NORM_MINMAX).astype('uint8')
+    inverted_mask = cv2.bitwise_not(mask_SAM)
+
+    # Step 2: Flood fill from the corner (e.g., top-left corner) with white
+    h, w = inverted_mask.shape[:2]
+    mask_filled = np.zeros((h + 2, w + 2), np.uint8)  # Notice the size needs to be 2 pixels more than the original mask
+    cv2.floodFill(inverted_mask, mask_filled, (0, 0), 255)
+
+    # Step 3: Invert back
+    holes_filled = cv2.bitwise_not(inverted_mask)
+
+    # Optionally, you can combine the filled holes with the original mask to ensure only the holes are filled
+    final_result = cv2.bitwise_or(mask_SAM, holes_filled)
+
+
+    return final_result, logits
 
 
 def flatten_and_concatenate_arrays(array_list):
