@@ -288,11 +288,13 @@ def SAM_predict(predictor, image=None, bounding_box=None, point_prompt=None, hea
     final_result = cv2.bitwise_or(mask_SAM, holes_filled)
     final_result = cv2.normalize(final_result.astype('uint8'), None, 0, 255, cv2.NORM_MINMAX)
     print(final_result.shape)
-    _, final_result = cv2.threshold(final_result.astype('uint8'), 127, 255, cv2.THRESH_BINARY)
-    print(final_result.shape)
+    mask = final_result > 127
+    thresholded_image = np.zeros_like(final_result)
+    thresholded_image[mask] = 1
+    print(thresholded_image.shape)
 
 
-    return final_result, logits
+    return thresholded_image, logits
 
 
 def flatten_and_concatenate_arrays(array_list):
