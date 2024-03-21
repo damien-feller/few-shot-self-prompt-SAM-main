@@ -676,8 +676,11 @@ def sample_points(indices, probabilities, n_points, fg=True, alpha=10.0):
             return []
         # Apply transformation to skew the probabilities
         probabilities_transformed = np.power(probabilities, alpha)
-        print(probabilities_transformed.sum())
-        probabilities_normalized = probabilities_transformed / probabilities_transformed.sum()
+        total_prob = probabilities_transformed.sum()
+        if total_prob > 0:
+            probabilities_normalized = probabilities_transformed / total_prob
+        else:
+            probabilities_normalized = probabilities/probabilities.sum()
         samples = np.random.choice(len(probabilities), size=n_points, replace=False, p=probabilities_normalized)
         return list(zip(indices[1][samples], indices[0][samples]))
     else:
