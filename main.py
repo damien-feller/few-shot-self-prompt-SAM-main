@@ -933,7 +933,6 @@ def train(args, predictor):
         # Predict on the validation set
         start_time = time.time()  # Start timing
         predicted_masks_svm = predict_and_reshape(model, val_embeddings_flat, val_labels, (len(val_embeddings_tensor), 64, 64))
-        predicted_masks_svm = (predicted_masks_svm > args.threshold).astype(np.uint8)
         end_time = time.time()  # End timing
         prediction_time = (end_time - start_time) / 25
         pred_original = predicted_masks_svm
