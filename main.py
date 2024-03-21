@@ -651,7 +651,7 @@ def monte_carlo_sample_from_mask(heatmap, mask, ground_truth_mask, num_fg = 10, 
     foreground_probs = heatmap[foreground_indices]
     foreground_points = sample_points(foreground_indices, foreground_probs, n_points_foreground)
     background_probs = heatmap[background_indices]
-    background_points = sample_points(foreground_indices, background_probs, n_points_background, fg=False)
+    background_points = sample_points(background_indices, background_probs, n_points_background, fg=False)
 
     # Check each point against the ground truth mask
     correct_positives = sum(ground_truth_mask[y, x] for x, y in foreground_points)
@@ -682,17 +682,9 @@ def sample_points(indices, probabilities, n_points, fg=True, alpha=1.0):
     else:
         if n_points == 0:
             return []
-        # Sample uniformly across the entire 1024x1024 space
-        all_points = np.indices((1024, 1024)).reshape(2, -1).T
-        sampled_points = all_points[np.random.choice(all_points.shape[0], size=n_points, replace=False)]
+        samples = np.random.choice(len(probabilities), size=n_points, replace=False)
+        return list(zip(indices[1][samples], indices[0][samples]))
 
-        # Convert foreground indices for easy lookup
-        fg_points_set = set(zip(indices[0], indices[1]))
-
-        # Filter out points that lie on the foreground
-        filtered_points = [point for point in sampled_points if tuple(point) not in fg_points_set]
-
-        return filtered_points
 
 
 def sample_top_n_points(indices, probabilities, n_points):
