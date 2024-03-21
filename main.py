@@ -649,7 +649,7 @@ def monte_carlo_sample_from_mask(heatmap, mask, ground_truth_mask, num_fg = 10, 
 
     # Sampling points
     foreground_probs = heatmap[foreground_indices]
-    foreground_points = sample_points(foreground_indices, foreground_probs, n_points_foreground, alpha = 20)
+    foreground_points = sample_points(foreground_indices, foreground_probs, n_points_foreground, alpha = 5)
     background_probs = heatmap[background_indices]
     background_points = sample_points(background_indices, background_probs, n_points_background, fg=False)
 
