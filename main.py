@@ -149,7 +149,7 @@ def predict_and_reshape_otsu(model, X, val_labels, original_shape):
 
 def predict_and_reshape(model, X, val_labels, original_shape):
     median_thresh = []
-    predictions = model.predict(X)
+
 
     # Loop over each example in the batch
     for i in range(original_shape[0]):
@@ -187,7 +187,7 @@ def predict_and_reshape(model, X, val_labels, original_shape):
         mask_otsu = (mask_otsu / 255).astype(np.uint8)
 
         median_thresh.append(mask_otsu)
-    return predictions.reshape(original_shape)
+    return median_thresh
 
 
 def dice_coeff_individual(pred, target):
