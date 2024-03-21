@@ -153,7 +153,7 @@ def predict_and_reshape(model, X, val_labels, original_shape):
 
     # Loop over each example in the batch
     for i in range(original_shape[0]):
-        image_flat = X[i].reshape(-1, X[i].shape[0])  # Ensure this reshapes correctly
+        image_flat = X[(i*4096):((i+1)*4096)]
         pred_probs_flat = model.predict(image_flat)
         pred_probs = pred_probs_flat.reshape((64, 64))
 
