@@ -682,6 +682,7 @@ def sample_points(indices, probabilities, n_points, fg=True, alpha=10.0):
             print('yay')
         else:
             probabilities_normalized = probabilities/probabilities.sum()
+            print('boo')
         samples = np.random.choice(len(probabilities), size=n_points, replace=False, p=probabilities_normalized)
         return list(zip(indices[1][samples], indices[0][samples]))
     else:
