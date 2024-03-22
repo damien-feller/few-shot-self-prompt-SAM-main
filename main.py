@@ -679,7 +679,7 @@ def sample_points(indices, probabilities, n_points, fg=True, alpha=10.0):
         plt.figure()
         plt.hist(before, bins=50, color='red', alpha=0.7, log=True)
         plt.savefig(f"/content/visualisation/Prob before.png")
-        probabilities_transformed = np.power(probabilities, alpha)
+        probabilities_transformed = probabilities^alpha
         after = cv2.normalize(probabilities_transformed, None, 0, 255, cv2.NORM_MINMAX)
         plt.figure()
         plt.hist(after, bins=50, color='red', alpha=0.7, log=True)
