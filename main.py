@@ -694,9 +694,9 @@ def sample_points(indices, probabilities, n_points, fg=True, alpha=10.0):
         # Re-normalize these probabilities to ensure they sum to 1
         total_prob = probabilities_transformed.sum()
         if total_prob > 0:
-            probabilities_normalized = probabilities_transformed
+            probabilities_normalized = probabilities_transformed/probabilities_transformed.sum()
         else:
-            probabilities_normalized = probabilities
+            probabilities_normalized = probabilities/probabilities.sum()
 
         samples = np.random.choice(len(probabilities), size=n_points, replace=False, p=probabilities_normalized.flatten())
         return list(zip(indices[1][samples], indices[0][samples]))
