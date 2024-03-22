@@ -675,7 +675,13 @@ def sample_points(indices, probabilities, n_points, fg=True, alpha=10.0):
         if n_points == 0:
             return []
         # Apply transformation to skew the probabilities
+        plt.figure()
+        plt.imshow(probabilities, cmap='jet')
+        plt.savefig(f"/content/visualisation/Prob before.png")
         probabilities_transformed = np.power(probabilities, alpha)
+        plt.figure()
+        plt.imshow(probabilities_transformed, cmap='jet')
+        plt.savefig(f"/content/visualisation/Prob after.png")
         total_prob = probabilities_transformed.sum()
         if total_prob > 0:
             probabilities_normalized = probabilities_transformed / total_prob
