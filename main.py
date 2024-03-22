@@ -674,21 +674,30 @@ def sample_points(indices, probabilities, n_points, fg=True, alpha=10.0):
     if fg:
         if n_points == 0:
             return []
-        # Apply transformation to skew the probabilities
-        before = cv2.normalize(probabilities, None, 0, 255, cv2.NORM_MINMAX)
+        # Normalize probabilities to 0-255 range before transformation
+        probabilities = cv2.normalize(probabilities, None, 0, 255, cv2.NORM_MINMAX)
         plt.figure()
-        plt.hist(before, bins=50, color='red', alpha=0.7, log=True)
+        plt.hist(probabilities, bins=50, color='red', alpha=0.7, log=True)
         plt.savefig(f"/content/visualisation/Prob before.png")
+
+        # Apply transformation to skew the probabilities
         probabilities_transformed = probabilities**alpha
-        after = cv2.normalize(probabilities_transformed, None, 0, 255, cv2.NORM_MINMAX)
+        # Set any transformed probabilities below 220 to zero
+        probabilities_transformed[probabilities_transformed < 220] = 0
+
+        # Normalize the transformed probabilities to 0-255 range
+        probabilities_transformed = cv2.normalize(probabilities_transformed, None, 0, 255, cv2.NORM_MINMAX)
         plt.figure()
-        plt.hist(after, bins=50, color='red', alpha=0.7, log=True)
+        plt.hist(probabilities_transformed, bins=50, color='red', alpha=0.7, log=True)
         plt.savefig(f"/content/visualisation/Prob after.png")
+
+        # Re-normalize these probabilities to ensure they sum to 1
         total_prob = probabilities_transformed.sum()
         if total_prob > 0:
-            probabilities_normalized = probabilities_transformed / total_prob
+            probabilities_normalized = probabilities_transformed
         else:
-            probabilities_normalized = probabilities/probabilities.sum()
+            probabilities_normalized = probabilities
+
         samples = np.random.choice(len(probabilities), size=n_points, replace=False, p=probabilities_normalized)
         return list(zip(indices[1][samples], indices[0][samples]))
     else:
