@@ -675,12 +675,16 @@ def sample_points(indices, probabilities, n_points, fg=True, alpha=10.0):
         if n_points == 0:
             return []
         # Apply transformation to skew the probabilities
+        before = probabilities.reshape((1024, 1024))
+        before = cv2.normalize(before, None, 0, 255, cv2.NORM_MINMAX).astype('uint8')
         plt.figure()
-        plt.imshow(probabilities, cmap='jet')
+        plt.imshow(before, cmap='jet')
         plt.savefig(f"/content/visualisation/Prob before.png")
         probabilities_transformed = np.power(probabilities, alpha)
+        after = probabilities_transformed.reshape((1024, 1024))
+        after = cv2.normalize(after, None, 0, 255, cv2.NORM_MINMAX).astype('uint8')
         plt.figure()
-        plt.imshow(probabilities_transformed, cmap='jet')
+        plt.imshow(after, cmap='jet')
         plt.savefig(f"/content/visualisation/Prob after.png")
         total_prob = probabilities_transformed.sum()
         if total_prob > 0:
