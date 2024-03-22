@@ -682,10 +682,8 @@ def sample_points(indices, probabilities, n_points, fg=True, alpha=10.0):
 
         # Apply transformation to skew the probabilities
         probabilities_transformed = probabilities**alpha
-        print(probabilities_transformed.shape)
         # Set any transformed probabilities below 220 to zero
         probabilities_transformed[probabilities_transformed < 220] = 0
-        print(probabilities_transformed.shape)
 
         # Normalize the transformed probabilities to 0-255 range
         probabilities_transformed = cv2.normalize(probabilities_transformed, None, 0, 255, cv2.NORM_MINMAX)
@@ -700,8 +698,7 @@ def sample_points(indices, probabilities, n_points, fg=True, alpha=10.0):
         else:
             probabilities_normalized = probabilities
 
-        print(probabilities_normalized.shape)
-        samples = np.random.choice(len(probabilities), size=n_points, replace=False, p=probabilities_normalized)
+        samples = np.random.choice(len(probabilities), size=n_points, replace=False, p=probabilities_normalized.flatten())
         return list(zip(indices[1][samples], indices[0][samples]))
     else:
         if n_points == 0:
