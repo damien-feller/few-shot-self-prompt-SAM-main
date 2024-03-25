@@ -280,7 +280,7 @@ def save_aggregated_metrics_with_std(all_metrics, all_metrics_otsu, all_metrics_
 def SAM_predict(sam, predictor, image=None, bounding_box=None, point_prompt=None, heatmap=None):
     # Check if an image is provided and set it
     if image is not None:
-        #image = sam.preprocess(torch.from_numpy(image))
+        image = sam.preprocess(torch.from_numpy(image))
         predictor.set_image(image)
 
     # Initialize variables for point_coords and point_labels
