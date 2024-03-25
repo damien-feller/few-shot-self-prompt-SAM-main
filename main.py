@@ -280,7 +280,7 @@ def save_aggregated_metrics_with_std(all_metrics, all_metrics_otsu, all_metrics_
 def SAM_predict(sam, predictor, image=None, bounding_box=None, point_prompt=None, heatmap=None):
     # Check if an image is provided and set it
     if image is not None:
-        image = sam.preprocess(torch.from_numpy(image))
+        #image = sam.preprocess(torch.from_numpy(image))
         predictor.set_image(image)
 
     # Initialize variables for point_coords and point_labels
@@ -697,7 +697,7 @@ def sample_points(indices, probabilities, n_points, fg=True, alpha=10.0):
         if total_prob > 0:
             probabilities_normalized = probabilities_transformed/probabilities_transformed.sum()
         else:
-            probabilities_normalized = probabilities/probabilities.sum()
+            probabilities_normalized = np.ones(len(probabilities)) / len(probabilities)
 
         samples = np.random.choice(len(probabilities), size=n_points, replace=False, p=probabilities_normalized.flatten())
         return list(zip(indices[1][samples], indices[0][samples]))
