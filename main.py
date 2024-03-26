@@ -904,6 +904,7 @@ def train(args, predictor, sam):
             normalize = transforms.Normalize(mean=mean, std=std)
             normalized_image_tensor = normalize(image_tensor)
             image = np.array(normalized_image_tensor)
+            image = image.transpose(1, 2, 0)
             print(image.shape)
 
             mask = cv2.imread(os.path.join(data_path, 'masks', fname), cv2.IMREAD_GRAYSCALE)
