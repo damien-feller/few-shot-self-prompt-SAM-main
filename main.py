@@ -900,7 +900,8 @@ def train(args, predictor, sam):
 
             # Normalize the image
             normalize = transforms.Normalize(mean=mean, std=std)
-            image = normalize(image_tensor)
+            normalized_image_tensor = normalize(image_tensor)
+            image = np.array(normalized_image_tensor)
 
             mask = cv2.imread(os.path.join(data_path, 'masks', fname), cv2.IMREAD_GRAYSCALE)
             _, mask = cv2.threshold(mask, 128, 1, cv2.THRESH_BINARY)
