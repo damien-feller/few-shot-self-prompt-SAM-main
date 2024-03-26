@@ -1105,50 +1105,48 @@ def train(args, predictor, sam):
         prediction_time_SAM_point /= len(val_images)
         print('Finished SAM')
 
-        if i == 0:
-            # Get evaluations from SAM
-            print('Evaluating using SAM Ground Truth', i)
-            SAM_pred_GT = []
-            SAM_pred_GT_resized = []
-            prediction_time_SAM_GT = 0
-            for j in range(len(val_images)):
-                start_time = time.time()  # Start timing
-                masks_pred, logits = SAM_predict(sam, predictor, val_images[j], bounding_box=BBoxes_GT[j],
-                                                 point_prompt=None, heatmap=heatmaps[j])
-                mask_SAM = masks_pred.astype('uint8')
-                mask_SAM_GT_resized = cv2.resize(mask_SAM, dsize=val_sizes[j], interpolation=cv2.INTER_NEAREST)
-                end_time = time.time()  # End timing
-                prediction_time_SAM_GT += (end_time - start_time)
-                SAM_pred_GT.append(mask_SAM)
-                SAM_pred_GT_resized.append(mask_SAM_GT_resized)
-            prediction_time_SAM_GT /= len(val_images)
-            report_SAM_GT = classification_report(flatten_and_concatenate_arrays(val_masks),
-                                                  flatten_and_concatenate_arrays(SAM_pred_GT_resized),
-                                                  target_names=['0', '1'], output_dict=True)
-            print('Finished SAM')
+        # Get evaluations from SAM
+        print('Evaluating using SAM Ground Truth', i)
+        SAM_pred_GT = []
+        SAM_pred_GT_resized = []
+        prediction_time_SAM_GT = 0
+        for j in range(len(val_images)):
+            start_time = time.time()  # Start timing
+            masks_pred, logits = SAM_predict(sam, predictor, val_images[j], bounding_box=BBoxes_GT[j],
+                                             point_prompt=None, heatmap=heatmaps[j])
+            mask_SAM = masks_pred.astype('uint8')
+            mask_SAM_GT_resized = cv2.resize(mask_SAM, dsize=val_sizes[j], interpolation=cv2.INTER_NEAREST)
+            end_time = time.time()  # End timing
+            prediction_time_SAM_GT += (end_time - start_time)
+            SAM_pred_GT.append(mask_SAM)
+            SAM_pred_GT_resized.append(mask_SAM_GT_resized)
+        prediction_time_SAM_GT /= len(val_images)
+        report_SAM_GT = classification_report(flatten_and_concatenate_arrays(val_masks),
+                                              flatten_and_concatenate_arrays(SAM_pred_GT_resized),
+                                              target_names=['0', '1'], output_dict=True)
+        print('Finished SAM')
 
-        if i == 0:
-            # Get evaluations from SAM
-            print('Evaluating using SAM Ground Truth - Point', i)
-            SAM_pred_GTp = []
-            SAM_pred_GTp_resized = []
-            prediction_time_SAM_GTp = 0
-            for j in range(len(val_images)):
-                input_point = np.array([[points_GT[j][0], points_GT[j][1], 1]])
-                start_time = time.time()  # Start timing
-                masks_pred, logits = SAM_predict(sam, predictor, val_images[j], bounding_box=BBoxes_GT[j],
-                                                 point_prompt=input_point, heatmap=heatmaps[j])
-                mask_SAM = masks_pred.astype('uint8')
-                mask_SAM_GTp_resized = cv2.resize(mask_SAM, dsize=val_sizes[j], interpolation=cv2.INTER_NEAREST)
-                end_time = time.time()  # End timing
-                prediction_time_SAM_GTp += (end_time - start_time)
-                SAM_pred_GTp.append(mask_SAM)
-                SAM_pred_GTp_resized.append(mask_SAM_GTp_resized)
-            prediction_time_SAM_GTp /= len(val_images)
-            report_SAM_GTp = classification_report(flatten_and_concatenate_arrays(val_masks),
-                                                   flatten_and_concatenate_arrays(SAM_pred_GTp_resized),
-                                                   target_names=['0', '1'], output_dict=True)
-            print('Finished SAM')
+        # Get evaluations from SAM
+        print('Evaluating using SAM Ground Truth - Point', i)
+        SAM_pred_GTp = []
+        SAM_pred_GTp_resized = []
+        prediction_time_SAM_GTp = 0
+        for j in range(len(val_images)):
+            input_point = np.array([[points_GT[j][0], points_GT[j][1], 1]])
+            start_time = time.time()  # Start timing
+            masks_pred, logits = SAM_predict(sam, predictor, val_images[j], bounding_box=BBoxes_GT[j],
+                                             point_prompt=input_point, heatmap=heatmaps[j])
+            mask_SAM = masks_pred.astype('uint8')
+            mask_SAM_GTp_resized = cv2.resize(mask_SAM, dsize=val_sizes[j], interpolation=cv2.INTER_NEAREST)
+            end_time = time.time()  # End timing
+            prediction_time_SAM_GTp += (end_time - start_time)
+            SAM_pred_GTp.append(mask_SAM)
+            SAM_pred_GTp_resized.append(mask_SAM_GTp_resized)
+        prediction_time_SAM_GTp /= len(val_images)
+        report_SAM_GTp = classification_report(flatten_and_concatenate_arrays(val_masks),
+                                               flatten_and_concatenate_arrays(SAM_pred_GTp_resized),
+                                               target_names=['0', '1'], output_dict=True)
+        print('Finished SAM')
 
         print('Multi Point SAM')
         SAM_pred_multi = []
