@@ -926,8 +926,6 @@ def train(args, predictor, sam):
 
         train_masks = [masks[i] for i in train_index]
         val_masks = [masks[i] for i in val_index]
-        print(train_embeddings.shape)
-        print(val_embeddings.shape)
 
         # Convert to tensor
         val_embeddings_tensor = torch.stack([torch.Tensor(e) for e in val_embeddings])
@@ -939,6 +937,9 @@ def train(args, predictor, sam):
         # Convert to tensors
         train_embeddings_tensor = torch.stack([torch.Tensor(e) for e in train_embeddings])
         train_labels_tensor = torch.stack([torch.Tensor(l) for l in train_labels])
+
+        print(train_embeddings_tensor.shape)
+        print(val_embeddings_tensor.shape)
 
         # Use the same function as defined for Random Forest
         train_embeddings_flat, train_labels_flat = create_dataset_for_SVM(train_embeddings_tensor.numpy(),
