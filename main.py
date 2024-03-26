@@ -907,6 +907,7 @@ def train(args, predictor, sam):
     embeddings, labels, images, sizes, masks = process_images(val_fnames, augment_data=False)
 
     kf = KFold(n_splits=5, shuffle=True, random_state=42)
+    i = 0
 
     for train_index, val_index in kf.split(embeddings):
         print(train_index)
@@ -1323,6 +1324,8 @@ def train(args, predictor, sam):
             'dice_score': SAM_multi_dice_val
         }
         all_metrics_SAM_multi.append(metrics_SAM_multi)
+
+        i += 1
 
         # Visualize SVM predictions on the validation dataset
         # print("Validation Predictions with SVM:")
