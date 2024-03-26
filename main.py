@@ -889,22 +889,6 @@ def train(args, predictor, sam):
             # Read data
             image = cv2.imread(os.path.join(data_path, 'images', fname))
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
-            # Convert the image to a PyTorch tensor
-            to_tensor = transforms.ToTensor()
-            image_tensor = to_tensor(image)
-
-            # Define the mean and standard deviation
-            mean = [123.675, 116.28, 103.53]
-            std = [58.395, 57.12, 57.375]
-
-            # Normalize the image
-            normalize = transforms.Normalize(mean=mean, std=std)
-            normalized_image_tensor = normalize(image_tensor)
-            image = np.array(normalized_image_tensor)
-            image = np.clip(image, 0, 255)
-            image = image.transpose(1, 2, 0).astype(np.uint8)
-
             mask = cv2.imread(os.path.join(data_path, 'masks', fname), cv2.IMREAD_GRAYSCALE)
             _, mask = cv2.threshold(mask, 128, 1, cv2.THRESH_BINARY)
 
