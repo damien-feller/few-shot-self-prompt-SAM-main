@@ -889,12 +889,10 @@ def train(args, predictor, sam):
             # Read data
             image = cv2.imread(os.path.join(data_path, 'images', fname))
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            print(image.shape)
 
             # Convert the image to a PyTorch tensor
             to_tensor = transforms.ToTensor()
             image_tensor = to_tensor(image)
-            print(image_tensor.shape)
 
             # Define the mean and standard deviation
             mean = [123.675, 116.28, 103.53]
@@ -905,7 +903,6 @@ def train(args, predictor, sam):
             normalized_image_tensor = normalize(image_tensor)
             image = np.array(normalized_image_tensor)
             image = image.transpose(1, 2, 0)
-            print(image.shape)
 
             mask = cv2.imread(os.path.join(data_path, 'masks', fname), cv2.IMREAD_GRAYSCALE)
             _, mask = cv2.threshold(mask, 128, 1, cv2.THRESH_BINARY)
