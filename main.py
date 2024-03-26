@@ -912,6 +912,7 @@ def train(args, predictor, sam):
         print(train_index)
         print(val_index)
         # Split the data into training and validation sets
+        print(embeddings.shape)
         train_embeddings, val_embeddings = embeddings[train_index], embeddings[val_index]
         train_labels, val_labels = labels[train_index], labels[val_index]
         train_images, val_images = images[train_index], images[val_index]
