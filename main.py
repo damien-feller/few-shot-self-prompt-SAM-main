@@ -910,8 +910,6 @@ def train(args, predictor, sam):
     i = 0
 
     for train_index, val_index in kf.split(embeddings):
-        print(train_index)
-        print(val_index)
         # Split the data into training and validation sets
         train_embeddings = [embeddings[i] for i in train_index]
         val_embeddings = [embeddings[i] for i in val_index]
@@ -939,8 +937,6 @@ def train(args, predictor, sam):
         train_embeddings_tensor = torch.stack([torch.Tensor(e) for e in train_embeddings])
         train_labels_tensor = torch.stack([torch.Tensor(l) for l in train_labels])
 
-        print(train_embeddings_tensor.shape)
-        print(val_embeddings_tensor.shape)
 
         # Use the same function as defined for Random Forest
         train_embeddings_flat, train_labels_flat = create_dataset_for_SVM(train_embeddings_tensor.numpy(),
@@ -1323,8 +1319,6 @@ def train(args, predictor, sam):
         }
         all_metrics_SAM_multi.append(metrics_SAM_multi)
 
-        i += 1
-
         # Visualize SVM predictions on the validation dataset
         # print("Validation Predictions with SVM:")
         if i == 0:
@@ -1332,6 +1326,8 @@ def train(args, predictor, sam):
             visualize_predictions(val_images, val_embeddings, val_labels, model, num_samples=25, val=True, eval_num=i)
             visualise_SAM(val_images, val_labels, pred_original, otsu_original, SAM_pred, SAM_pred_GT, SAM_point_pred,
                           SAM_pred_GTp, BBoxes_Otsu, BBoxes, BBoxes_GT, heatmaps, points_otsu, points_GT, logits_test)
+
+        i += 1
 
     save_aggregated_metrics_with_std(all_metrics, all_metrics_otsu, all_metrics_SAM, all_metrics_SAM_point,
                                      all_metrics_SAM_GT, all_metrics_SAM_GTp, all_metrics_SAM_multi)
