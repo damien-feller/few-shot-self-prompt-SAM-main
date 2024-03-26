@@ -846,14 +846,7 @@ def train(args, predictor, sam):
     fnames = os.listdir(os.path.join(data_path, 'images'))
     # get k random indices from fnames
     random.shuffle(fnames)
-    val_fnames = fnames[-args.val_size:]
-    fnames[-args.val_size:] = []
-
-    # create a number of different training sets
-    train_fnames = []
-    for i in range(args.evaluation_num):
-        segment = fnames[(i * num_image):(i + 1) * num_image]
-        train_fnames.append(segment)
+    val_fnames = fnames[:args.val_size]
 
     # image augmentation and embedding processing
     num_augmentations = int(args.augmentation_num)  # Number of augmented versions to create per image
@@ -911,18 +904,28 @@ def train(args, predictor, sam):
         return image_embeddings, labels, org_img, original_sizes, maskOrgs
 
     # Process validation images without augmentation
-    val_embeddings, val_labels, val_images, val_sizes, val_masks = process_images(val_fnames, augment_data=False)
+    embeddings, labels, images, sizes, masks = process_images(val_fnames, augment_data=False)
 
-    # Convert to tensor
-    val_embeddings_tensor = torch.stack([torch.Tensor(e) for e in val_embeddings])
-    val_labels_tensor = torch.stack([torch.Tensor(l) for l in val_labels])
+    kf = KFold(n_splits=5, shuffle=True, random_state=42)
 
-    val_embeddings_flat, val_labels_flat = create_dataset_for_SVM(val_embeddings_tensor.numpy(),
-                                                                  val_labels_tensor.numpy())
-    for i in range(args.evaluation_num):
-        # Process training images with augmentation
-        train_embeddings, train_labels, train_images, train_sizes, train_masks = process_images(train_fnames[i],
-                                                                                                augment_data=True)
+    for train_index, val_index in kf.split(embeddings):
+        print(train_index)
+        print(val_index)
+        # Split the data into training and validation sets
+        train_embeddings, val_embeddings = embeddings[train_index], embeddings[val_index]
+        train_labels, val_labels = labels[train_index], labels[val_index]
+        train_images, val_images = images[train_index], images[val_index]
+        train_sizes, val_sizes = sizes[train_index], sizes[val_index]
+        train_masks, val_masks = masks[train_index], masks[val_index]
+        print(train_embeddings.shape)
+        print(val_embeddings.shape)
+
+        # Convert to tensor
+        val_embeddings_tensor = torch.stack([torch.Tensor(e) for e in val_embeddings])
+        val_labels_tensor = torch.stack([torch.Tensor(l) for l in val_labels])
+
+        val_embeddings_flat, val_labels_flat = create_dataset_for_SVM(val_embeddings_tensor.numpy(),
+                                                                      val_labels_tensor.numpy())
 
         # Convert to tensors
         train_embeddings_tensor = torch.stack([torch.Tensor(e) for e in train_embeddings])
